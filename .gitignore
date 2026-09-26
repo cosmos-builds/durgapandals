@@ -1,0 +1,44 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Turborepo
+.turbo
+
+# Next.js (apps/web, apps/admin)
+.next
+out
+next-env.d.ts
+
+# API build output (apps/api)
+dist
+
+# TypeScript
+*.tsbuildinfo
+
+# Env files — everything except the committed .env.example templates
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# Deployment
+.vercel
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+
+# Editor / OS
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea

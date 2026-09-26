@@ -1,0 +1,34 @@
+{
+  "name": "@durgapandals/api",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "seed": "tsx scripts/seed.ts",
+    "seed:pandals": "tsx scripts/seed-pandals.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@durgapandals/auth": "workspace:*",
+    "@durgapandals/config": "workspace:*",
+    "@durgapandals/database": "workspace:*",
+    "@durgapandals/deduplication": "workspace:*",
+    "@durgapandals/types": "workspace:*",
+    "@durgapandals/utils": "workspace:*",
+    "@durgapandals/validation": "workspace:*",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/rate-limit": "^10.1.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "fastify": "^5.0.0",
+    "mongoose": "^8.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "tsx": "^4.19.0",
+    "typescript": "5.6.3"
+  }
+}

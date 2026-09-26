@@ -1,0 +1,26 @@
+{
+  "name": "@durgapandals/admin",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@durgapandals/types": "workspace:*",
+    "@durgapandals/ui": "workspace:*",
+    "next": "^15.0.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.0",
+    "@types/node": "^22.7.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.0"
+  }
+}

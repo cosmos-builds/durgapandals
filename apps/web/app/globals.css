@@ -1,0 +1,22 @@
+/* @import rules must precede every other rule (including @tailwind) or the
+   browser silently drops them — that was previously causing Material Symbols
+   ligatures ("location_off" etc.) to render as literal text instead of icons. */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&family=JetBrains+Mono:wght@500&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&display=block");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark only — no theme switcher (spec §28.2) */
+body {
+  background: #0f0c15;
+  color: #f4eff6;
+  font-family: "DM Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-rounded {
+  font-family: "Material Symbols Rounded";
+  font-variation-settings: "FILL" 0;
+}

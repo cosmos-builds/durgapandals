@@ -1,0 +1,13 @@
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=DM+Sans:opsz,wght@9..40,400..700&family=JetBrains+Mono:wght@500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Utilitarian but shares the same dark foundation tokens as the public site
+   (spec §28.2). */
+body {
+  background: #0f0c15;
+  color: #f4eff6;
+  font-family: "DM Sans", system-ui, sans-serif;
+}
