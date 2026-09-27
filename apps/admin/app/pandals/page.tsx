@@ -140,9 +140,9 @@ export default function PandalsListPage() {
           placeholder="Search by name or locality…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="h-11 md:flex-1"
+          className="h-12 md:flex-1"
         />
-        <Select value={cityId} onChange={(e) => setCityId(e.target.value)} className="h-11 md:w-56">
+        <Select value={cityId} onChange={(e) => setCityId(e.target.value)} className="h-12 md:w-56">
           <option value="">All cities</option>
           {cities.map((city) => (
             <option key={city._id} value={city._id}>
@@ -150,7 +150,7 @@ export default function PandalsListPage() {
             </option>
           ))}
         </Select>
-        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="h-11 md:w-48">
+        <Select value={status} onChange={(e) => setStatus(e.target.value)} className="h-12 md:w-48">
           {STATUS_OPTIONS.map((s) => (
             <option key={s} value={s}>
               {s || "All statuses"}

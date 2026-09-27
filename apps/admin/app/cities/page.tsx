@@ -124,7 +124,7 @@ export default function CitiesPage() {
                 <Select
                   value={city.status}
                   onChange={(e) => updateStatus(city._id, e.target.value as City["status"])}
-                  className="h-10 w-40 text-sm"
+                  className="h-12 w-40 text-sm"
                 >
                   <option value="ACTIVE">Active</option>
                   <option value="COMING_SOON">Coming soon</option>
@@ -133,7 +133,7 @@ export default function CitiesPage() {
                 <Select
                   value={city.tier}
                   onChange={(e) => updateTier(city._id, e.target.value as City["tier"])}
-                  className="h-10 w-40 text-sm"
+                  className="h-12 w-40 text-sm"
                 >
                   <option value="MAJOR">Major</option>
                   <option value="MINOR">Minor</option>
@@ -156,21 +156,21 @@ export default function CitiesPage() {
               placeholder="Name (e.g. Jabalpur)"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="col-span-2 h-11"
+              className="col-span-2 h-12"
             />
             <Input
               required
               placeholder="State"
               value={form.state}
               onChange={(e) => setForm({ ...form, state: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Input
               required
               placeholder="State code (e.g. MP)"
               value={form.stateCode}
               onChange={(e) => setForm({ ...form, stateCode: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Input
               required
@@ -179,7 +179,7 @@ export default function CitiesPage() {
               placeholder="Latitude"
               value={form.latitude}
               onChange={(e) => setForm({ ...form, latitude: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Input
               required
@@ -188,26 +188,26 @@ export default function CitiesPage() {
               placeholder="Longitude"
               value={form.longitude}
               onChange={(e) => setForm({ ...form, longitude: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Input
               type="number"
               placeholder="Map zoom"
               value={form.defaultMapZoom}
               onChange={(e) => setForm({ ...form, defaultMapZoom: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Input
               type="number"
               placeholder="Active festival year"
               value={form.activeFestivalYear}
               onChange={(e) => setForm({ ...form, activeFestivalYear: e.target.value })}
-              className="h-11"
+              className="h-12"
             />
             <Select
               value={form.tier}
               onChange={(e) => setForm({ ...form, tier: e.target.value as City["tier"] })}
-              className="col-span-2 h-11"
+              className="col-span-2 h-12"
             >
               <option value="MINOR">Minor — search-only in the city picker</option>
               <option value="MAJOR">Major — pinned in the city picker</option>

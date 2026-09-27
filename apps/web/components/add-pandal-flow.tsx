@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { distanceMeters } from "@durgapandals/deduplication";
-import { Button, Input, Select, Textarea } from "@durgapandals/ui";
+import { Button, Field, Input, Select, Textarea } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
   reverseGeocode,
@@ -18,6 +18,7 @@ import {
   type UploadedPhoto,
 } from "@/lib/api";
 import { LocationSearchBox } from "./location-search-box";
+import { MobileHeader } from "./mobile-header";
 
 // OTP verification is off by default (contributors submit directly) but the
 // code path stays in place — flip this back on with
@@ -450,7 +451,8 @@ export function AddPandalFlow({
         <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden">
           <span className="material-symbols-rounded">arrow_back</span>
         </button>
-        <span className="font-body text-sm font-bold">Add your pandal</span>
+        <MobileHeader citySlug={citySlug} className="md:hidden" />
+        <span className="hidden font-body text-sm font-bold md:inline">Add your pandal</span>
         <span className="font-mono text-xs text-ink-muted">
           {progress.index + 1}/{progress.total}
         </span>
@@ -514,8 +516,7 @@ export function AddPandalFlow({
 
             <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
 
-            <div className="flex flex-col gap-1.5">
-              <span className="font-body text-sm font-bold">Festival year</span>
+            <Field label="Festival year">
               <Select value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
                 {[activeFestivalYear, activeFestivalYear - 1, activeFestivalYear - 2].map((year) => (
                   <option key={year} value={year}>
@@ -524,25 +525,31 @@ export function AddPandalFlow({
                   </option>
                 ))}
               </Select>
-            </div>
+            </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Input
-                placeholder="Locality / area"
-                value={details.locality}
-                onChange={(e) => setDetails({ ...details, locality: e.target.value })}
-              />
-              <Input
-                placeholder="Landmark (optional)"
-                value={details.landmark}
-                onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
-              />
+              <Field label="Locality / area">
+                <Input
+                  placeholder="e.g. Kumartuli"
+                  value={details.locality}
+                  onChange={(e) => setDetails({ ...details, locality: e.target.value })}
+                />
+              </Field>
+              <Field label="Landmark">
+                <Input
+                  placeholder="Optional"
+                  value={details.landmark}
+                  onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                />
+              </Field>
             </div>
-            <Input
-              placeholder="Address"
-              value={details.address}
-              onChange={(e) => setDetails({ ...details, address: e.target.value })}
-            />
+            <Field label="Address">
+              <Input
+                placeholder="Full street address"
+                value={details.address}
+                onChange={(e) => setDetails({ ...details, address: e.target.value })}
+              />
+            </Field>
 
             {geocoding && (
               <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
@@ -649,17 +656,21 @@ export function AddPandalFlow({
               </span>
               <span className="font-display text-base font-bold">Basics</span>
             </div>
-            <Input
-              required
-              placeholder="Pandal name"
-              value={details.canonicalName}
-              onChange={(e) => setDetails({ ...details, canonicalName: e.target.value })}
-            />
-            <Input
-              placeholder="Organiser / committee · optional"
-              value={details.organizerName}
-              onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
-            />
+            <Field label="Pandal name">
+              <Input
+                required
+                placeholder="e.g. Kumartuli Sarbojanin"
+                value={details.canonicalName}
+                onChange={(e) => setDetails({ ...details, canonicalName: e.target.value })}
+              />
+            </Field>
+            <Field label="Organiser / committee">
+              <Input
+                placeholder="Optional"
+                value={details.organizerName}
+                onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
+              />
+            </Field>
           </div>
 
           <span className="mt-1 font-body text-xs font-extrabold tracking-wide text-accent">OPTIONAL DETAILS</span>
@@ -672,16 +683,20 @@ export function AddPandalFlow({
               <span className="font-display text-base font-bold">Theme for {festivalYear}</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            <Input
-              placeholder="Theme name — e.g. Rural Bengal"
-              value={details.theme}
-              onChange={(e) => setDetails({ ...details, theme: e.target.value })}
-            />
-            <Textarea
-              placeholder="Theme details — what makes it worth visiting?"
-              value={details.description}
-              onChange={(e) => setDetails({ ...details, description: e.target.value })}
-            />
+            <Field label="Theme name">
+              <Input
+                placeholder="e.g. Rural Bengal"
+                value={details.theme}
+                onChange={(e) => setDetails({ ...details, theme: e.target.value })}
+              />
+            </Field>
+            <Field label="Theme details">
+              <Textarea
+                placeholder="What makes it worth visiting?"
+                value={details.description}
+                onChange={(e) => setDetails({ ...details, description: e.target.value })}
+              />
+            </Field>
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
@@ -765,11 +780,13 @@ export function AddPandalFlow({
               <span className="font-display text-base font-bold">Good to know for visitors</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            <Input
-              placeholder="Public contact number"
-              value={details.publicContact}
-              onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
-            />
+            <Field label="Public contact">
+              <Input
+                placeholder="Phone number visitors can call"
+                value={details.publicContact}
+                onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
+              />
+            </Field>
             {(
               [
                 ["parkingAvailable", "Parking available"],
@@ -789,8 +806,7 @@ export function AddPandalFlow({
                 />
               </label>
             ))}
-            <div className="flex flex-col gap-1.5">
-              <span className="font-body text-sm">Visit type</span>
+            <Field label="Visit type">
               <Select value={visitType} onChange={(e) => setVisitType(e.target.value)}>
                 {VISIT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -798,7 +814,7 @@ export function AddPandalFlow({
                   </option>
                 ))}
               </Select>
-            </div>
+            </Field>
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">

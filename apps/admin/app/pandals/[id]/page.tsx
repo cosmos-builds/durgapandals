@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
-import { Button, Card, Dialog, Input, Select, Textarea } from "@durgapandals/ui";
+import { Button, Card, Dialog, Field, Input, Select, Textarea } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import type { ReverseGeocodeResult } from "@/lib/admin-api";
 
@@ -285,7 +285,7 @@ export default function PandalDetailPage() {
         <Select
           value={pandal.publicationStatus}
           onChange={(e) => setStatus("publicationStatus", e.target.value)}
-          className="h-10 w-44 text-sm"
+          className="h-12 w-44 text-sm"
         >
           {["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"].map((s) => (
             <option key={s} value={s}>
@@ -296,7 +296,7 @@ export default function PandalDetailPage() {
         <Select
           value={pandal.verificationStatus}
           onChange={(e) => setStatus("verificationStatus", e.target.value)}
-          className="h-10 w-44 text-sm"
+          className="h-12 w-44 text-sm"
         >
           {["UNVERIFIED", "VERIFIED", "DUPLICATE"].map((s) => (
             <option key={s} value={s}>
@@ -307,7 +307,7 @@ export default function PandalDetailPage() {
         <Select
           value={pandal.addedBy}
           onChange={(e) => updateField("addedBy", e.target.value)}
-          className="h-10 w-48 text-sm"
+          className="h-12 w-48 text-sm"
         >
           <option value="PUBLIC_SUBMISSION">Added by a visitor</option>
           <option value="ORGANIZER">Added by organiser</option>
@@ -321,50 +321,43 @@ export default function PandalDetailPage() {
         </h2>
         <div className="flex flex-col gap-6 md:flex-row">
           <div className="grid flex-1 grid-cols-2 gap-3">
-            <Input
-              value={pandal.canonicalName}
-              onChange={(e) => updateField("canonicalName", e.target.value)}
-              className="col-span-2 h-11"
-            />
-            <Input
-              placeholder="Organizer"
-              value={pandal.organizerName ?? ""}
-              onChange={(e) => updateField("organizerName", e.target.value)}
-              className="col-span-2 h-11"
-            />
-            <Input
-              placeholder="Address"
-              value={pandal.address}
-              onChange={(e) => updateField("address", e.target.value)}
-              className="col-span-2 h-11"
-            />
-            <Input
-              placeholder="Locality"
-              value={pandal.locality}
-              onChange={(e) => updateField("locality", e.target.value)}
-              className="h-11"
-            />
-            <Input
-              placeholder="Landmark"
-              value={pandal.landmark ?? ""}
-              onChange={(e) => updateField("landmark", e.target.value)}
-              className="h-11"
-            />
-            <Input
-              placeholder="Public contact"
-              value={pandal.publicContact ?? ""}
-              onChange={(e) => updateField("publicContact", e.target.value)}
-              className="col-span-2 h-11"
-            />
-            <Select
-              value={pandal.visitType}
-              onChange={(e) => updateField("visitType", e.target.value)}
-              className="col-span-2 h-11"
-            >
-              <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
-              <option value="PARK_AND_VISIT">Park &amp; visit</option>
-              <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
-            </Select>
+            <Field label="Pandal name" className="col-span-2">
+              <Input value={pandal.canonicalName} onChange={(e) => updateField("canonicalName", e.target.value)} />
+            </Field>
+            <Field label="Organiser / committee" className="col-span-2">
+              <Input
+                placeholder="Optional"
+                value={pandal.organizerName ?? ""}
+                onChange={(e) => updateField("organizerName", e.target.value)}
+              />
+            </Field>
+            <Field label="Address" className="col-span-2">
+              <Input value={pandal.address} onChange={(e) => updateField("address", e.target.value)} />
+            </Field>
+            <Field label="Locality">
+              <Input value={pandal.locality} onChange={(e) => updateField("locality", e.target.value)} />
+            </Field>
+            <Field label="Landmark">
+              <Input
+                placeholder="Optional"
+                value={pandal.landmark ?? ""}
+                onChange={(e) => updateField("landmark", e.target.value)}
+              />
+            </Field>
+            <Field label="Public contact" className="col-span-2">
+              <Input
+                placeholder="Phone number visitors can call"
+                value={pandal.publicContact ?? ""}
+                onChange={(e) => updateField("publicContact", e.target.value)}
+              />
+            </Field>
+            <Field label="Visit type" className="col-span-2">
+              <Select value={pandal.visitType} onChange={(e) => updateField("visitType", e.target.value)}>
+                <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
+                <option value="PARK_AND_VISIT">Park &amp; visit</option>
+                <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
+              </Select>
+            </Field>
             <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-card px-4 py-3">
               {AMENITY_FIELDS.map((field) => (
                 <label key={field.key} className="flex items-center gap-2 font-body text-sm">
@@ -464,28 +457,36 @@ export default function PandalDetailPage() {
           {years.length === 0 && <p className="font-body text-sm text-ink-muted">No years added yet.</p>}
         </div>
 
-        <form onSubmit={addYear} className="flex flex-col gap-2 border-t border-border pt-4">
+        <form onSubmit={addYear} className="flex flex-col gap-3 border-t border-border pt-4">
+          <span className="-mb-1 font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Add a festival year
+          </span>
           <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              placeholder="Year"
-              value={yearForm.year}
-              onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
-              className="h-10 text-sm"
-            />
-            <Input
-              placeholder="Theme"
-              value={yearForm.theme}
-              onChange={(e) => setYearForm({ ...yearForm, theme: e.target.value })}
-              className="h-10 text-sm"
-            />
+            <Field label="Year">
+              <Input
+                type="number"
+                value={yearForm.year}
+                onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
+                className="text-sm"
+              />
+            </Field>
+            <Field label="Theme">
+              <Input
+                placeholder="Optional"
+                value={yearForm.theme}
+                onChange={(e) => setYearForm({ ...yearForm, theme: e.target.value })}
+                className="text-sm"
+              />
+            </Field>
           </div>
-          <Textarea
-            placeholder="Theme details"
-            value={yearForm.description}
-            onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
-            className="min-h-20 text-sm"
-          />
+          <Field label="Theme details">
+            <Textarea
+              placeholder="What makes this year's theme worth visiting?"
+              value={yearForm.description}
+              onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
+              className="min-h-20 text-sm"
+            />
+          </Field>
           <div className="flex flex-col gap-2">
             <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
               Puja schedule
@@ -496,13 +497,13 @@ export default function PandalDetailPage() {
                   placeholder="Time"
                   value={row.time}
                   onChange={(e) => updateScheduleRow(index, "time", e.target.value)}
-                  className="h-10 w-28 text-sm"
+                  className="h-12 w-28 text-sm"
                 />
                 <Input
                   placeholder="Event"
                   value={row.label}
                   onChange={(e) => updateScheduleRow(index, "label", e.target.value)}
-                  className="h-10 flex-1 text-sm"
+                  className="h-12 flex-1 text-sm"
                 />
                 <button
                   type="button"
@@ -557,7 +558,7 @@ export default function PandalDetailPage() {
             setMergeQuery(e.target.value);
             setMergeTarget(null);
           }}
-          className="h-11 w-full"
+          className="h-12 w-full"
         />
         <div className="flex max-h-52 flex-col gap-1 overflow-y-auto">
           {mergeResults.map((candidate) => (

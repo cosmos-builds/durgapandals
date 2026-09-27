@@ -11,6 +11,7 @@ import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
 import { CityYearPill } from "./city-year-pill";
+import { MobileHeader } from "./mobile-header";
 import { IntroHero } from "./intro-hero";
 import { FestiveBunting } from "./festive-bunting";
 export interface MapHomeProps {
@@ -59,6 +60,20 @@ export function MapHome({
   useEffect(() => {
     if (!hasSeenIntro()) setShowIntro(true);
   }, []);
+
+  // `useState(initialPandals)` only reads its argument on the very first
+  // mount — switching the year (or city) via the picker changes the
+  // `?year=` query param and the server re-renders this page with fresh
+  // `pandals` for that year, but React reuses this same MapHome instance
+  // (same route) rather than remounting it, so the old `pandals` state was
+  // silently staying put and the map kept showing the previous year's
+  // listings. Re-sync whenever the city or year actually changes.
+  useEffect(() => {
+    setPandals(initialPandals);
+    setSelectedId(null);
+    setShowSearchArea(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [citySlug, year]);
 
   function dismissIntro() {
     markIntroSeen();
@@ -292,14 +307,22 @@ export function MapHome({
 
   return (
     <div className="relative h-dvh w-full bg-ground md:flex md:h-[calc(100dvh-60px)]">
-      {/* Mobile-only floating header (spec §4/§5) — logo + city/year pill +
-          notification icon, then a pandal search bar, overlaid on the map
-          instead of pushing it down. Desktop uses the persistent TopHeader
-          instead (rendered one level up), so this is hidden there. */}
+      {/* Mobile-only floating header (spec §4/§5) — brand row, then city/year
+          pill + notification icon, then a pandal search bar, overlaid on
+          the map instead of pushing it down. Desktop uses the persistent
+          TopHeader instead (rendered one level up), so this is hidden
+          there. */}
       <div className="absolute inset-x-3 top-3 z-20 flex flex-col gap-2 md:hidden">
+        <MobileHeader
+          citySlug={citySlug}
+          className="rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur"
+          right={
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-ground/40">
+              <span className="material-symbols-rounded text-lg">notifications</span>
+            </span>
+          }
+        />
         <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.png" alt="" className="h-[30px] w-[30px] flex-none object-contain" />
           <CityYearPill
             citySlug={citySlug}
             cityName={cityName}
@@ -307,9 +330,6 @@ export function MapHome({
             availableYears={availableYears}
             className="flex h-9 flex-1 items-center justify-between gap-1.5 rounded-xl bg-card px-2.5 font-body text-xs font-bold"
           />
-          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-card">
-            <span className="material-symbols-rounded text-lg">notifications</span>
-          </span>
         </div>
         <div className="relative">
           <div className="flex h-[42px] items-center gap-2 rounded-2xl bg-card px-3">
@@ -438,7 +458,7 @@ export function MapHome({
         {/* Positioned below the mobile floating header (~104px tall); desktop
             has no overlaid header on the map itself, so it starts at top:0. */}
         <FestiveBunting
-          className="pointer-events-none absolute inset-x-0 top-[104px] z-10 h-16 w-full px-4 md:top-0"
+          className="pointer-events-none absolute inset-x-0 top-[144px] z-10 h-16 w-full px-4 md:top-0"
           flagCount={17}
         />
 
@@ -448,7 +468,7 @@ export function MapHome({
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute left-1/2 top-[132px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+            className="absolute left-1/2 top-[172px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
           >
             <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}

@@ -8,6 +8,7 @@ import { ADDED_BY_LABELS, VISIT_TYPE_LABELS, type NearbyRadiusPandal, type Panda
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { PhotoCarousel } from "./photo-carousel";
+import { MobileHeader } from "./mobile-header";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -41,9 +42,15 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  // Same class of bug as MapHome's pandal list: navigating pandal-to-pandal
+  // (e.g. via "Pandals near here") reuses this component instance rather
+  // than remounting it, so `likes`/`liked` must be explicitly re-synced to
+  // the newly-loaded pandal instead of quietly showing the previous one's.
   useEffect(() => {
+    setLikes(pandal.likes);
+    setLiked(false);
     setSaved(getSavedPandalSlugs().includes(pandal.slug));
-  }, [pandal.slug]);
+  }, [pandal.slug, pandal.likes]);
 
   async function toggleLike() {
     if (!pandal.year) return;
@@ -115,6 +122,7 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
             >
               <span className="material-symbols-rounded">arrow_back</span>
             </Link>
+            <MobileHeader citySlug={citySlug} variant="overlay" className="md:hidden" />
             <div className="ml-auto flex items-center gap-2">
               <button onClick={handleShare} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
                 <span className="material-symbols-rounded">share</span>

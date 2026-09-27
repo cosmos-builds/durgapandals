@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
-import { Button, Card, Input, Select } from "@durgapandals/ui";
+import { Button, Card, Field, Input, Select } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
@@ -156,71 +156,78 @@ export default function NewPandalPage() {
       <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
         <Card padding="md">
         <div className="grid grid-cols-2 gap-3">
-          <Select
-            required
-            value={form.cityId}
-            onChange={(e) => {
-              const cityId = e.target.value;
-              const city = cities.find((c) => c._id === cityId);
-              // Seed lat/lng from the city's centre right away instead of
-              // waiting on the map to finish loading and fire its first
-              // moveend — otherwise Check-duplicates/Create would stay
-              // disabled/empty until the admin drags the pin at least once.
-              setForm({
-                ...form,
-                cityId,
-                latitude: city ? String(city.latitude) : "",
-                longitude: city ? String(city.longitude) : "",
-              });
-            }}
-            className="col-span-2 h-11"
-          >
-            <option value="">Select city…</option>
-            {cities.map((city) => (
-              <option key={city._id} value={city._id}>
-                {city.name}
-              </option>
-            ))}
-          </Select>
-          <Input
-            required
-            placeholder="Pandal name"
-            value={form.canonicalName}
-            onChange={(e) => setForm({ ...form, canonicalName: e.target.value })}
-            className="col-span-2 h-11"
-          />
-          <Input
-            placeholder="Organizer / committee"
-            value={form.organizerName}
-            onChange={(e) => setForm({ ...form, organizerName: e.target.value })}
-            className="col-span-2 h-11"
-          />
-          <Input
-            required
-            placeholder="Address"
-            value={form.address}
-            onChange={(e) => setForm({ ...form, address: e.target.value })}
-            className="col-span-2 h-11"
-          />
-          <Input
-            required
-            placeholder="Locality / area"
-            value={form.locality}
-            onChange={(e) => setForm({ ...form, locality: e.target.value })}
-            className="h-11"
-          />
-          <Input
-            placeholder="Landmark"
-            value={form.landmark}
-            onChange={(e) => setForm({ ...form, landmark: e.target.value })}
-            className="h-11"
-          />
-          <Input
-            placeholder="Public contact"
-            value={form.publicContact}
-            onChange={(e) => setForm({ ...form, publicContact: e.target.value })}
-            className="col-span-2 h-11"
-          />
+          <Field label="City" className="col-span-2">
+            <Select
+              required
+              value={form.cityId}
+              onChange={(e) => {
+                const cityId = e.target.value;
+                const city = cities.find((c) => c._id === cityId);
+                // Seed lat/lng from the city's centre right away instead of
+                // waiting on the map to finish loading and fire its first
+                // moveend — otherwise Check-duplicates/Create would stay
+                // disabled/empty until the admin drags the pin at least once.
+                setForm({
+                  ...form,
+                  cityId,
+                  latitude: city ? String(city.latitude) : "",
+                  longitude: city ? String(city.longitude) : "",
+                });
+              }}
+            >
+              <option value="">Select city…</option>
+              {cities.map((city) => (
+                <option key={city._id} value={city._id}>
+                  {city.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Pandal name" className="col-span-2">
+            <Input
+              required
+              placeholder="e.g. Kumartuli Sarbojanin"
+              value={form.canonicalName}
+              onChange={(e) => setForm({ ...form, canonicalName: e.target.value })}
+            />
+          </Field>
+          <Field label="Organiser / committee" className="col-span-2">
+            <Input
+              placeholder="e.g. Kumartuli Sarbojanin Committee"
+              value={form.organizerName}
+              onChange={(e) => setForm({ ...form, organizerName: e.target.value })}
+            />
+          </Field>
+          <Field label="Address" className="col-span-2">
+            <Input
+              required
+              placeholder="Full street address"
+              value={form.address}
+              onChange={(e) => setForm({ ...form, address: e.target.value })}
+            />
+          </Field>
+          <Field label="Locality / area">
+            <Input
+              required
+              placeholder="e.g. Kumartuli"
+              value={form.locality}
+              onChange={(e) => setForm({ ...form, locality: e.target.value })}
+            />
+          </Field>
+          <Field label="Landmark">
+            <Input
+              placeholder="Optional"
+              value={form.landmark}
+              onChange={(e) => setForm({ ...form, landmark: e.target.value })}
+            />
+          </Field>
+          <Field label="Public contact" className="col-span-2">
+            <Input
+              placeholder="Phone number visitors can call"
+              value={form.publicContact}
+              onChange={(e) => setForm({ ...form, publicContact: e.target.value })}
+            />
+          </Field>
         </div>
 
         <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
@@ -240,15 +247,13 @@ export default function NewPandalPage() {
               </label>
             ))}
           </div>
-          <Select
-            value={form.visitType}
-            onChange={(e) => setForm({ ...form, visitType: e.target.value })}
-            className="h-11"
-          >
-            <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
-            <option value="PARK_AND_VISIT">Park &amp; visit</option>
-            <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
-          </Select>
+          <Field label="Visit type">
+            <Select value={form.visitType} onChange={(e) => setForm({ ...form, visitType: e.target.value })}>
+              <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
+              <option value="PARK_AND_VISIT">Park &amp; visit</option>
+              <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
+            </Select>
+          </Field>
         </div>
 
         <div className="mt-4 flex gap-2">

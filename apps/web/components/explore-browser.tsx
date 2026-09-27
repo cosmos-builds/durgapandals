@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Select } from "@durgapandals/ui";
 import type { PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
+import { MobileHeader } from "./mobile-header";
 
 export interface ExploreBrowserProps {
   citySlug: string;
@@ -119,41 +120,42 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
           into an icon-sized box without clipping — this is a small custom
           menu instead, matching the mockup's icon-only trigger while
           staying fully readable. */}
-      <div className="relative flex items-center justify-between gap-2 px-4 pt-4 md:hidden">
-        <div className="flex items-center gap-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/logo.png" alt="" className="h-6 w-6 object-contain" />
-          <h2 className="font-display text-[18px] font-extrabold">
-            Explore <span className="text-brand">{cityName}</span>
-          </h2>
-        </div>
-        <div className="relative">
-          <button
-            onClick={() => setSortMenuOpen((prev) => !prev)}
-            aria-label="Sort"
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-chip"
-          >
-            <span className="material-symbols-rounded text-lg">sort</span>
-          </button>
-          {sortMenuOpen && (
-            <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
-              {SORT_OPTIONS.map((o) => (
-                <button
-                  key={o.key}
-                  onClick={() => {
-                    setSort(o.key);
-                    setSortMenuOpen(false);
-                  }}
-                  className={`rounded-xl px-3 py-2 text-left font-body text-sm font-semibold ${
-                    sort === o.key ? "bg-card text-brand" : "hover:bg-card"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              ))}
+      <div className="relative flex flex-col gap-1.5 px-4 pt-4 md:hidden">
+        <MobileHeader
+          citySlug={citySlug}
+          right={
+            <div className="relative">
+              <button
+                onClick={() => setSortMenuOpen((prev) => !prev)}
+                aria-label="Sort"
+                className="flex h-9 w-9 items-center justify-center rounded-xl bg-chip"
+              >
+                <span className="material-symbols-rounded text-lg">sort</span>
+              </button>
+              {sortMenuOpen && (
+                <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
+                  {SORT_OPTIONS.map((o) => (
+                    <button
+                      key={o.key}
+                      onClick={() => {
+                        setSort(o.key);
+                        setSortMenuOpen(false);
+                      }}
+                      className={`rounded-xl px-3 py-2 text-left font-body text-sm font-semibold ${
+                        sort === o.key ? "bg-card text-brand" : "hover:bg-card"
+                      }`}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          }
+        />
+        <h2 className="font-display text-[18px] font-extrabold">
+          Explore <span className="text-brand">{cityName}</span>
+        </h2>
       </div>
 
       <div className="relative md:flex md:items-start md:gap-8 md:px-8 md:pt-6">
@@ -173,6 +175,7 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
               </label>
             ))}
           </aside>
+          
         )}
 
         <div className="min-w-0 flex-1">
@@ -180,7 +183,7 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
             <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">
               Explore <span className="text-brand">{cityName}</span>
             </h1>
-            <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-10 w-[190px] text-sm font-semibold">
+            <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-12 w-[190px] text-sm font-semibold">
               {SORT_OPTIONS.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
@@ -195,21 +198,21 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
           {/* Search + area filter */}
           <div className="mt-5 flex flex-col gap-2.5 px-4 md:flex-row md:px-0">
             <div className="flex h-13 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-4">
-              <span className="material-symbols-rounded text-ink-muted">search</span>
+              <span className="material-symbols-rounded text-ground/50">search</span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, area, committee, theme…"
-                className="flex-1 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ink-muted"
+                className="flex-1 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ground/50"
               />
               {query && (
-                <button onClick={() => setQuery("")} className="text-ink-muted">
+                <button onClick={() => setQuery("")} className="text-ground/50">
                   <span className="material-symbols-rounded text-lg">close</span>
                 </button>
               )}
             </div>
 
-            <Select value={area} onChange={(e) => setArea(e.target.value)} className="h-13 text-sm font-semibold md:w-[180px]">
+            <Select value={area} onChange={(e) => setArea(e.target.value)} className="h-12 text-sm font-semibold md:w-[180px]">
               <option value="all">All areas</option>
               {areas.map((a) => (
                 <option key={a} value={a}>

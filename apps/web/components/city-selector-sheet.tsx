@@ -83,12 +83,12 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
         </div>
 
         <div className="flex h-12 items-center gap-2.5 rounded-2xl bg-ink px-3.5">
-          <span className="material-symbols-rounded text-ink-muted">search</span>
+          <span className="material-symbols-rounded text-ground/50">search</span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search any city"
-            className="flex-1 bg-transparent font-body text-[15.5px] text-ground outline-none placeholder:text-ink-muted"
+            className="flex-1 bg-transparent font-body text-[15.5px] text-ground outline-none placeholder:text-ground/50"
           />
         </div>
 

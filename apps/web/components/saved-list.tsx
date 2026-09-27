@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
+import { MobileHeader } from "./mobile-header";
 
 export interface SavedListProps {
   citySlug: string;
@@ -41,17 +42,15 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
         }}
       />
 
-      {/* Mobile-only minimal header — logo present on every screen (spec §5);
-          desktop uses the persistent TopHeader instead. */}
-      <div className="relative flex items-center gap-2 px-4 pt-4 md:hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/logo.png" alt="" className="h-6 w-6 object-contain" />
-        <span className="font-display text-[15px] font-extrabold">Saved</span>
+      {/* Mobile-only minimal header — logo + brand present on every screen
+          (spec §5); desktop uses the persistent TopHeader instead. */}
+      <div className="relative px-4 pt-4 md:hidden">
+        <MobileHeader citySlug={citySlug} />
       </div>
 
       {/* Constrained + centered on desktop instead of stretching edge to edge */}
       <div className="relative mx-auto max-w-5xl px-4 pt-4 md:px-8 md:pt-6">
-        <h1 className="hidden font-display text-[34px] font-extrabold tracking-tight md:block md:text-[40px]">Saved</h1>
+        <h1 className="font-display text-2xl font-extrabold tracking-tight md:text-[40px]">Saved</h1>
         <p className="mt-1 flex items-center gap-1.5 font-body text-sm text-ink-muted">
           <span className="material-symbols-rounded text-[17px]">smartphone</span>
           Kept on this device · {saved.length} in {cityName}
