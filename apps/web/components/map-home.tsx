@@ -7,8 +7,10 @@ import maplibregl from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { buildClusterIndex, getClusters } from "@durgapandals/maps";
 import { fetchPandalsForCity, type LocationSearchResult, type PandalSummary } from "@/lib/api";
+import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
+import { IntroHero } from "./intro-hero";
 
 export interface MapHomeProps {
   citySlug: string;
@@ -37,6 +39,16 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   const [pandals, setPandals] = useState(initialPandals);
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [searchingArea, setSearchingArea] = useState(false);
+  const [showIntro, setShowIntro] = useState(false);
+
+  useEffect(() => {
+    if (!hasSeenIntro()) setShowIntro(true);
+  }, []);
+
+  function dismissIntro() {
+    markIntroSeen();
+    setShowIntro(false);
+  }
 
   const mapRef = useRef<maplibregl.Map | null>(null);
   const meMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -368,6 +380,8 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
       {!isDesktop && selectedPandal && (
         <PandalPreviewSheet citySlug={citySlug} pandal={selectedPandal} onClose={() => setSelectedId(null)} />
       )}
+
+      {showIntro && <IntroHero cityName={cityName} pandalCount={pandals.length} onExplore={dismissIntro} />}
     </div>
   );
 }

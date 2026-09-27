@@ -1,4 +1,28 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
+// Server Components/generateMetadata/opengraph-image run inside the same
+// container as the API — routing that traffic through the public
+// NEXT_PUBLIC_API_URL (a forwarded Codespaces URL in dev) was hitting
+// GitHub's private-port auth gate and getting an HTML redirect back instead
+// of JSON. Only the browser genuinely needs the public URL; server-side
+// code should just talk to the API directly. `typeof window` is evaluated
+// once per bundle (server vs client are built separately), so this
+// resolves correctly in each.
+const API_BASE_URL =
+  typeof window === "undefined"
+    ? (process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
+    : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000");
+
+// A transient proxy/redirect/error page (HTML, not JSON) previously crashed
+// the caller with an unhandled JSON.parse SyntaxError instead of degrading
+// gracefully — this treats "response body isn't valid JSON" the same as
+// "request failed".
+async function safeJson<T>(response: Response, fallback: T): Promise<T> {
+  if (!response.ok) return fallback;
+  try {
+    return await response.json();
+  } catch {
+    return fallback;
+  }
+}
 
 export interface CityApiModel {
   _id: string;
@@ -13,14 +37,12 @@ export interface CityApiModel {
 
 export async function fetchCities(): Promise<CityApiModel[]> {
   const response = await fetch(`${API_BASE_URL}/cities`, { next: { revalidate: 300 } });
-  if (!response.ok) return [];
-  return response.json();
+  return safeJson(response, []);
 }
 
 export async function fetchCityBySlug(slug: string): Promise<CityApiModel | null> {
   const response = await fetch(`${API_BASE_URL}/cities/${slug}`, { next: { revalidate: 300 } });
-  if (!response.ok) return null;
-  return response.json();
+  return safeJson(response, null);
 }
 
 export interface PandalYearSummary {
@@ -75,16 +97,14 @@ export async function fetchPandalsForCity(citySlug: string, bbox?: BoundingBox):
     cache: bbox ? "no-store" : undefined,
     next: bbox ? undefined : { revalidate: 30 },
   });
-  if (!response.ok) return [];
-  return response.json();
+  return safeJson(response, []);
 }
 
 export async function fetchPandalDetail(cityId: string, slug: string): Promise<PandalSummary | null> {
   const response = await fetch(`${API_BASE_URL}/pandals/${cityId}/${slug}`, {
     next: { revalidate: 30 },
   });
-  if (!response.ok) return null;
-  return response.json();
+  return safeJson(response, null);
 }
 
 export interface NearbyPandal {
@@ -103,8 +123,7 @@ export async function fetchNearbyPandals(
 ): Promise<NearbyPandal[]> {
   const url = `${API_BASE_URL}/pandals/nearby?cityId=${cityId}&latitude=${latitude}&longitude=${longitude}`;
   const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) return [];
-  return response.json();
+  return safeJson(response, []);
 }
 
 export async function sendVerificationCode(identifier: string): Promise<{ ok: boolean; error?: string }> {
@@ -153,16 +172,14 @@ export async function searchLocations(
     params.set("lon", String(bias.longitude));
   }
   const response = await fetch(`${API_BASE_URL}/geocode/search?${params}`, { cache: "no-store" });
-  if (!response.ok) return [];
-  return response.json();
+  return safeJson(response, []);
 }
 
 export async function reverseGeocode(latitude: number, longitude: number): Promise<LocationSearchResult | null> {
   const response = await fetch(`${API_BASE_URL}/geocode/reverse?lat=${latitude}&lon=${longitude}`, {
     cache: "no-store",
   });
-  if (!response.ok) return null;
-  return response.json();
+  return safeJson(response, null);
 }
 
 export interface SubmitPandalInput {
@@ -187,6 +204,6 @@ export async function submitPandal(
     const body = await response.json().catch(() => ({}));
     return { ok: false, error: body.error ?? "Could not submit" };
   }
-  const body = await response.json();
+  const body = await safeJson<{ _id?: string }>(response, {});
   return { ok: true, id: body._id };
 }
