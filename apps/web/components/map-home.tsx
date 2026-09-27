@@ -34,7 +34,6 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [locationOn, setLocationOn] = useState(false);
   const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [pandals, setPandals] = useState(initialPandals);
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [searchingArea, setSearchingArea] = useState(false);
@@ -191,12 +190,8 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   // Location permission is optional (spec §6.1) — denial/failure falls back
   // to the city's configured center silently, it never blocks the map.
   function locateMe() {
-    if (!navigator.geolocation) {
-      setLocationError("Location isn't available on this device.");
-      return;
-    }
+    if (!navigator.geolocation) return;
     setLocating(true);
-    setLocationError(null);
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
@@ -220,10 +215,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           meMarkerRef.current.setLngLat([longitude, latitude]);
         }
       },
-      () => {
-        setLocating(false);
-        setLocationError("Location permission denied — showing city centre instead.");
-      },
+      () => setLocating(false),
       { enableHighAccuracy: true, timeout: 8000 }
     );
   }
@@ -353,52 +345,16 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           className="absolute inset-0"
         />
 
-        {/* Mobile-only chrome — desktop uses the sidebar instead. Warm diya
-            glow layered under the fade instead of a flat dark gradient,
-            matching the same treatment Explore uses. */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-[240px] bg-gradient-to-b from-ground via-ground/80 to-transparent md:hidden" />
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[240px] opacity-70 md:hidden"
-          style={{
-            background:
-              "radial-gradient(60% 60% at 50% -10%, rgba(255,181,71,.16), transparent 70%), radial-gradient(40% 50% at 85% 5%, rgba(255,68,51,.14), transparent 70%)",
-          }}
-        />
-
-        <div className="absolute inset-x-4 top-[84px] z-10 flex flex-col gap-2.5 md:hidden">
-          <LocationSearchBox citySlug={citySlug} placeholder="Search a location…" onSelect={handleLocationSelect} biasCenter={center} />
-        </div>
-
         {showSearchArea && (
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute left-1/2 top-[152px] z-10 flex h-11 -translate-x-1/2 items-center gap-1.5 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+            className="absolute left-1/2 top-[84px] z-10 flex h-11 -translate-x-1/2 items-center gap-1.5 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
           >
             <span className="material-symbols-rounded text-lg">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}
           </button>
         )}
-
-        {!locationOn && (
-          <div className="absolute inset-x-4 bottom-[160px] z-10 flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-lg md:bottom-4 md:left-4 md:right-auto md:w-[320px]">
-            <span className="material-symbols-rounded text-ink-muted">location_off</span>
-            <span className="flex-1 font-body text-sm text-ink-dim">
-              {locationError ?? `Showing ${cityName} centre. Turn on location to see distances.`}
-            </span>
-            <button className="font-body text-sm font-bold text-brand disabled:opacity-50" onClick={locateMe} disabled={locating}>
-              {locating ? "Locating…" : "Turn on"}
-            </button>
-          </div>
-        )}
-
-        <Link
-          href={`/${citySlug}/explore`}
-          className="absolute bottom-[102px] left-1/2 z-10 flex h-[46px] -translate-x-1/2 items-center gap-2 rounded-pill bg-ink pl-4 pr-5 font-body text-[15px] font-bold text-ground shadow-lg md:hidden"
-        >
-          <span className="material-symbols-rounded">view_agenda</span>
-          List · {pandals.length}
-        </Link>
 
         <button
           onClick={locateMe}

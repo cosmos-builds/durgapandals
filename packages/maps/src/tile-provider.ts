@@ -9,19 +9,20 @@ export interface MapProviderConfig {
 }
 
 const PALETTE = {
-  ground: "#15121A",
-  water: "#1B1622",
-  road: "#3A3342",
-  roadMinor: "#2A2432",
-  label: "#A79FB0",
-  labelHalo: "#0F0C15",
-  poi: "#5C5468",
-  border: "#221C2B",
+  ground: "#EDEAE3",
+  water: "#AAD3DF",
+  road: "#FFFFFF",
+  roadMinor: "#F7F5F1",
+  label: "#5C5448",
+  labelHalo: "#FFFFFF",
+  poi: "#8A8272",
+  border: "#E2DED4",
 };
 
-// Applies the product's dark visual identity on top of the base OSM-derived
-// style (spec §6.3) — keeps roads/labels readable while matching the app's
-// violet-black ground + alta-pink accent palette used throughout the UI.
+// The map canvas itself is deliberately light — unlike the rest of the
+// app's dark-only UI (spec §28.2), a light basemap reads roads/labels more
+// clearly and is what "map mode" means to most users coming from Google
+// Maps. Everything else (chrome, cards, sheets) stays dark.
 export async function buildMapStyle(config: MapProviderConfig): Promise<StyleSpecification> {
   const response = await fetch(config.styleUrl);
   const style = (await response.json()) as StyleSpecification;

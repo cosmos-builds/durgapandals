@@ -10,9 +10,22 @@ export async function generateMetadata({
 }: {
   params: Promise<{ citySlug: string; slug: string }>;
 }) {
-  const { slug } = await params;
+  const { citySlug, slug } = await params;
+  const city = await fetchCityBySlug(citySlug).catch(() => null);
+  const pandal = city ? await fetchPandalDetail(city._id, slug).catch(() => null) : null;
+  if (!pandal) return { title: slug.replace(/-/g, " ") };
+
+  const description = pandal.year?.theme
+    ? `${pandal.year.theme} — ${pandal.locality}, ${city!.name}`
+    : `${pandal.locality}, ${city!.name}`;
+
+  // No `openGraph.images` here on purpose — this segment's own
+  // opengraph-image.tsx (the pandal's real photo) already supplies it, and
+  // Next.js merges file-convention images with metadata title/description.
   return {
-    title: `${slug.replace(/-/g, " ")} · DurgaPandals.com`,
+    title: pandal.canonicalName,
+    description,
+    openGraph: { title: pandal.canonicalName, description },
   };
 }
 
