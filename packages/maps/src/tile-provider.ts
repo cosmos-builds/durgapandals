@@ -17,7 +17,17 @@ const PALETTE = {
   labelHalo: "#FFFFFF",
   poi: "#8A8272",
   border: "#E2DED4",
+  placeLabel: "#3A342C",
 };
+
+// The base style's suburb/neighbourhood/locality label layer (source style's
+// "label_other" — its filter explicitly catches every place class OTHER
+// than city/town/village/state/country/continent) renders at only 9–10px,
+// uppercase, italic — technically present but easy to miss entirely on a
+// live map, which is what read as "no labels on sections of the city" when
+// zoomed to a normal browsing level. City/town names don't have this
+// problem (they scale up to 13–20px already).
+const LOCALITY_LABEL_LAYER_ID = "label_other";
 
 // The map canvas itself is deliberately light — unlike the rest of the
 // app's dark-only UI (spec §28.2), a light basemap reads roads/labels more
@@ -44,9 +54,18 @@ export async function buildMapStyle(config: MapProviderConfig): Promise<StyleSpe
       paint["line-color"] = layer.id.includes("minor") ? PALETTE.roadMinor : PALETTE.road;
     }
     if (layer.type === "symbol") {
-      paint["text-color"] = PALETTE.label;
+      const isLocalityLabel = layer.id === LOCALITY_LABEL_LAYER_ID;
+      paint["text-color"] = isLocalityLabel ? PALETTE.placeLabel : PALETTE.label;
       paint["text-halo-color"] = PALETTE.labelHalo;
-      paint["text-halo-width"] = 1.2;
+      paint["text-halo-width"] = isLocalityLabel ? 1.6 : 1.2;
+
+      if (isLocalityLabel && "layout" in layer && layer.layout) {
+        const layout = layer.layout as Record<string, unknown>;
+        // Same zoom breakpoints as the source style, just legible sizes
+        // instead of 9–10px — this is the actual fix, the color/halo bump
+        // above only helps once the text is big enough to read at all.
+        layout["text-size"] = ["interpolate", ["linear"], ["zoom"], 8, 12, 12, 14];
+      }
     }
     if (layer.type === "fill" && layer.id.includes("building")) paint["fill-color"] = PALETTE.border;
     if (layer.type === "fill-extrusion" && layer.id.includes("building")) {

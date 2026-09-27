@@ -106,7 +106,6 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
     for (const cluster of clusters) {
       const el = document.createElement("button");
       el.style.cursor = "pointer";
-      el.style.border = "2px solid #0F0C15";
       el.style.display = "flex";
       el.style.alignItems = "center";
       el.style.justifyContent = "center";
@@ -115,6 +114,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
         const size = 34 + Math.min(26, Math.log2(cluster.count) * 6);
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
+        el.style.border = "2px solid #0F0C15";
         el.style.borderRadius = "50%";
         el.style.background = "linear-gradient(135deg, #FFB547, #FF4433)";
         el.style.color = "#1A0710";
@@ -129,13 +129,9 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
       } else {
         const pandal = cluster.markerId ? byId.current[cluster.markerId] : undefined;
         el.setAttribute("aria-label", pandal?.canonicalName ?? "Pandal");
-        el.className = "pandal-marker";
-        el.style.width = "34px";
-        el.style.height = "34px";
-        el.style.borderRadius = "50%";
-        el.style.background = "linear-gradient(135deg, #FFB547, #FF4433)";
-        el.innerHTML =
-          '<span class="material-symbols-rounded" style="font-size:18px;color:#1A0710;font-variation-settings:\'FILL\' 1">local_fire_department</span>';
+        el.style.width = "30px";
+        el.style.height = "30px";
+        el.innerHTML = '<img src="/images/marker-icon.svg" alt="" style="width:30px;height:30px" />';
         el.onclick = () => {
           if (pandal) selectPandal(pandal.id);
         };
@@ -357,14 +353,12 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           className="absolute inset-0"
         />
 
-        {/* Same crossing-corner garland treatment as the intro hero, scaled
-            down — decorative only (pointer-events-none) so it never blocks
-            map drag/tap underneath it, and kept compact since map space is
-            the whole point of this screen. */}
-        <div className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-28 md:top-0">
-           <FestiveBunting className="h-16 w-full" flagCount={19} />
-        </div>
-
+        {/* Positioned below the fixed header (which sits on top, not in
+            flow, so top-0 here would render hidden behind it). */}
+        <FestiveBunting
+          className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-16 px-4 md:top-0"
+          flagCount={17}
+        />
 
         {showSearchArea && (
           <button

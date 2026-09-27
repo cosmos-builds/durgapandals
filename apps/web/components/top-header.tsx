@@ -27,8 +27,12 @@ export function TopHeader({ citySlug, cityName }: TopHeaderProps) {
       {/* Marigold-to-brand gradient hairline instead of a flat border. */}
       <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-brand via-accent to-brand" />
 
-      <Link href={`/${citySlug}`} className="font-display text-[19px] font-extrabold tracking-tight">
-        durga<span className="text-brand">pandals</span>
+      <Link href={`/${citySlug}`} className="flex items-center gap-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/logo.png" alt="" className="h-12 w-auto object-contain" />
+        <span className="font-display text-[19px] font-extrabold tracking-tight">
+          durga<span className="text-brand">pandals</span>
+        </span>
       </Link>
 
       <div className="flex items-center gap-2">

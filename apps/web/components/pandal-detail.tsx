@@ -56,12 +56,12 @@ export function PandalDetail({ citySlug, cityName, pandal, mapTilesUrl }: Pandal
 
   function handleMapReady(map: maplibregl.Map) {
     const el = document.createElement("div");
-    el.style.width = "20px";
-    el.style.height = "20px";
-    el.style.borderRadius = "50%";
-    el.style.background = "#FF4433";
-    el.style.border = "3px solid #F4EFF6";
-    el.style.boxShadow = "0 4px 12px rgba(0,0,0,.5)";
+    el.style.width = "30px";
+    el.style.height = "30px";
+    el.style.display = "flex";
+    el.style.alignItems = "center";
+    el.style.justifyContent = "center";
+    el.innerHTML = '<img src="/images/marker-icon.svg" alt="" style="width:30px;height:30px" />';
     new maplibregl.Marker({ element: el }).setLngLat([pandal.longitude, pandal.latitude]).addTo(map);
   }
 

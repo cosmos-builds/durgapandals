@@ -21,22 +21,6 @@ body {
   font-variation-settings: "FILL" 0;
 }
 
-/* Warm glow + gentle pulse on map markers — sells "lit diya" instead of
-   "generic pin", the way marker glow reads on real festival night maps. */
-@keyframes pandal-marker-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 4px rgba(255, 181, 71, 0.18), 0 4px 14px rgba(255, 68, 51, 0.45);
-  }
-  50% {
-    box-shadow: 0 0 0 7px rgba(255, 181, 71, 0.3), 0 4px 18px rgba(255, 68, 51, 0.6);
-  }
-}
-
-.pandal-marker {
-  animation: pandal-marker-pulse 2.4s ease-in-out infinite;
-}
-
 /* Subtle sparkle on featured/verified accents — static gold icons otherwise
    read as just another app badge. */
 @keyframes festive-shimmer {

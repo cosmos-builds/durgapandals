@@ -27,19 +27,14 @@ export function IntroHero({ cityName, pandalCount, onExplore }: IntroHeroProps) 
       <FestiveBunting className="h-16 w-full px-4 pt-4" flagCount={17} />
 
       <div className="relative flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
-        <span className="text-[64px] leading-none">🪔</span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/images/hero-durga.png" alt="" className="h-40 w-auto object-contain" />
         <h1 className="max-w-sm font-display text-[32px] font-extrabold leading-tight tracking-tight">
           Discover Durga Puja pandals
         </h1>
         <p className="max-w-xs font-body text-[15px] text-ink-dim">
           Map-first, no login needed — find a pandal, tap the pin, get directions.
         </p>
-        <span className="flex items-center gap-1.5 rounded-pill border border-accent/30 bg-card px-4 py-1.5 font-body text-sm font-semibold text-accent">
-          <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-            location_on
-          </span>
-          {pandalCount} pandal{pandalCount === 1 ? "" : "s"} live this festival
-        </span>
         <button
           onClick={onExplore}
           className="mt-4 flex items-center gap-2 rounded-pill bg-brand px-7 py-4 font-body text-base font-bold text-brand-ink shadow-lg"
