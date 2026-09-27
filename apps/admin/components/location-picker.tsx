@@ -20,14 +20,29 @@ export interface LocationPickerProps {
 // create/edit.
 export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAddressResolved }: LocationPickerProps) {
   const [coords, setCoords] = useState(center);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeFailed, setGeocodeFailed] = useState(false);
   const mapRef = useRef<MapLibreMap | null>(null);
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Lat/lng always lands via onChange the instant the pin moves (below) —
+  // that's the one thing every pandal actually needs and it never fails.
+  // Reverse geocoding (the address text) is best-effort on top of that, so
+  // this surfaces its status instead of failing silently — a stuck-looking
+  // form with no explanation was the actual complaint, not the geocoding
+  // itself.
   function scheduleReverseGeocode(next: { latitude: number; longitude: number }) {
     if (geocodeTimer.current) clearTimeout(geocodeTimer.current);
+    setGeocodeFailed(false);
     geocodeTimer.current = setTimeout(async () => {
+      setGeocoding(true);
       const result = await reverseGeocode(next.latitude, next.longitude);
-      if (result) onAddressResolved?.(result);
+      setGeocoding(false);
+      if (result) {
+        onAddressResolved?.(result);
+      } else {
+        setGeocodeFailed(true);
+      }
     }, 500);
   }
 
@@ -61,8 +76,22 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
         </span>
       </div>
 
-      <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg bg-ground/80 px-2 py-1 font-body text-xs text-ink-muted">
-        {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
+      <div className="pointer-events-none absolute inset-x-2 bottom-2 flex items-center justify-between gap-2 rounded-lg bg-ground/80 px-2 py-1 font-body text-xs">
+        <span className="text-ink-muted">
+          {coords.latitude.toFixed(5)}, {coords.longitude.toFixed(5)}
+        </span>
+        {geocoding && (
+          <span className="flex items-center gap-1 text-ink-muted">
+            <span className="material-symbols-rounded animate-spin text-sm">progress_activity</span>
+            Locating…
+          </span>
+        )}
+        {!geocoding && geocodeFailed && (
+          <span className="flex items-center gap-1 text-accent">
+            <span className="material-symbols-rounded text-sm">info</span>
+            Address lookup failed — edit manually
+          </span>
+        )}
       </div>
     </div>
   );
