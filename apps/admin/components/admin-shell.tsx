@@ -19,8 +19,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const router = useRouter();
 
   return (
-    <div className="flex min-h-dvh bg-ground">
-      <aside className="flex w-56 flex-none flex-col gap-1 border-r border-border p-4">
+    <div className="flex h-dvh overflow-hidden bg-ground">
+      <aside className="flex h-full w-56 flex-none flex-col gap-1 overflow-y-auto border-r border-border p-4">
         <div className="mb-6 px-2 font-display text-lg font-extrabold tracking-tight">
           durga<span className="text-brand">pandals</span>
         </div>
