@@ -24,19 +24,7 @@ export function IntroHero({ cityName, pandalCount, onExplore }: IntroHeroProps) 
         }}
       />
 
-      {/* Two garlands draped from each top corner, crossing over in the
-          middle — instead of one straight strip, reads more like an actual
-          hand-strung festival doorway decoration. */}
-      <div className="relative h-32 w-full">
-        <FestiveBunting
-          className="absolute -left-10 top-0 h-16 w-[92%] origin-top-left rotate-[24deg]"
-          flagCount={14}
-        />
-        <FestiveBunting
-          className="absolute -right-10 top-0 z-10 h-16 w-[92%] origin-top-right -rotate-[24deg]"
-          flagCount={14}
-        />
-      </div>
+      <FestiveBunting className="h-16 w-full px-4 pt-4" flagCount={17} />
 
       <div className="relative flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
         <span className="text-[64px] leading-none">🪔</span>
