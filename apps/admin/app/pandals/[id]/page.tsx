@@ -40,7 +40,19 @@ interface MergeCandidate {
   locality: string;
 }
 
-const EMPTY_YEAR_FORM = { year: String(new Date().getFullYear()), theme: "", description: "" };
+const EMPTY_YEAR_FORM = {
+  year: String(new Date().getFullYear()),
+  theme: "",
+  description: "",
+  parkingInfo: "",
+  categories: [] as string[],
+};
+
+// Same curated set as the public Add Pandal form (apps/web) — kept as a
+// separate small constant here rather than a shared package, since it's
+// just a 5-item list. "Family Friendly" is deliberately excluded: it
+// described nearly every pandal, so it wasn't a useful filter.
+const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
 
 export default function PandalDetailPage() {
   const ready = useAdminGuard();
@@ -130,6 +142,15 @@ export default function PandalDetailPage() {
     await load();
   }
 
+  function toggleYearCategory(category: string) {
+    setYearForm((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter((c) => c !== category)
+        : [...prev.categories, category],
+    }));
+  }
+
   async function addYear(event: React.FormEvent) {
     event.preventDefault();
     if (!pandal) return;
@@ -142,6 +163,8 @@ export default function PandalDetailPage() {
           year: Number(yearForm.year),
           theme: yearForm.theme || undefined,
           description: yearForm.description || undefined,
+          parkingInfo: yearForm.parkingInfo || undefined,
+          categories: yearForm.categories,
         }),
       });
       setYearForm(EMPTY_YEAR_FORM);
@@ -313,11 +336,34 @@ export default function PandalDetailPage() {
             />
           </div>
           <Textarea
-            placeholder="Description"
+            placeholder="Theme details"
             value={yearForm.description}
             onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
             className="min-h-20 text-sm"
           />
+          <Input
+            placeholder="Parking — e.g. Street parking available near the entrance"
+            value={yearForm.parkingInfo}
+            onChange={(e) => setYearForm({ ...yearForm, parkingInfo: e.target.value })}
+            className="h-10 text-sm"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORY_OPTIONS.map((category) => {
+              const isActive = yearForm.categories.includes(category);
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => toggleYearCategory(category)}
+                  className={`rounded-pill border px-2.5 py-1 font-body text-xs font-semibold ${
+                    isActive ? "border-brand bg-brand text-brand-ink" : "border-border text-ink-muted"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
           <Button type="submit" variant="secondary" disabled={savingYear}>
             {savingYear ? "Adding…" : "Add year"}
           </Button>

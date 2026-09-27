@@ -77,6 +77,7 @@ async function reviewSubmission(
     });
 
     if (data.year) {
+      const photos: { url: string }[] = Array.isArray(data.photos) ? data.photos : [];
       await PandalYearModel.create({
         pandalId: pandal._id,
         year: data.year,
@@ -86,6 +87,11 @@ async function reviewSubmission(
         entryInfo: data.entryInfo,
         categories: data.categories ?? [],
         tags: data.tags ?? [],
+        // First uploaded photo doubles as the cover image — contributors
+        // never see a separate "pick a cover" step, keeping the form to
+        // one upload action instead of two.
+        coverImage: photos[0]?.url,
+        photos,
         publicationStatus: "PUBLISHED",
         verificationStatus: "UNVERIFIED",
       });

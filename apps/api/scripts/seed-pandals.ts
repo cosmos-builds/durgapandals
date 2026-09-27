@@ -27,8 +27,8 @@ const BHOPAL_PANDALS = [
     theme: "Nadi Matrika — the river as mother",
     description:
       "A 40-foot pandal of jute, clay and river reeds, built by artisans from Krishnanagar. The idol is set on a floating stage lit only by diyas after 8 PM.",
-    categories: ["Traditional", "Theme"],
-    tags: ["Family Friendly", "Photography"],
+    categories: ["Traditional", "Theme / Creative"],
+    tags: ["Photography"],
     featured: true,
   },
   {
@@ -69,7 +69,7 @@ const BHOPAL_PANDALS = [
     lng: 77.4423,
     theme: "Village hearth — terracotta and thatch",
     description: "A rustic Bengal-village themed pandal with terracotta panels handmade by local art students.",
-    categories: ["Traditional", "Family Friendly"],
+    categories: ["Traditional", "Community Pandal"],
     tags: ["Kids Activities", "Food Stalls"],
     featured: false,
   },
@@ -100,7 +100,7 @@ const INDORE_PANDALS = [
     theme: "Shola art and white lace",
     description: "Delicate shola (pith) craft work covers this pandal, handcrafted by a family of artisans from Nadia.",
     categories: ["Traditional"],
-    tags: ["Family Friendly"],
+    tags: [],
     featured: false,
   },
   {
@@ -113,8 +113,8 @@ const INDORE_PANDALS = [
     lng: 75.8825,
     theme: "Eco-friendly clay and cloth",
     description: "An entirely biodegradable pandal built from clay, cloth and bamboo, with a zero-plastic pledge this year.",
-    categories: ["Theme / Creative", "Family Friendly"],
-    tags: ["Eco-Friendly", "Kids Activities"],
+    categories: ["Theme / Creative", "Eco-Friendly"],
+    tags: ["Kids Activities"],
     featured: true,
   },
 ];

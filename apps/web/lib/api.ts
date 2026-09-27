@@ -207,3 +207,29 @@ export async function submitPandal(
   const body = await safeJson<{ _id?: string }>(response, {});
   return { ok: true, id: body._id };
 }
+
+export interface UploadedPhoto {
+  url: string;
+  width: number;
+  height: number;
+}
+
+// The resolution cap itself is enforced server-side (Cloudinary transform,
+// so it can't be bypassed by a modified client) — this just uploads and
+// surfaces a clear error if the API rejects it (wrong type, too large).
+export async function uploadPhoto(file: File): Promise<{ ok: boolean; photo?: UploadedPhoto; error?: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/media/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    return { ok: false, error: body.error ?? "Could not upload photo" };
+  }
+  const photo = await safeJson<UploadedPhoto | null>(response, null);
+  if (!photo) return { ok: false, error: "Could not upload photo" };
+  return { ok: true, photo };
+}

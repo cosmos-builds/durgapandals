@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
+import { distanceMeters } from "@durgapandals/deduplication";
 import { Button } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
@@ -11,8 +12,10 @@ import {
   sendVerificationCode,
   verifyCode,
   submitPandal,
+  uploadPhoto,
   type NearbyPandal,
   type LocationSearchResult,
+  type UploadedPhoto,
 } from "@/lib/api";
 import { LocationSearchBox } from "./location-search-box";
 
@@ -22,6 +25,12 @@ import { LocationSearchBox } from "./location-search-box";
 // server-side REQUIRE_CONTRIBUTOR_VERIFICATION on the API) to require it
 // again without restoring any deleted code.
 const REQUIRE_VERIFICATION = process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
+
+// We only serve specific cities (spec §5.1) — a pin dropped hours away isn't
+// a "correction to the city center," it's a different city we don't cover
+// yet. 40km comfortably covers a metro area plus its outer suburbs without
+// letting someone submit from a different city entirely.
+const MAX_DISTANCE_FROM_CITY_KM = 40;
 
 export interface AddPandalFlowProps {
   cityId: string;
@@ -51,7 +60,18 @@ const emptyDetails = {
   locality: "",
   landmark: "",
   publicContact: "",
+  parkingInfo: "",
 };
+
+// Curated, not free text — a fixed multi-select reads faster than typing
+// tags, and keeps the set meaningful. "Family Friendly" deliberately isn't
+// here: it described nearly every pandal, so it wasn't actually helping
+// anyone filter (see the Explore category chips it used to clutter).
+const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
+
+const MAX_PHOTOS = 5;
+const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 // The full contribution flow from spec §14.2: drop pin (with a live nearby
 // check) -> either "it's mine" (update/correction) or continue as new ->
@@ -71,6 +91,12 @@ export function AddPandalFlow({
   const [step, setStep] = useState<Step>("location");
   const [coords, setCoords] = useState(center);
   const [nearby, setNearby] = useState<NearbyPandal[]>([]);
+  const [geocoding, setGeocoding] = useState(false);
+  const [geocodeFailed, setGeocodeFailed] = useState(false);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [selectedExisting, setSelectedExisting] = useState<NearbyPandal | null>(null);
   const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(null);
   const [details, setDetails] = useState(emptyDetails);
@@ -86,6 +112,8 @@ export function AddPandalFlow({
   const mapRef = useRef<MapLibreMap | null>(null);
 
   const isNewPandal = !selectedExisting;
+  const distanceFromCityKm = distanceMeters(coords, center) / 1000;
+  const isOutsideServiceArea = distanceFromCityKm > MAX_DISTANCE_FROM_CITY_KM;
 
   function scheduleNearbyFetch(next: { latitude: number; longitude: number }) {
     if (fetchTimer.current) clearTimeout(fetchTimer.current);
@@ -136,9 +164,16 @@ export function AddPandalFlow({
   const reverseGeocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function scheduleReverseGeocode(next: { latitude: number; longitude: number }) {
     if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
+    setGeocodeFailed(false);
     reverseGeocodeTimer.current = setTimeout(async () => {
+      setGeocoding(true);
       const result = await reverseGeocode(next.latitude, next.longitude);
+      setGeocoding(false);
       if (result) applyGeocodedDetails(result);
+      // Never leave someone stuck on a disabled Continue button with no
+      // explanation — if auto-fill didn't work (provider hiccup, network,
+      // whatever), tell them to type it in instead of just looking broken.
+      else setGeocodeFailed(true);
     }, 500);
   }
 
@@ -173,6 +208,49 @@ export function AddPandalFlow({
     setStep("verify");
   }
 
+  function toggleCategory(category: string) {
+    setCategories((prev) =>
+      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+    );
+  }
+
+  // The resolution cap itself is enforced server-side (can't be bypassed) —
+  // this is just fast client-side feedback so a rejected file fails
+  // instantly instead of after a slow upload.
+  async function handlePhotoSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = ""; // lets the same file be picked again if removed
+    setPhotoError(null);
+
+    for (const file of files) {
+      if (photos.length >= MAX_PHOTOS) {
+        setPhotoError(`You can add up to ${MAX_PHOTOS} photos.`);
+        break;
+      }
+      if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
+        setPhotoError("Only JPEG, PNG, or WebP images are supported.");
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE_BYTES) {
+        setPhotoError(`"${file.name}" is larger than ${MAX_PHOTO_SIZE_BYTES / 1024 / 1024}MB.`);
+        continue;
+      }
+
+      setUploadingPhoto(true);
+      const result = await uploadPhoto(file);
+      setUploadingPhoto(false);
+      if (result.ok && result.photo) {
+        setPhotos((prev) => [...prev, result.photo!]);
+      } else {
+        setPhotoError(result.error ?? "Could not upload photo.");
+      }
+    }
+  }
+
+  function removePhoto(url: string) {
+    setPhotos((prev) => prev.filter((p) => p.url !== url));
+  }
+
   async function doSubmit() {
     const submittedData = isNewPandal
       ? {
@@ -184,8 +262,11 @@ export function AddPandalFlow({
           locality: details.locality,
           landmark: details.landmark || undefined,
           publicContact: details.publicContact || undefined,
+          parkingInfo: details.parkingInfo || undefined,
           theme: details.theme || undefined,
           description: details.description || undefined,
+          categories,
+          photos: photos.map((p) => ({ url: p.url })),
           year: activeFestivalYear,
         }
       : { note: `Requested update: ${updateChoice}` };
@@ -317,6 +398,19 @@ export function AddPandalFlow({
               className="h-12 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
 
+            {geocoding && (
+              <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
+                <span className="material-symbols-rounded animate-spin text-sm">progress_activity</span>
+                Locating…
+              </span>
+            )}
+            {!geocoding && geocodeFailed && !details.locality && !details.address && (
+              <span className="flex items-center gap-1.5 font-body text-xs text-accent">
+                <span className="material-symbols-rounded text-sm">info</span>
+                Couldn't auto-fill from the map — type your locality and address above.
+              </span>
+            )}
+
             <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
               <div className="flex flex-col gap-1">
                 <span className="font-display text-lg font-extrabold">Is your pandal already here?</span>
@@ -340,9 +434,16 @@ export function AddPandalFlow({
                   </button>
                 </div>
               ))}
+              {isOutsideServiceArea && (
+                <span className="flex items-center gap-1.5 rounded-2xl bg-card p-2.5 font-body text-xs text-accent md:bg-panel">
+                  <span className="material-symbols-rounded text-base">location_off</span>
+                  That pin is {Math.round(distanceFromCityKm)}km from {cityName} — we only cover pandals in and
+                  around {cityName} right now.
+                </span>
+              )}
               <Button
                 onClick={continueAsNew}
-                disabled={!details.locality || !details.address}
+                disabled={!details.locality || !details.address || isOutsideServiceArea}
                 className="mt-1 flex items-center justify-center gap-1.5"
               >
                 None of these — continue
@@ -391,48 +492,147 @@ export function AddPandalFlow({
 
       {step === "details" && (
         <form onSubmit={submitDetails} className={formStepClass}>
-          <h2 className="font-display text-2xl font-extrabold">Tell us the basics</h2>
-          <label className="flex flex-col gap-1.5">
-            <span className="font-body text-xs font-semibold text-ink-muted">Pandal name</span>
+          <h2 className="font-display text-2xl font-extrabold">Tell us about your pandal</h2>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-brand">storefront</span>
+              </span>
+              <span className="font-display text-base font-bold">Basics</span>
+            </div>
             <input
               required
+              placeholder="Pandal name"
               value={details.canonicalName}
               onChange={(e) => setDetails({ ...details, canonicalName: e.target.value })}
               className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="font-body text-xs font-semibold text-ink-muted">Organiser / committee</span>
             <input
+              placeholder="Organiser / committee · optional"
               value={details.organizerName}
               onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
               className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="font-body text-xs font-semibold text-ink-muted">Theme for {activeFestivalYear} · optional</span>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-4">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-accent">palette</span>
+              </span>
+              <span className="font-display text-base font-bold">Theme for {activeFestivalYear}</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+            </div>
             <input
+              placeholder="Theme name — e.g. Rural Bengal"
               value={details.theme}
               onChange={(e) => setDetails({ ...details, theme: e.target.value })}
               className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="font-body text-xs font-semibold text-ink-muted">Description · optional</span>
             <textarea
+              placeholder="Theme details — what makes it worth visiting?"
               value={details.description}
               onChange={(e) => setDetails({ ...details, description: e.target.value })}
               className="min-h-24 rounded-2xl border border-border bg-panel px-4 py-3 font-body md:bg-card"
             />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="font-body text-xs font-semibold text-ink-muted">Public contact · optional</span>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-brand">photo_camera</span>
+              </span>
+              <span className="font-display text-base font-bold">Photos</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">optional · up to {MAX_PHOTOS}</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {photos.map((photo) => (
+                <div key={photo.url} className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-card">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(photo.url)}
+                    className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ground/80"
+                  >
+                    <span className="material-symbols-rounded text-xs">close</span>
+                  </button>
+                </div>
+              ))}
+              {photos.length < MAX_PHOTOS && (
+                <label className="flex h-20 w-20 flex-none cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-ink-muted">
+                  {uploadingPhoto ? (
+                    <span className="material-symbols-rounded animate-spin text-xl">progress_activity</span>
+                  ) : (
+                    <>
+                      <span className="material-symbols-rounded text-xl">add_photo_alternate</span>
+                      <span className="font-body text-[10px] font-semibold">Add</span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    disabled={uploadingPhoto}
+                    onChange={handlePhotoSelect}
+                    className="hidden"
+                  />
+                </label>
+              )}
+            </div>
+            {photoError && <p className="font-body text-xs text-brand">{photoError}</p>}
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-brand">sell</span>
+              </span>
+              <span className="font-display text-base font-bold">Categories</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {CATEGORY_OPTIONS.map((category) => {
+                const isActive = categories.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => toggleCategory(category)}
+                    className={`rounded-pill border px-3 py-1.5 font-body text-sm font-semibold transition-colors ${
+                      isActive ? "border-brand bg-brand text-brand-ink" : "border-border bg-card text-ink-dim"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-brand">local_parking</span>
+              </span>
+              <span className="font-display text-base font-bold">Good to know</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+            </div>
             <input
+              placeholder="Parking — e.g. Street parking available near the entrance"
+              value={details.parkingInfo}
+              onChange={(e) => setDetails({ ...details, parkingInfo: e.target.value })}
+              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
+            />
+            <input
+              placeholder="Public contact number"
               value={details.publicContact}
               onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
               className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-          </label>
+          </div>
+
           <Button type="submit" disabled={!details.canonicalName}>
             Continue
           </Button>
@@ -541,6 +741,9 @@ export function AddPandalFlow({
                 setCode("");
                 setCodeSent(false);
                 setWebsite("");
+                setCategories([]);
+                setPhotos([]);
+                setPhotoError(null);
                 setSubmissionId(null);
               }}
             >

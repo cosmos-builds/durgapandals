@@ -8,6 +8,7 @@
     "start": "tsx src/server.ts",
     "seed": "tsx scripts/seed.ts",
     "seed:pandals": "tsx scripts/seed-pandals.ts",
+    "remove-category": "tsx scripts/remove-category.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
@@ -19,8 +20,10 @@
     "@durgapandals/utils": "workspace:*",
     "@durgapandals/validation": "workspace:*",
     "@fastify/cors": "^10.0.0",
+    "@fastify/multipart": "^9.0.1",
     "@fastify/rate-limit": "^10.1.0",
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.1",
     "dotenv": "^16.4.5",
     "fastify": "^5.0.0",
     "mongoose": "^8.7.0",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { fetchCities, type CityApiModel } from "@/lib/api";
 
@@ -107,6 +108,14 @@ export function CitySelectorSheet({ currentCitySlug, onClose }: CitySelectorShee
             </p>
           )}
         </div>
+
+        <Link
+          href="/about"
+          onClick={onClose}
+          className="flex items-center justify-center gap-1 border-t border-border pt-4 font-body text-sm font-semibold text-ink-muted"
+        >
+          About DurgaPandals.com
+        </Link>
       </div>
     </>
   );

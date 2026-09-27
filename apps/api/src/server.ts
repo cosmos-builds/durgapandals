@@ -13,6 +13,7 @@ import { reactionsRoutes } from "./reactions/reactions.routes";
 import { authRoutes } from "./auth/auth.routes";
 import { adminRoutes } from "./admin/admin.routes";
 import { geocodingRoutes } from "./geocoding/geocoding.routes";
+import { mediaRoutes } from "./media/media.routes";
 
 async function main() {
   const env = loadServerEnv();
@@ -35,6 +36,7 @@ async function main() {
   await app.register(authRoutes, { prefix: "/auth" });
   await app.register(adminRoutes, { prefix: "/admin" });
   await app.register(geocodingRoutes, { prefix: "/geocode" });
+  await app.register(mediaRoutes, { prefix: "/media" });
 
   const port = Number(process.env.PORT ?? 4000);
   await app.listen({ port, host: "0.0.0.0" });

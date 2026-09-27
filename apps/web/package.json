@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@durgapandals/deduplication": "workspace:*",
     "@durgapandals/maps": "workspace:*",
     "@durgapandals/types": "workspace:*",
     "@durgapandals/ui": "workspace:*",
