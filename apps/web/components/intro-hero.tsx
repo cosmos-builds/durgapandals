@@ -29,7 +29,7 @@ export function IntroHero({ cityName, pandalCount, onExplore }: IntroHeroProps) 
       <div className="relative flex flex-1 flex-col items-center justify-center gap-5 px-6 text-center">
         <span className="text-[64px] leading-none">🪔</span>
         <h1 className="max-w-sm font-display text-[32px] font-extrabold leading-tight tracking-tight">
-          Discover Durga Puja pandals in <span className="text-brand">{cityName}</span>
+          Discover Durga Puja pandals in your city
         </h1>
         <p className="max-w-xs font-body text-[15px] text-ink-dim">
           Map-first, no login needed — find a pandal, tap the pin, get directions.
