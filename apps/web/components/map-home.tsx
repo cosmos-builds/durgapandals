@@ -10,11 +10,15 @@ import { fetchPandalsForCity, type LocationSearchResult, type PandalSummary } fr
 import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
+import { CityYearPill } from "./city-year-pill";
 import { IntroHero } from "./intro-hero";
 import { FestiveBunting } from "./festive-bunting";
 export interface MapHomeProps {
   citySlug: string;
   cityName: string;
+  year: number;
+  activeFestivalYear: number;
+  availableYears: number[];
   center: { latitude: number; longitude: number };
   zoom: number;
   mapTilesUrl: string;
@@ -29,7 +33,17 @@ const DESKTOP_QUERY = "(min-width: 768px)";
 // scrolls/highlights the matching row instead of opening a floating card,
 // and picking a row flies the map to it — both directions of the same
 // selection state.
-export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals: initialPandals }: MapHomeProps) {
+export function MapHome({
+  citySlug,
+  cityName,
+  year,
+  activeFestivalYear,
+  availableYears,
+  center,
+  zoom,
+  mapTilesUrl,
+  pandals: initialPandals,
+}: MapHomeProps) {
   const searchParams = useSearchParams();
   const focusSlug = searchParams.get("pandal");
   const [isDesktop, setIsDesktop] = useState(false);
@@ -40,6 +54,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   const [showSearchArea, setShowSearchArea] = useState(false);
   const [searchingArea, setSearchingArea] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
+  const [pandalQuery, setPandalQuery] = useState("");
 
   useEffect(() => {
     if (!hasSeenIntro()) setShowIntro(true);
@@ -62,6 +77,23 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
     () => buildClusterIndex(pandals.map((p) => ({ id: p.id, latitude: p.latitude, longitude: p.longitude }))),
     [pandals]
   );
+
+  // Mobile's floating "Search pandals…" bar (spec: matches the mockup's Home
+  // header) — a lightweight client-side filter over the already-loaded list,
+  // not a new endpoint. Selecting a result flies the map to it, same as
+  // tapping its marker or its desktop sidebar row.
+  const pandalMatches = useMemo(() => {
+    const q = pandalQuery.trim().toLowerCase();
+    if (!q) return [];
+    return pandals.filter((p) => p.canonicalName.toLowerCase().includes(q) || p.locality.toLowerCase().includes(q)).slice(0, 6);
+  }, [pandals, pandalQuery]);
+
+  function selectPandalFromSearch(id: string) {
+    setPandalQuery("");
+    setSelectedId(id);
+    const target = byId.current[id];
+    if (target) mapRef.current?.flyTo({ center: [target.longitude, target.latitude], zoom: Math.max(zoom, 15) });
+  }
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
@@ -182,12 +214,16 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
     setSearchingArea(true);
     try {
       const bounds = map.getBounds();
-      const results = await fetchPandalsForCity(citySlug, {
-        minLat: bounds.getSouth(),
-        minLng: bounds.getWest(),
-        maxLat: bounds.getNorth(),
-        maxLng: bounds.getEast(),
-      });
+      const results = await fetchPandalsForCity(
+        citySlug,
+        {
+          minLat: bounds.getSouth(),
+          minLng: bounds.getWest(),
+          maxLat: bounds.getNorth(),
+          maxLng: bounds.getEast(),
+        },
+        year
+      );
       setPandals(results);
       setShowSearchArea(false);
     } finally {
@@ -255,13 +291,59 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   const selectedPandal = pandals.find((p) => p.id === selectedId) ?? null;
 
   return (
-    <div className="h-dvh w-full bg-ground md:flex md:pt-[64px]">
+    <div className="relative h-dvh w-full bg-ground md:flex md:h-[calc(100dvh-60px)]">
+      {/* Mobile-only floating header (spec §4/§5) — logo + city/year pill +
+          notification icon, then a pandal search bar, overlaid on the map
+          instead of pushing it down. Desktop uses the persistent TopHeader
+          instead (rendered one level up), so this is hidden there. */}
+      <div className="absolute inset-x-3 top-3 z-20 flex flex-col gap-2 md:hidden">
+        <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo.png" alt="" className="h-[30px] w-[30px] flex-none object-contain" />
+          <CityYearPill
+            citySlug={citySlug}
+            cityName={cityName}
+            activeFestivalYear={activeFestivalYear}
+            availableYears={availableYears}
+            className="flex h-9 flex-1 items-center justify-between gap-1.5 rounded-xl bg-card px-2.5 font-body text-xs font-bold"
+          />
+          <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-card">
+            <span className="material-symbols-rounded text-lg">notifications</span>
+          </span>
+        </div>
+        <div className="relative">
+          <div className="flex h-[42px] items-center gap-2 rounded-2xl bg-card px-3">
+            <span className="material-symbols-rounded text-lg text-ink-muted">search</span>
+            <input
+              value={pandalQuery}
+              onChange={(e) => setPandalQuery(e.target.value)}
+              placeholder="Search pandals…"
+              className="flex-1 bg-transparent font-body text-[13px] outline-none placeholder:text-ink-muted"
+            />
+          </div>
+          {pandalMatches.length > 0 && (
+            <div className="absolute inset-x-0 top-[calc(100%+6px)] flex flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
+              {pandalMatches.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => selectPandalFromSearch(p.id)}
+                  className="rounded-xl px-3 py-2 text-left font-body text-sm font-semibold hover:bg-card"
+                >
+                  {p.canonicalName}
+                  <span className="ml-1.5 font-normal text-ink-muted">{p.locality}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Desktop sidebar — scrollable list, map lives beside it, not under it */}
       <aside className="hidden md:flex md:w-[420px] md:flex-none md:flex-col md:overflow-y-auto md:border-r md:border-border">
         <div className="flex flex-col gap-3 px-4 pb-3 pt-4">
           <LocationSearchBox citySlug={citySlug} onSelect={handleLocationSelect} biasCenter={center} />
           <span className="font-body text-sm font-semibold text-ink-muted">
-            {pandals.length} pandals in {cityName}
+            {pandals.length} pandals in {cityName} · {year}
           </span>
         </div>
         <div className="flex flex-col px-3 pb-4">
@@ -317,9 +399,9 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
                       ))}
                     </div>
                   )}
-                  <span className="mt-0.5 flex items-center gap-1 font-body text-xs font-semibold text-accent">
+                  <span className="mt-0.5 flex items-center gap-1 font-body text-xs font-semibold text-brand">
                     <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      thumb_up
+                      favorite
                     </span>
                     {pandal.likes}
                   </span>
@@ -353,18 +435,20 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           className="absolute inset-0"
         />
 
-        {/* Positioned below the fixed header (which sits on top, not in
-            flow, so top-0 here would render hidden behind it). */}
+        {/* Positioned below the mobile floating header (~104px tall); desktop
+            has no overlaid header on the map itself, so it starts at top:0. */}
         <FestiveBunting
-          className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-16 w-full px-4 md:top-0"
+          className="pointer-events-none absolute inset-x-0 top-[104px] z-10 h-16 w-full px-4 md:top-0"
           flagCount={17}
         />
 
+        {/* Matches the design: sits just under the header, not at the bottom
+            of the screen (Google-Maps-style "search this area" placement). */}
         {showSearchArea && (
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute bottom-[70px] left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:bottom-4"
+            className="absolute left-1/2 top-[132px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
           >
             <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}
@@ -374,7 +458,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
         <button
           onClick={locateMe}
           disabled={locating}
-          className="absolute bottom-[100px] right-4 z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card shadow-lg disabled:opacity-60 md:bottom-4"
+          className="absolute bottom-[70px] right-4 z-10 flex h-[50px] w-[50px] items-center justify-center rounded-full border border-border bg-card shadow-lg disabled:opacity-60 md:bottom-4"
         >
           <span className={`material-symbols-rounded ${locationOn ? "text-info" : ""}`}>my_location</span>
         </button>
@@ -384,7 +468,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
         <PandalPreviewSheet citySlug={citySlug} pandal={selectedPandal} onClose={() => setSelectedId(null)} />
       )}
 
-      {showIntro && <IntroHero cityName={cityName} pandalCount={pandals.length} onExplore={dismissIntro} />}
+      {showIntro && <IntroHero citySlug={citySlug} onExplore={dismissIntro} />}
     </div>
   );
 }

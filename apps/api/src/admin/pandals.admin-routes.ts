@@ -114,6 +114,7 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
       location: { type: "Point", coordinates: [body.longitude, body.latitude] },
       verificationStatus: "VERIFIED",
       publicationStatus: "PUBLISHED",
+      addedBy: "ADMIN",
     });
 
     return reply.code(201).send(pandal);

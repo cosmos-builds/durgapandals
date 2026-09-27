@@ -3,6 +3,7 @@
 // those are data, loaded from the database/config packages.
 
 export type CityStatus = "ACTIVE" | "COMING_SOON" | "DISABLED";
+export type CityTier = "MAJOR" | "MINOR";
 
 export interface City {
   id: string;
@@ -16,6 +17,7 @@ export interface City {
   defaultMapZoom: number;
   status: CityStatus;
   activeFestivalYear: number;
+  tier: CityTier;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +30,8 @@ export type PublicationStatus =
   | "REJECTED";
 
 export type VerificationStatus = "UNVERIFIED" | "VERIFIED" | "DUPLICATE";
+export type AddedBy = "ADMIN" | "ORGANIZER" | "PUBLIC_SUBMISSION";
+export type VisitType = "WALKING_DARSHAN" | "PARK_AND_VISIT" | "DARSHAN_AND_GO";
 
 export interface Pandal {
   id: string;
@@ -52,8 +56,21 @@ export interface Pandal {
   verificationStatus: VerificationStatus;
   publicationStatus: PublicationStatus;
 
+  addedBy: AddedBy;
+  parkingAvailable: boolean;
+  twoWheelerAccessible: boolean;
+  fourWheelerAccessible: boolean;
+  foodStallsNearby: boolean;
+  streetShopsNearby: boolean;
+  visitType: VisitType;
+
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ScheduleEntry {
+  time: string;
+  label: string;
 }
 
 export interface PandalYear {
@@ -67,11 +84,8 @@ export interface PandalYear {
 
   startDate?: string;
   endDate?: string;
-  openingHours?: string;
 
-  parkingInfo?: string;
-  entryInfo?: string;
-  accessibilityInfo?: string;
+  schedule: ScheduleEntry[];
 
   coverImage?: string;
   photos: MediaAsset[];

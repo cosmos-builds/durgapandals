@@ -11,6 +11,9 @@ import type { ReverseGeocodeResult } from "@/lib/admin-api";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
 
+type AddedBy = "ADMIN" | "ORGANIZER" | "PUBLIC_SUBMISSION";
+type VisitType = "WALKING_DARSHAN" | "PARK_AND_VISIT" | "DARSHAN_AND_GO";
+
 interface Pandal {
   _id: string;
   canonicalName: string;
@@ -23,6 +26,18 @@ interface Pandal {
   verificationStatus: string;
   latitude: number;
   longitude: number;
+  addedBy: AddedBy;
+  parkingAvailable: boolean;
+  twoWheelerAccessible: boolean;
+  fourWheelerAccessible: boolean;
+  foodStallsNearby: boolean;
+  streetShopsNearby: boolean;
+  visitType: VisitType;
+}
+
+interface ScheduleEntry {
+  time: string;
+  label: string;
 }
 
 interface PandalYear {
@@ -33,6 +48,7 @@ interface PandalYear {
   featured: boolean;
   publicationStatus: string;
   likes: number;
+  schedule: ScheduleEntry[];
 }
 
 interface MergeCandidate {
@@ -45,9 +61,17 @@ const EMPTY_YEAR_FORM = {
   year: String(new Date().getFullYear()),
   theme: "",
   description: "",
-  parkingInfo: "",
   categories: [] as string[],
+  schedule: [] as ScheduleEntry[],
 };
+
+const AMENITY_FIELDS: { key: keyof Pick<Pandal, "parkingAvailable" | "twoWheelerAccessible" | "fourWheelerAccessible" | "foodStallsNearby" | "streetShopsNearby">; label: string }[] = [
+  { key: "parkingAvailable", label: "Parking available" },
+  { key: "twoWheelerAccessible", label: "2-wheeler accessible" },
+  { key: "fourWheelerAccessible", label: "4-wheeler accessible" },
+  { key: "foodStallsNearby", label: "Food stalls nearby" },
+  { key: "streetShopsNearby", label: "Street shops nearby" },
+];
 
 // Same curated set as the public Add Pandal form (apps/web) — kept as a
 // separate small constant here rather than a shared package, since it's
@@ -110,9 +134,14 @@ export default function PandalDetailPage() {
     return () => clearTimeout(timer);
   }, [mergeOpen, mergeQuery, params.id]);
 
-  async function updateField(field: keyof Pandal, value: string) {
+  function updateField(field: keyof Pandal, value: string) {
     if (!pandal) return;
     setPandal({ ...pandal, [field]: value });
+  }
+
+  function toggleAmenity(field: (typeof AMENITY_FIELDS)[number]["key"]) {
+    if (!pandal) return;
+    setPandal({ ...pandal, [field]: !pandal[field] });
   }
 
   async function saveCanonical() {
@@ -128,6 +157,13 @@ export default function PandalDetailPage() {
         publicContact: pandal.publicContact,
         latitude: pandal.latitude,
         longitude: pandal.longitude,
+        addedBy: pandal.addedBy,
+        parkingAvailable: pandal.parkingAvailable,
+        twoWheelerAccessible: pandal.twoWheelerAccessible,
+        fourWheelerAccessible: pandal.fourWheelerAccessible,
+        foodStallsNearby: pandal.foodStallsNearby,
+        streetShopsNearby: pandal.streetShopsNearby,
+        visitType: pandal.visitType,
       }),
     });
     setSavedPandal(pandal);
@@ -177,6 +213,21 @@ export default function PandalDetailPage() {
     }));
   }
 
+  function addScheduleRow() {
+    setYearForm((prev) => ({ ...prev, schedule: [...prev.schedule, { time: "", label: "" }] }));
+  }
+
+  function updateScheduleRow(index: number, field: keyof ScheduleEntry, value: string) {
+    setYearForm((prev) => ({
+      ...prev,
+      schedule: prev.schedule.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    }));
+  }
+
+  function removeScheduleRow(index: number) {
+    setYearForm((prev) => ({ ...prev, schedule: prev.schedule.filter((_, i) => i !== index) }));
+  }
+
   async function addYear(event: React.FormEvent) {
     event.preventDefault();
     if (!pandal) return;
@@ -189,8 +240,8 @@ export default function PandalDetailPage() {
           year: Number(yearForm.year),
           theme: yearForm.theme || undefined,
           description: yearForm.description || undefined,
-          parkingInfo: yearForm.parkingInfo || undefined,
           categories: yearForm.categories,
+          schedule: yearForm.schedule.filter((row) => row.time && row.label),
         }),
       });
       setYearForm(EMPTY_YEAR_FORM);
@@ -253,6 +304,15 @@ export default function PandalDetailPage() {
             </option>
           ))}
         </Select>
+        <Select
+          value={pandal.addedBy}
+          onChange={(e) => updateField("addedBy", e.target.value)}
+          className="h-10 w-48 text-sm"
+        >
+          <option value="PUBLIC_SUBMISSION">Added by a visitor</option>
+          <option value="ORGANIZER">Added by organiser</option>
+          <option value="ADMIN">Added by admin</option>
+        </Select>
       </div>
 
       <Card className="mb-8 max-w-5xl">
@@ -296,6 +356,28 @@ export default function PandalDetailPage() {
               onChange={(e) => updateField("publicContact", e.target.value)}
               className="col-span-2 h-11"
             />
+            <Select
+              value={pandal.visitType}
+              onChange={(e) => updateField("visitType", e.target.value)}
+              className="col-span-2 h-11"
+            >
+              <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
+              <option value="PARK_AND_VISIT">Park &amp; visit</option>
+              <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
+            </Select>
+            <div className="col-span-2 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-card px-4 py-3">
+              {AMENITY_FIELDS.map((field) => (
+                <label key={field.key} className="flex items-center gap-2 font-body text-sm">
+                  <input
+                    type="checkbox"
+                    checked={pandal[field.key]}
+                    onChange={() => toggleAmenity(field.key)}
+                    className="h-4 w-4 accent-brand"
+                  />
+                  {field.label}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Map lives beside the form instead of stacked above/below it —
@@ -360,12 +442,13 @@ export default function PandalDetailPage() {
                 </div>
                 <div className="flex items-center gap-2 font-body text-xs text-ink-muted">
                   <span>{year.publicationStatus}</span>
-                  <span className="flex items-center gap-0.5 text-accent">
+                  <span className="flex items-center gap-0.5 text-brand">
                     <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      thumb_up
+                      favorite
                     </span>
                     {year.likes}
                   </span>
+                  {year.schedule.length > 0 && <span>{year.schedule.length} schedule rows</span>}
                 </div>
               </div>
               <button
@@ -403,12 +486,41 @@ export default function PandalDetailPage() {
             onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
             className="min-h-20 text-sm"
           />
-          <Input
-            placeholder="Parking — e.g. Street parking available near the entrance"
-            value={yearForm.parkingInfo}
-            onChange={(e) => setYearForm({ ...yearForm, parkingInfo: e.target.value })}
-            className="h-10 text-sm"
-          />
+          <div className="flex flex-col gap-2">
+            <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
+              Puja schedule
+            </span>
+            {yearForm.schedule.map((row, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  placeholder="Time"
+                  value={row.time}
+                  onChange={(e) => updateScheduleRow(index, "time", e.target.value)}
+                  className="h-10 w-28 text-sm"
+                />
+                <Input
+                  placeholder="Event"
+                  value={row.label}
+                  onChange={(e) => updateScheduleRow(index, "label", e.target.value)}
+                  className="h-10 flex-1 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeScheduleRow(index)}
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-card"
+                >
+                  <span className="material-symbols-rounded text-sm text-ink-muted">close</span>
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addScheduleRow}
+              className="rounded-xl border border-dashed border-border py-2 font-body text-xs font-bold text-brand"
+            >
+              + Add a schedule row
+            </button>
+          </div>
           <div className="flex flex-wrap gap-1.5">
             {CATEGORY_OPTIONS.map((category) => {
               const isActive = yearForm.categories.includes(category);

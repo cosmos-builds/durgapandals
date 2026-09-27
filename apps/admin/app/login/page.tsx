@@ -32,6 +32,8 @@ export default function AdminLoginPage() {
     <main className="flex min-h-dvh items-center justify-center bg-ground px-6">
       <Card padding="lg" className="w-full max-w-sm">
         <form onSubmit={handleSubmit}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo.png" alt="durgaPandals" className="mb-3 h-12 w-12 object-contain" />
           <h1 className="mb-6 font-display text-2xl font-extrabold">Admin sign in</h1>
           <div className="flex flex-col gap-3">
             <Input

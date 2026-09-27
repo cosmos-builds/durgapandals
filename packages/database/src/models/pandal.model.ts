@@ -42,6 +42,30 @@ const pandalSchema = new Schema(
       default: "DRAFT",
     },
 
+    // Drives the "Added by organiser / Added by admin" attribution line on
+    // the detail page — `verificationStatus === "VERIFIED"` is the separate
+    // "verified by admin" signal, this is just who originated the listing.
+    addedBy: {
+      type: String,
+      enum: ["ADMIN", "ORGANIZER", "PUBLIC_SUBMISSION"],
+      required: true,
+      default: "PUBLIC_SUBMISSION",
+    },
+
+    // "Good to know" amenities (spec: only render entries that are true).
+    parkingAvailable: { type: Boolean, required: true, default: false },
+    twoWheelerAccessible: { type: Boolean, required: true, default: false },
+    fourWheelerAccessible: { type: Boolean, required: true, default: false },
+    foodStallsNearby: { type: Boolean, required: true, default: false },
+    streetShopsNearby: { type: Boolean, required: true, default: false },
+
+    visitType: {
+      type: String,
+      enum: ["WALKING_DARSHAN", "PARK_AND_VISIT", "DARSHAN_AND_GO"],
+      required: true,
+      default: "WALKING_DARSHAN",
+    },
+
     mergedIntoPandalId: { type: Schema.Types.ObjectId, ref: "Pandal" },
   },
   { timestamps: true }

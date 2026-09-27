@@ -8,8 +8,8 @@
 /* Utilitarian but shares the same dark foundation tokens as the public site
    (spec §28.2). */
 body {
-  background: #0f0c15;
-  color: #f4eff6;
+  background: #170810;
+  color: #fcefe4;
   font-family: "DM Sans", system-ui, sans-serif;
 }
 

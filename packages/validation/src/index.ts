@@ -11,6 +11,8 @@ export const coordinatesSchema = z.object({
   longitude: z.number().min(-180).max(180),
 });
 
+export const visitTypeSchema = z.enum(["WALKING_DARSHAN", "PARK_AND_VISIT", "DARSHAN_AND_GO"]);
+
 export const createPandalSchema = z.object({
   cityId: z.string().min(1),
   canonicalName: z.string().min(2).max(160),
@@ -25,10 +27,25 @@ export const createPandalSchema = z.object({
   instagramUrl: z.string().url().optional(),
   facebookUrl: z.string().url().optional(),
   websiteUrl: z.string().url().optional(),
+  parkingAvailable: z.boolean().default(false),
+  twoWheelerAccessible: z.boolean().default(false),
+  fourWheelerAccessible: z.boolean().default(false),
+  foodStallsNearby: z.boolean().default(false),
+  streetShopsNearby: z.boolean().default(false),
+  visitType: visitTypeSchema.default("WALKING_DARSHAN"),
 });
 
+// `addedBy` is admin-editable only (never accepted from a public submission,
+// which always defaults to PUBLIC_SUBMISSION — spec §1) — kept off
+// createPandalSchema and added only here.
 export const updatePandalSchema = createPandalSchema.partial().extend({
   id: z.string().min(1),
+  addedBy: z.enum(["ADMIN", "ORGANIZER", "PUBLIC_SUBMISSION"]).optional(),
+});
+
+export const scheduleEntrySchema = z.object({
+  time: z.string().min(1).max(20),
+  label: z.string().min(1).max(80),
 });
 
 export const pandalYearSchema = z.object({
@@ -39,10 +56,8 @@ export const pandalYearSchema = z.object({
   description: z.string().max(4000).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  openingHours: z.string().max(200).optional(),
-  parkingInfo: z.string().max(500).optional(),
-  entryInfo: z.string().max(500).optional(),
-  accessibilityInfo: z.string().max(500).optional(),
+  // Free-length, 0..N rows — no fixed template (spec §1).
+  schedule: z.array(scheduleEntrySchema).max(10).default([]),
   coverImage: z.string().url().optional(),
   categories: z.array(z.string()).max(10).default([]),
   tags: z.array(z.string()).max(20).default([]),
@@ -60,6 +75,9 @@ export const citySchema = z.object({
   defaultMapZoom: z.number().min(1).max(20).default(13),
   status: z.enum(["ACTIVE", "COMING_SOON", "DISABLED"]).default("COMING_SOON"),
   activeFestivalYear: z.number().int().min(2000).max(2100),
+  // MAJOR cities are pinned in the city picker; MINOR ones are search-only
+  // (spec §4 — generalizes past the old Bhopal/Indore-only hardcoded pair).
+  tier: z.enum(["MAJOR", "MINOR"]).default("MINOR"),
 });
 
 export const submissionTypeSchema = z.enum([

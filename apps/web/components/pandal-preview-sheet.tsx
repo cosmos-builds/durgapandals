@@ -105,7 +105,18 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
                 Featured
               </span>
             )}
-            <span className="truncate font-display text-xl font-bold leading-tight">{pandal.canonicalName}</span>
+            <span className="flex items-center gap-1.5">
+              <span className="truncate font-display text-xl font-bold leading-tight">{pandal.canonicalName}</span>
+              {pandal.verificationStatus === "VERIFIED" && (
+                <span
+                  className="material-symbols-rounded flex-none text-lg text-accent"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                  title="Verified by admin"
+                >
+                  verified
+                </span>
+              )}
+            </span>
             <span className="truncate font-body text-sm text-ink-muted">{pandal.locality}</span>
           </div>
         </div>
@@ -124,10 +135,10 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
           <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleLike}
-            className={`flex items-center gap-1.5 rounded-2xl px-3.5 font-body font-bold ${liked ? "bg-accent text-accent-ink" : "bg-card"}`}
+            className={`flex items-center gap-1.5 rounded-2xl px-3.5 font-body font-bold ${liked ? "bg-brand text-brand-ink" : "bg-card"}`}
           >
             <span className="material-symbols-rounded" style={liked ? { fontVariationSettings: "'FILL' 1" } : undefined}>
-              thumb_up
+              favorite
             </span>
             {likes}
           </button>

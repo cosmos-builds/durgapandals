@@ -1,5 +1,5 @@
 import { PandalModel, PandalYearModel, toGeoPoint, fromGeoPoint } from "@durgapandals/database";
-import { findDuplicateCandidates, type CandidatePandal } from "@durgapandals/deduplication";
+import { findDuplicateCandidates, type CandidatePandal, distanceMeters } from "@durgapandals/deduplication";
 
 // Shared so admin create, public submission review, and CSV import all run
 // the exact same duplicate scoring against the exact same candidate pool
@@ -66,6 +66,50 @@ export async function findNearbyPandals(input: {
     locality: pandal.locality,
     ...fromGeoPoint(pandal.location),
   }));
+}
+
+// Powers the detail page's "Pandals near here (1-2km)" rail (spec §2) — a
+// fixed 1-2km ring around this pandal, not the tighter dedup/nearby radii
+// above, and it excludes the pandal being viewed.
+export async function findNearbyPublishedPandals(input: {
+  cityId: string;
+  excludePandalId: string;
+  latitude: number;
+  longitude: number;
+  year: number;
+}) {
+  const candidates = await PandalModel.find({
+    cityId: input.cityId,
+    _id: { $ne: input.excludePandalId },
+    publicationStatus: "PUBLISHED",
+    location: {
+      $near: {
+        $geometry: toGeoPoint(input.latitude, input.longitude),
+        $minDistance: 1000,
+        $maxDistance: 2000,
+      },
+    },
+  }).limit(8);
+
+  const enriched = await Promise.all(
+    candidates.map(async (pandal) => {
+      const pandalYear = await PandalYearModel.findOne({
+        pandalId: pandal._id,
+        year: input.year,
+        publicationStatus: "PUBLISHED",
+      });
+      if (!pandalYear) return null;
+      return {
+        id: String(pandal._id),
+        slug: pandal.slug,
+        canonicalName: pandal.canonicalName,
+        coverImage: pandalYear.coverImage,
+        distanceMeters: Math.round(distanceMeters(input, fromGeoPoint(pandal.location))),
+      };
+    })
+  );
+
+  return enriched.filter((item) => item != null);
 }
 
 export async function listPublishedPandalsForCity(cityId: string, year: number) {

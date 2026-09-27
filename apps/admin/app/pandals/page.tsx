@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
@@ -14,10 +14,12 @@ interface City {
 
 interface Pandal {
   _id: string;
+  cityId: string;
   canonicalName: string;
   locality: string;
   publicationStatus: string;
   verificationStatus: string;
+  updatedAt: string;
 }
 
 interface Page<T> {
@@ -29,6 +31,27 @@ interface Page<T> {
 }
 
 const STATUS_OPTIONS = ["", "DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"];
+
+const STATUS_TONE: Record<string, string> = {
+  PUBLISHED: "bg-[rgba(127,217,154,.18)] text-[#7FD99A]",
+  PENDING: "bg-[rgba(255,181,71,.18)] text-accent",
+  DRAFT: "bg-chip text-ink-muted",
+  ARCHIVED: "bg-chip text-ink-muted",
+  REJECTED: "bg-[rgba(255,68,51,.18)] text-brand",
+};
+
+// "2h ago" / "3d ago" — matches the mockup's UPDATED column, computed from
+// the real updatedAt timestamp Mongoose already tracks (no new field).
+function timeAgo(iso: string): string {
+  const diffMs = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "just now";
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 export default function PandalsListPage() {
   const ready = useAdminGuard();
@@ -48,6 +71,8 @@ export default function PandalsListPage() {
       .then((res) => (res.ok ? res.json() : []))
       .then(setCities);
   }, [ready]);
+
+  const cityNameById = useMemo(() => new Map(cities.map((c) => [c._id, c.name])), [cities]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -151,9 +176,9 @@ export default function PandalsListPage() {
           <TableHeadRow>
             <Th className="w-10" />
             <Th>Name</Th>
-            <Th>Locality</Th>
+            <Th>City</Th>
             <Th>Status</Th>
-            <Th>Verification</Th>
+            <Th>Updated</Th>
           </TableHeadRow>
         </thead>
         <tbody>
@@ -171,10 +196,15 @@ export default function PandalsListPage() {
                 <Link href={`/pandals/${pandal._id}`} className="font-semibold text-ink hover:text-brand">
                   {pandal.canonicalName}
                 </Link>
+                <div className="font-body text-xs text-ink-muted">{pandal.locality}</div>
               </Td>
-              <Td className="text-ink-muted">{pandal.locality}</Td>
-              <Td className="text-ink-muted">{pandal.publicationStatus}</Td>
-              <Td className="text-ink-muted">{pandal.verificationStatus}</Td>
+              <Td className="text-ink-muted">{cityNameById.get(pandal.cityId) ?? "—"}</Td>
+              <Td>
+                <span className={`rounded-pill px-2.5 py-1 font-body text-xs font-bold ${STATUS_TONE[pandal.publicationStatus] ?? "bg-chip text-ink-muted"}`}>
+                  {pandal.publicationStatus}
+                </span>
+              </Td>
+              <Td className="text-ink-muted">{timeAgo(pandal.updatedAt)}</Td>
             </Tr>
           ))}
           {pandals.length === 0 && (

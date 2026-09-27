@@ -74,6 +74,16 @@ async function reviewSubmission(
       websiteUrl: data.websiteUrl,
       verificationStatus: "UNVERIFIED",
       publicationStatus: "PUBLISHED",
+      // Always PUBLIC_SUBMISSION on approval — an admin can re-attribute to
+      // ORGANIZER afterwards from the pandal edit page once they've
+      // confirmed the contributor is the organiser (spec §1).
+      addedBy: "PUBLIC_SUBMISSION",
+      parkingAvailable: Boolean(data.parkingAvailable),
+      twoWheelerAccessible: Boolean(data.twoWheelerAccessible),
+      fourWheelerAccessible: Boolean(data.fourWheelerAccessible),
+      foodStallsNearby: Boolean(data.foodStallsNearby),
+      streetShopsNearby: Boolean(data.streetShopsNearby),
+      visitType: data.visitType ?? "WALKING_DARSHAN",
     });
 
     if (data.year) {
@@ -83,8 +93,7 @@ async function reviewSubmission(
         year: data.year,
         theme: data.theme,
         description: data.description,
-        parkingInfo: data.parkingInfo,
-        entryInfo: data.entryInfo,
+        schedule: Array.isArray(data.schedule) ? data.schedule : [],
         categories: data.categories ?? [],
         tags: data.tags ?? [],
         // First uploaded photo doubles as the cover image — contributors

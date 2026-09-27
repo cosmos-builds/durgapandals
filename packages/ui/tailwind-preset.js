@@ -1,29 +1,35 @@
-// Design tokens straight from the approved DurgaPandals UI design file —
-// dark-only, no theme switcher (spec §28.2). web and admin both extend this
-// preset instead of redefining colors/type locally.
+// Design tokens reconciled with the 2026 redesign handoff
+// (design_handoff_durgapandals_redesign) — dark-only, no theme switcher
+// (spec §28.2). web and admin both extend this preset instead of
+// redefining colors/type locally, so this single reconciliation carries
+// through every screen automatically.
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ["class"],
   theme: {
     extend: {
       colors: {
-        ground: "#0F0C15",
-        surface: "#15121A",
-        panel: "#18141F",
-        card: "#221C2B",
-        chip: "#2E2639",
-        border: "rgba(255,255,255,.1)",
-        ink: "#F4EFF6",
-        "ink-muted": "#A79FB0",
-        "ink-dim": "#C4BCCB",
+        ground: "#170810",
+        // Sticky/nav-bar tone one shade darker than the page body (top
+        // header, bottom nav, admin sidebar) — matches the redesign's two
+        // ground shades instead of one flat background everywhere.
+        "ground-deep": "#0F050A",
+        surface: "#170810",
+        panel: "#241019",
+        card: "#241019",
+        chip: "#341A28",
+        border: "rgba(255,214,173,.1)",
+        ink: "#FCEFE4",
+        "ink-muted": "rgba(252,239,228,.55)",
+        "ink-dim": "rgba(252,239,228,.75)",
         brand: {
           DEFAULT: "#FF4433",
-          hover: "#FF7A64",
-          ink: "#1A0710",
+          hover: "#FF7A3D",
+          ink: "#FFF6EF",
         },
         accent: {
           DEFAULT: "#FFB547",
-          ink: "#1A0710",
+          ink: "#241019",
         },
         info: "#4DA3FF",
       },

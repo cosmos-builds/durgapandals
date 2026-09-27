@@ -1,79 +1,89 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useState } from "react";
-import { CitySelectorSheet } from "./city-selector-sheet";
+import { CityYearPill } from "./city-year-pill";
 
 export interface TopHeaderProps {
   citySlug: string;
   cityName: string;
+  activeFestivalYear: number;
+  availableYears: number[];
 }
 
-// Rendered once from the (tabs) layout so it stays fixed across navigations
-// instead of unmounting/remounting on every route change. On desktop, a
-// bottom tab bar is a mobile pattern — Saved and Add Pandal move into this
-// header instead, and BottomNav (see below) hides entirely at that width.
-export function TopHeader({ citySlug, cityName }: TopHeaderProps) {
+const NAV_LINKS = [
+  { key: "home", label: "Home", suffix: "" },
+  { key: "explore", label: "Explore", suffix: "/explore" },
+  { key: "addpandal", label: "Add Pandal", suffix: "/add" },
+  { key: "saved", label: "Saved", suffix: "/saved" },
+] as const;
+
+// Desktop-only persistent top nav bar (spec §5) — a bottom tab bar is a
+// mobile pattern, so desktop gets this instead across every non-onboarding
+// screen (Home/Explore/Detail/Add-pandal/Saved), rendered once from
+// `[citySlug]/layout.tsx` so it survives client-side navigation instead of
+// remounting. Mobile gets its own bespoke per-screen header (see MapHome's
+// floating header, ExploreBrowser's inline header, and Detail/Add's
+// contextual back-button headers) rather than this bar squeezed down.
+export function TopHeader({ citySlug, cityName, activeFestivalYear, availableYears }: TopHeaderProps) {
   const pathname = usePathname();
-  const savedHref = `/${citySlug}/saved`;
-  const isSavedActive = pathname === savedHref;
-  const [citySheetOpen, setCitySheetOpen] = useState(false);
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function handleSearch(event: React.FormEvent) {
+    event.preventDefault();
+    const q = query.trim();
+    router.push(q ? `/${citySlug}/explore?q=${encodeURIComponent(q)}` : `/${citySlug}/explore`);
+  }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-3 bg-ground px-4 pb-3 pt-3">
-      {/* Solid background — this previously had none, so scrolled page
-          content (e.g. Explore's list) showed straight through behind it. */}
-      {/* Marigold-to-brand gradient hairline instead of a flat border. */}
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-brand via-accent to-brand" />
-
-      <Link href={`/${citySlug}`} className="flex items-center gap-2">
+    <header className="sticky top-0 z-30 hidden h-[60px] items-center gap-5 border-b border-border bg-ground px-6 md:flex">
+      <Link href={`/${citySlug}`} className="flex flex-none items-center gap-2">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/images/logo.png" alt="" className="h-12 w-auto object-contain" />
-        <span className="font-display text-[19px] font-extrabold tracking-tight">
+        <img src="/images/logo.png" alt="" className="h-[30px] w-[30px] object-contain" />
+        <span className="font-display text-[15px] font-extrabold tracking-tight">
           durga<span className="text-brand">pandals</span>
         </span>
       </Link>
 
-      <div className="flex items-center gap-2">
-        <Link
-          href={savedHref}
-          className={`hidden h-10 items-center gap-1.5 rounded-pill border border-border bg-card/90 px-3.5 font-body text-[14.5px] font-semibold backdrop-blur md:flex ${
-            isSavedActive ? "text-brand" : ""
-          }`}
-        >
-          <span
-            className="material-symbols-rounded text-[18px]"
-            style={isSavedActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
-          >
-            bookmark
-          </span>
-          Saved
-        </Link>
+      <CityYearPill
+        citySlug={citySlug}
+        cityName={cityName}
+        activeFestivalYear={activeFestivalYear}
+        availableYears={availableYears}
+        className="flex h-[38px] flex-none items-center gap-1.5 rounded-xl bg-chip px-3 font-body text-[13px] font-bold"
+      />
 
-        <Link
-          href={`/${citySlug}/add`}
-          className="hidden h-10 items-center gap-1.5 rounded-pill bg-brand px-3.5 font-body text-[14.5px] font-bold text-brand-ink md:flex"
-        >
-          <span className="material-symbols-rounded text-[18px]">add</span>
-          Add Pandal
-        </Link>
+      <form onSubmit={handleSearch} className="flex h-[38px] max-w-[360px] flex-1 items-center gap-2 rounded-xl bg-card px-3">
+        <span className="material-symbols-rounded text-[17px] text-ink-muted">search</span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search pandals, themes, localities"
+          className="flex-1 bg-transparent font-body text-[13px] text-ink outline-none placeholder:text-ink-muted"
+        />
+      </form>
 
-        <button
-          onClick={() => setCitySheetOpen(true)}
-          className="flex h-10 items-center gap-1 rounded-pill border border-border bg-card/90 px-3 font-body text-[15px] font-semibold backdrop-blur"
-        >
-          <span className="material-symbols-rounded text-[18px] text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>
-            location_on
-          </span>
-          {cityName}
-          <span className="material-symbols-rounded text-ink-muted">expand_more</span>
-        </button>
-      </div>
+      <nav className="ml-2 flex flex-none items-center gap-[22px]">
+        {NAV_LINKS.map((link) => {
+          const href = `/${citySlug}${link.suffix}`;
+          const isActive = link.suffix === "" ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={link.key}
+              href={href}
+              className={`font-body text-[13px] font-bold ${isActive ? "text-brand" : "text-ink"}`}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
+      </nav>
 
-      {citySheetOpen && (
-        <CitySelectorSheet currentCitySlug={citySlug} onClose={() => setCitySheetOpen(false)} />
-      )}
+      <span className="ml-auto flex h-8 w-8 flex-none items-center justify-center rounded-full bg-chip font-body text-xs font-extrabold">
+        EN
+      </span>
     </header>
   );
 }

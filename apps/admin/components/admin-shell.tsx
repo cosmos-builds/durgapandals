@@ -1,21 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
-import { clearAdminToken } from "@/lib/admin-api";
+import { clearAdminToken, getAdminEmail } from "@/lib/admin-api";
 
 const NAV = [
-  { href: "/", label: "Dashboard" },
-  { href: "/cities", label: "Cities" },
-  { href: "/pandals", label: "Pandals" },
-  { href: "/submissions", label: "Submissions" },
+  { href: "/", label: "Dashboard", icon: "dashboard" },
+  { href: "/pandals", label: "Pandals", icon: "temple_hindu" },
+  { href: "/pandals/new", label: "Add Pandal", icon: "add_location_alt" },
+  { href: "/submissions", label: "Submissions", icon: "fact_check" },
+  { href: "/cities", label: "Cities", icon: "public" },
 ] as const;
 
 const WORDMARK = (
-  <span className="font-display text-lg font-extrabold tracking-tight">
-    durga<span className="text-brand">pandals</span>
+  <span className="flex items-center gap-2">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src="/images/logo.png" alt="" className="h-8 w-8 object-contain" />
+    <span className="font-display text-lg font-extrabold tracking-tight">
+      durga<span className="text-brand">pandals</span> Admin
+    </span>
   </span>
 );
 
@@ -30,6 +35,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [navOpen, setNavOpen] = useState(false);
+  const [email, setEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    setEmail(getAdminEmail());
+  }, []);
 
   function signOut() {
     clearAdminToken();
@@ -37,25 +47,49 @@ export function AdminShell({ children }: { children: ReactNode }) {
   }
 
   const navLinks = NAV.map((item) => {
-    const isActive = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+    // "Pandals" should stay active on its own detail pages (/pandals/[id])
+    // but not steal the highlight from the more specific "Add Pandal" link
+    // on /pandals/new.
+    const isActive =
+      item.href === "/"
+        ? pathname === "/"
+        : item.href === "/pandals"
+          ? pathname === "/pandals" || (pathname.startsWith("/pandals/") && pathname !== "/pandals/new")
+          : pathname === item.href;
     return (
       <Link
         key={item.href}
         href={item.href}
         onClick={() => setNavOpen(false)}
-        className={`rounded-xl px-3 py-2 font-body text-sm font-semibold ${
-          isActive ? "bg-card text-ink" : "text-ink-muted hover:text-ink"
+        className={`flex items-center gap-2.5 rounded-xl px-3 py-2 font-body text-sm font-semibold ${
+          isActive ? "bg-brand text-brand-ink" : "text-ink-muted hover:text-ink"
         }`}
       >
+        <span className="material-symbols-rounded text-[19px]">{item.icon}</span>
         {item.label}
       </Link>
     );
   });
 
+  // Falls back to a generic initial/label if the token can't be read (e.g.
+  // hasn't loaded yet) rather than showing a fabricated name.
+  const initial = email ? email.charAt(0).toUpperCase() : "?";
+
+  const identityBlock = (
+    <div className="flex items-center gap-2.5 border-t border-border px-3 pt-3">
+      <span className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-chip font-body text-xs font-extrabold">
+        {initial}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-body text-xs font-semibold text-ink-muted">
+        {email ?? "Signed in"}
+      </span>
+    </div>
+  );
+
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-ground md:flex-row">
       {/* Mobile top bar — desktop uses the persistent sidebar below instead */}
-      <div className="flex flex-none items-center justify-between border-b border-border px-4 py-3 md:hidden">
+      <div className="flex flex-none items-center justify-between border-b border-border bg-ground-deep px-4 py-3 md:hidden">
         {WORDMARK}
         <button
           onClick={() => setNavOpen(true)}
@@ -66,21 +100,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
         </button>
       </div>
 
-      <aside className="hidden h-full w-56 flex-none flex-col gap-1 overflow-y-auto border-r border-border p-4 md:flex">
-        <div className="mb-6 px-2">{WORDMARK}</div>
+      <aside className="hidden h-full w-[230px] flex-none flex-col gap-1 overflow-y-auto border-r border-border bg-ground-deep p-3.5 md:flex">
+        <div className="mb-5 px-1.5 pt-1">{WORDMARK}</div>
         {navLinks}
         <button
           onClick={signOut}
-          className="mt-auto rounded-xl px-3 py-2 text-left font-body text-sm font-semibold text-ink-muted hover:text-ink"
+          className="mt-2 rounded-xl px-3 py-2 text-left font-body text-sm font-semibold text-ink-muted hover:text-ink"
         >
           Sign out
         </button>
+        <div className="mt-auto" />
+        {identityBlock}
       </aside>
 
       {navOpen && (
         <>
           <div className="fixed inset-0 z-40 bg-black/50 md:hidden" onClick={() => setNavOpen(false)} />
-          <div className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 bg-panel p-4 shadow-2xl md:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col gap-1 bg-ground-deep p-4 shadow-2xl md:hidden">
             <div className="mb-4 flex items-center justify-between">
               {WORDMARK}
               <button
@@ -94,10 +130,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
             {navLinks}
             <button
               onClick={signOut}
-              className="mt-auto rounded-xl px-3 py-2 text-left font-body text-sm font-semibold text-ink-muted hover:text-ink"
+              className="mt-2 rounded-xl px-3 py-2 text-left font-body text-sm font-semibold text-ink-muted hover:text-ink"
             >
               Sign out
             </button>
+            <div className="mt-auto" />
+            {identityBlock}
           </div>
         </>
       )}

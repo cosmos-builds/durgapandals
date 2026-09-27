@@ -103,6 +103,24 @@ export function LikesLeaderboardChart({ data }: { data: { canonicalName: string;
   );
 }
 
+// Matches the design's "Submissions by city" bar — built from the published
+// pandal-year counts the dashboard endpoint already returns per city
+// (real data, no new query) rather than fabricating a submissions-by-city
+// aggregation we don't compute anywhere.
+export function PandalsByCityChart({ data }: { data: { cityName: string; publishedPandalYears: number }[] }) {
+  return (
+    <ResponsiveContainer width="100%" height={220}>
+      <BarChart data={data} margin={{ top: 8, right: 12, left: -16, bottom: 0 }}>
+        <CartesianGrid stroke={GRID_STROKE} vertical={false} />
+        <XAxis dataKey="cityName" tick={AXIS_STYLE} axisLine={{ stroke: GRID_STROKE }} tickLine={false} />
+        <YAxis allowDecimals={false} tick={AXIS_STYLE} axisLine={false} tickLine={false} width={32} />
+        <Tooltip contentStyle={TOOLTIP_STYLE} labelStyle={{ color: "#A79FB0" }} cursor={{ fill: "rgba(255,255,255,.04)" }} />
+        <Bar dataKey="publishedPandalYears" name="Published pandals" fill="#FF4433" radius={[6, 6, 0, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
 export function TopLocalitiesChart({ data }: { data: { locality: string; count: number }[] }) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(220, data.length * 34)}>

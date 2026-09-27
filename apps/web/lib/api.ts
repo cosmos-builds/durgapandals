@@ -33,6 +33,7 @@ export interface CityApiModel {
   defaultMapZoom: number;
   status: "ACTIVE" | "COMING_SOON" | "DISABLED";
   activeFestivalYear: number;
+  tier: "MAJOR" | "MINOR";
 }
 
 export async function fetchCities(): Promise<CityApiModel[]> {
@@ -45,6 +46,11 @@ export async function fetchCityBySlug(slug: string): Promise<CityApiModel | null
   return safeJson(response, null);
 }
 
+export interface ScheduleEntry {
+  time: string;
+  label: string;
+}
+
 export interface PandalYearSummary {
   id: string;
   year: number;
@@ -55,10 +61,11 @@ export interface PandalYearSummary {
   categories: string[];
   tags: string[];
   featured: boolean;
-  openingHours?: string;
-  parkingInfo?: string;
-  entryInfo?: string;
+  schedule: ScheduleEntry[];
 }
+
+export type AddedBy = "ADMIN" | "ORGANIZER" | "PUBLIC_SUBMISSION";
+export type VisitType = "WALKING_DARSHAN" | "PARK_AND_VISIT" | "DARSHAN_AND_GO";
 
 export interface PandalSummary {
   id: string;
@@ -71,9 +78,28 @@ export interface PandalSummary {
   locality: string;
   landmark?: string;
   verificationStatus: string;
+  addedBy: AddedBy;
+  parkingAvailable: boolean;
+  twoWheelerAccessible: boolean;
+  fourWheelerAccessible: boolean;
+  foodStallsNearby: boolean;
+  streetShopsNearby: boolean;
+  visitType: VisitType;
   year: PandalYearSummary | null;
   likes: number;
 }
+
+export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
+  WALKING_DARSHAN: "Walking darshan",
+  PARK_AND_VISIT: "Park & visit",
+  DARSHAN_AND_GO: "Darshan & go",
+};
+
+export const ADDED_BY_LABELS: Record<AddedBy, string> = {
+  ADMIN: "Added by admin",
+  ORGANIZER: "Added by organiser",
+  PUBLIC_SUBMISSION: "Added by a visitor",
+};
 
 export interface BoundingBox {
   minLat: number;
@@ -84,9 +110,16 @@ export interface BoundingBox {
 
 // `bbox` powers "Search this area" on the Map page — omitting it keeps the
 // original "every published pandal in the city" behavior (the initial load
-// still wants the whole city, not just the starting viewport).
-export async function fetchPandalsForCity(citySlug: string, bbox?: BoundingBox): Promise<PandalSummary[]> {
+// still wants the whole city, not just the starting viewport). `year`
+// switches to a historical festival year instead of the city's active one
+// (spec §4's combined city+year control).
+export async function fetchPandalsForCity(
+  citySlug: string,
+  bbox?: BoundingBox,
+  year?: number
+): Promise<PandalSummary[]> {
   const params = new URLSearchParams({ citySlug });
+  if (year) params.set("year", String(year));
   if (bbox) {
     params.set("minLat", String(bbox.minLat));
     params.set("minLng", String(bbox.minLng));
@@ -94,8 +127,8 @@ export async function fetchPandalsForCity(citySlug: string, bbox?: BoundingBox):
     params.set("maxLng", String(bbox.maxLng));
   }
   const response = await fetch(`${API_BASE_URL}/pandals?${params}`, {
-    cache: bbox ? "no-store" : undefined,
-    next: bbox ? undefined : { revalidate: 30 },
+    cache: bbox || year ? "no-store" : undefined,
+    next: bbox || year ? undefined : { revalidate: 30 },
   });
   return safeJson(response, []);
 }
@@ -125,6 +158,33 @@ export async function fetchNearbyPandals(
 ): Promise<NearbyPandal[]> {
   const url = `${API_BASE_URL}/pandals/nearby?cityId=${cityId}&latitude=${latitude}&longitude=${longitude}`;
   const response = await fetch(url, { cache: "no-store" });
+  return safeJson(response, []);
+}
+
+export interface NearbyRadiusPandal {
+  id: string;
+  slug: string;
+  canonicalName: string;
+  coverImage?: string;
+  distanceMeters: number;
+}
+
+// Powers the detail page's "Pandals near here (1-2km)" rail (spec §2).
+export async function fetchNearbyRadiusPandals(
+  cityId: string,
+  pandalId: string,
+  latitude: number,
+  longitude: number,
+  year: number
+): Promise<NearbyRadiusPandal[]> {
+  const params = new URLSearchParams({
+    cityId,
+    pandalId,
+    latitude: String(latitude),
+    longitude: String(longitude),
+    year: String(year),
+  });
+  const response = await fetch(`${API_BASE_URL}/pandals/nearby-radius?${params}`, { cache: "no-store" });
   return safeJson(response, []);
 }
 

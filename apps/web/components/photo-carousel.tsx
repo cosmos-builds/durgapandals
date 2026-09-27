@@ -12,13 +12,16 @@ export interface PhotoCarouselProps {
   fallbackImage?: string;
   alt: string;
   className?: string;
+  /** "center" (default, used by the map preview sheet) or "start" (matches
+   *  the pandal detail hero's bottom-left dot placement). */
+  dotsAlign?: "center" | "start";
 }
 
 // pandal.year.photos was already being fetched from the API and never
 // rendered anywhere — this was the only image shown being a single
 // coverImage. Swipeable with scroll-snap (no JS drag library needed) plus
 // dot indicators, matching a Google Maps place-page photo gallery.
-export function PhotoCarousel({ photos, fallbackImage, alt, className = "" }: PhotoCarouselProps) {
+export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dotsAlign = "center" }: PhotoCarouselProps) {
   const images = photos.length > 0 ? photos : fallbackImage ? [{ url: fallbackImage }] : [];
   const [active, setActive] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +63,11 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "" }: Ph
       </div>
 
       {images.length > 1 && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 flex justify-center gap-1.5">
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-3 flex gap-1.5 ${
+            dotsAlign === "start" ? "justify-start pl-4" : "justify-center"
+          }`}
+        >
           {images.map((_, index) => (
             <button
               key={index}

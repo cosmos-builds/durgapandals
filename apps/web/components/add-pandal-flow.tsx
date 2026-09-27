@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { distanceMeters } from "@durgapandals/deduplication";
-import { Button, Input, Textarea } from "@durgapandals/ui";
+import { Button, Input, Select, Textarea } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
   reverseGeocode,
@@ -60,7 +60,6 @@ const emptyDetails = {
   locality: "",
   landmark: "",
   publicContact: "",
-  parkingInfo: "",
 };
 
 // Curated, not free text — a fixed multi-select reads faster than typing
@@ -68,6 +67,22 @@ const emptyDetails = {
 // here: it described nearly every pandal, so it wasn't actually helping
 // anyone filter (see the Explore category chips it used to clutter).
 const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
+
+const VISIT_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "WALKING_DARSHAN", label: "Walking darshan · quick visit" },
+  { value: "PARK_AND_VISIT", label: "Park & visit" },
+  { value: "DARSHAN_AND_GO", label: "Darshan & go" },
+];
+
+const emptyAmenities = {
+  parkingAvailable: false,
+  twoWheelerAccessible: false,
+  fourWheelerAccessible: false,
+  foodStallsNearby: false,
+  streetShopsNearby: false,
+};
+
+type ScheduleRow = { time: string; label: string };
 
 const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
@@ -100,6 +115,13 @@ export function AddPandalFlow({
   const [selectedExisting, setSelectedExisting] = useState<NearbyPandal | null>(null);
   const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(null);
   const [details, setDetails] = useState(emptyDetails);
+  const [festivalYear, setFestivalYear] = useState(activeFestivalYear);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [searchingArea, setSearchingArea] = useState(false);
+  const [amenities, setAmenities] = useState(emptyAmenities);
+  const [visitType, setVisitType] = useState("WALKING_DARSHAN");
+  const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState(""); // honeypot — real visitors never see or fill this
   const [code, setCode] = useState("");
@@ -176,6 +198,67 @@ export function AddPandalFlow({
       // whatever), tell them to type it in instead of just looking broken.
       else setGeocodeFailed(true);
     }, 500);
+  }
+
+  // "Search this area" (Google-Maps pattern) — re-runs the nearby-duplicate
+  // check and reverse geocode for the map's current center on click, instead
+  // of relying only on the debounced moveend handler above.
+  function searchThisArea() {
+    const map = mapRef.current;
+    if (!map) return;
+    setSearchingArea(true);
+    const c = map.getCenter();
+    const next = { latitude: c.lat, longitude: c.lng };
+    setCoords(next);
+    scheduleNearbyFetch(next);
+    scheduleReverseGeocode(next);
+    setTimeout(() => setSearchingArea(false), 500);
+  }
+
+  // Geolocation alongside the existing drag-the-map-pin flow (spec §3) —
+  // permission-denied gets a visible message instead of failing silently.
+  function locateMe() {
+    if (!navigator.geolocation) {
+      setLocationError("Location isn't available on this device.");
+      return;
+    }
+    setLocating(true);
+    setLocationError(null);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 16 });
+        setCoords(next);
+        scheduleNearbyFetch(next);
+        scheduleReverseGeocode(next);
+      },
+      (err) => {
+        setLocating(false);
+        setLocationError(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied — drag the map to your pandal instead."
+            : "Couldn't get your location — drag the map to your pandal instead."
+        );
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  function toggleAmenity(key: keyof typeof emptyAmenities) {
+    setAmenities((prev) => ({ ...prev, [key]: !prev[key] }));
+  }
+
+  function addScheduleRow() {
+    setSchedule((prev) => [...prev, { time: "", label: "" }]);
+  }
+
+  function updateScheduleRow(index: number, field: keyof ScheduleRow, value: string) {
+    setSchedule((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  }
+
+  function removeScheduleRow(index: number) {
+    setSchedule((prev) => prev.filter((_, i) => i !== index));
   }
 
   function pickExisting(candidate: NearbyPandal) {
@@ -287,12 +370,14 @@ export function AddPandalFlow({
           locality: details.locality,
           landmark: details.landmark || undefined,
           publicContact: details.publicContact || undefined,
-          parkingInfo: details.parkingInfo || undefined,
           theme: details.theme || undefined,
           description: details.description || undefined,
           categories,
           photos: photos.map((p) => ({ url: p.url })),
-          year: activeFestivalYear,
+          year: festivalYear,
+          ...amenities,
+          visitType,
+          schedule: schedule.filter((row) => row.time && row.label),
         }
       : { note: `Requested update: ${updateChoice}` };
 
@@ -360,7 +445,9 @@ export function AddPandalFlow({
   const headerBlock = step !== "done" && (
     <div className="flex flex-col gap-3 px-4 pb-3 pt-4 md:mx-auto md:max-w-xl">
       <div className="flex items-center justify-between">
-        <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card">
+        {/* Back arrow: mobile only — desktop relies on the persistent top
+            nav bar instead, matching the design. */}
+        <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden">
           <span className="material-symbols-rounded">arrow_back</span>
         </button>
         <span className="font-body text-sm font-bold">Add your pandal</span>
@@ -399,9 +486,46 @@ export function AddPandalFlow({
             <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
               <LocationSearchBox citySlug={citySlug} placeholder="Search your pandal's area" onSelect={handleLocationSelect} biasCenter={coords} />
             </div>
+            <button
+              onClick={searchThisArea}
+              disabled={searchingArea}
+              className="absolute bottom-3 left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70"
+            >
+              <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
+              {searchingArea ? "Searching…" : "Search this area"}
+            </button>
           </div>
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
+            <button
+              onClick={locateMe}
+              disabled={locating}
+              className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-3 font-body text-sm font-bold text-brand-ink disabled:opacity-70"
+            >
+              <span className="material-symbols-rounded text-lg">{locating ? "sync" : "my_location"}</span>
+              {locating ? "Locating…" : "Use my current location"}
+            </button>
+            {locationError && (
+              <span className="flex items-center gap-1.5 font-body text-xs text-accent">
+                <span className="material-symbols-rounded text-sm">info</span>
+                {locationError}
+              </span>
+            )}
+
+            <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
+
+            <div className="flex flex-col gap-1.5">
+              <span className="font-body text-sm font-bold">Festival year</span>
+              <Select value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
+                {[activeFestivalYear, activeFestivalYear - 1, activeFestivalYear - 2].map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                    {year === activeFestivalYear ? " (current)" : ""}
+                  </option>
+                ))}
+              </Select>
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <Input
                 placeholder="Locality / area"
@@ -516,6 +640,8 @@ export function AddPandalFlow({
         <form onSubmit={submitDetails} className={formStepClass}>
           <h2 className="font-display text-2xl font-extrabold">Tell us about your pandal</h2>
 
+          <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
+
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
@@ -536,12 +662,14 @@ export function AddPandalFlow({
             />
           </div>
 
+          <span className="mt-1 font-body text-xs font-extrabold tracking-wide text-accent">OPTIONAL DETAILS</span>
+
           <div className="flex flex-col gap-3 rounded-3xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-4">
             <div className="flex items-center gap-2.5">
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-accent">palette</span>
               </span>
-              <span className="font-display text-base font-bold">Theme for {activeFestivalYear}</span>
+              <span className="font-display text-base font-bold">Theme for {festivalYear}</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
             <Input
@@ -634,19 +762,84 @@ export function AddPandalFlow({
               <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">local_parking</span>
               </span>
-              <span className="font-display text-base font-bold">Good to know</span>
+              <span className="font-display text-base font-bold">Good to know for visitors</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            <Input
-              placeholder="Parking — e.g. Street parking available near the entrance"
-              value={details.parkingInfo}
-              onChange={(e) => setDetails({ ...details, parkingInfo: e.target.value })}
-            />
             <Input
               placeholder="Public contact number"
               value={details.publicContact}
               onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
             />
+            {(
+              [
+                ["parkingAvailable", "Parking available"],
+                ["twoWheelerAccessible", "2-wheeler accessible"],
+                ["fourWheelerAccessible", "4-wheeler accessible"],
+                ["foodStallsNearby", "Food stalls nearby"],
+                ["streetShopsNearby", "Street shops nearby"],
+              ] as const
+            ).map(([key, label]) => (
+              <label key={key} className="flex items-center justify-between font-body text-sm">
+                {label}
+                <input
+                  type="checkbox"
+                  checked={amenities[key]}
+                  onChange={() => toggleAmenity(key)}
+                  className="h-5 w-5 accent-brand"
+                />
+              </label>
+            ))}
+            <div className="flex flex-col gap-1.5">
+              <span className="font-body text-sm">Visit type</span>
+              <Select value={visitType} onChange={(e) => setVisitType(e.target.value)}>
+                {VISIT_TYPE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+                <span className="material-symbols-rounded text-brand">schedule</span>
+              </span>
+              <span className="font-display text-base font-bold">Puja schedule</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+            </div>
+            {schedule.map((row, index) => (
+              <div key={index} className="flex gap-2">
+                <Input
+                  placeholder="Time — e.g. 7:00 PM"
+                  value={row.time}
+                  onChange={(e) => updateScheduleRow(index, "time", e.target.value)}
+                  className="w-[130px] flex-none"
+                />
+                <Input
+                  placeholder="Event — e.g. Evening Aarti"
+                  value={row.label}
+                  onChange={(e) => updateScheduleRow(index, "label", e.target.value)}
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeScheduleRow(index)}
+                  className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-card"
+                >
+                  <span className="material-symbols-rounded text-ink-muted">close</span>
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addScheduleRow}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 font-body text-sm font-bold text-brand"
+            >
+              <span className="material-symbols-rounded text-lg">add</span>
+              Add a schedule row
+            </button>
           </div>
 
           <Button type="submit" disabled={!details.canonicalName}>
@@ -761,6 +954,10 @@ export function AddPandalFlow({
                 setPhotos([]);
                 setPhotoError(null);
                 setSubmissionId(null);
+                setFestivalYear(activeFestivalYear);
+                setAmenities(emptyAmenities);
+                setVisitType("WALKING_DARSHAN");
+                setSchedule([]);
               }}
             >
               Add another pandal

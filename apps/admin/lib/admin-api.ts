@@ -14,6 +14,23 @@ export function clearAdminToken() {
   window.localStorage.removeItem(TOKEN_KEY);
 }
 
+// Reads the admin's real email straight out of the JWT payload for display
+// in the sidebar (spec: admin identity, not a fabricated "Super Admin"
+// placeholder) — no signature check needed since this is read-only UI, the
+// API independently re-verifies the token's signature on every request.
+export function getAdminEmail(): string | null {
+  const token = getAdminToken();
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
+    return (JSON.parse(json) as { email?: string }).email ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function adminLogin(email: string, password: string) {
   const response = await fetch(`${API_BASE_URL}/admin/login`, {
     method: "POST",

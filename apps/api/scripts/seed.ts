@@ -25,6 +25,10 @@ async function main() {
       defaultMapZoom: 13,
       status: "ACTIVE",
       activeFestivalYear: currentYear,
+      // The two cities the product originally launched with — MAJOR keeps
+      // them pinned in the city picker exactly as before, now as ordinary
+      // data instead of a hardcoded pair (spec §4).
+      tier: "MAJOR",
     },
     { upsert: true }
   );
@@ -42,6 +46,7 @@ async function main() {
       defaultMapZoom: 13,
       status: "ACTIVE",
       activeFestivalYear: currentYear,
+      tier: "MAJOR",
     },
     { upsert: true }
   );

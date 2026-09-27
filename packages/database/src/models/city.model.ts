@@ -17,6 +17,10 @@ const citySchema = new Schema(
       default: "COMING_SOON",
     },
     activeFestivalYear: { type: Number, required: true },
+    // MAJOR cities are pinned/pre-listed in the city picker; MINOR ones are
+    // reachable only by typing (generalizes past the old Bhopal/Indore-only
+    // hardcoded pair to any number of cities — spec §4).
+    tier: { type: String, enum: ["MAJOR", "MINOR"], required: true, default: "MINOR" },
   },
   { timestamps: true }
 );

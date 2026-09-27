@@ -2,19 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { fetchCities, type CityApiModel } from "@/lib/api";
 
 export interface CitySelectorSheetProps {
   currentCitySlug: string;
+  selectedYear: number;
+  availableYears: number[];
   onClose: () => void;
 }
 
-// Matches the design's city-selector sheet (spec §5.3): active cities are
-// switchable, coming-soon cities show a "Soon" badge instead of pretending
-// they have listings (spec §5.3's explicit "don't pretend" rule).
-export function CitySelectorSheet({ currentCitySlug, onClose }: CitySelectorSheetProps) {
+// Matches the design's combined city+year sheet (spec §4): MAJOR-tier cities
+// are pinned/pre-listed by default, MINOR-tier ones are reachable only by
+// typing — generalizes past the old Bhopal/Indore-only hardcoded pair to any
+// number of cities. Coming-soon cities show a "Soon" badge instead of
+// pretending they have listings.
+export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYears, onClose }: CitySelectorSheetProps) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [cities, setCities] = useState<CityApiModel[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,9 +37,20 @@ export function CitySelectorSheet({ currentCitySlug, onClose }: CitySelectorShee
     if (city.slug !== currentCitySlug) router.push(`/${city.slug}`);
   }
 
+  function selectYear(year: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("year", String(year));
+    router.push(`${pathname}?${params}`);
+    onClose();
+  }
+
+  const isSearching = query.trim().length > 0;
   const filtered = cities.filter((c) => c.name.toLowerCase().includes(query.toLowerCase()));
-  const active = filtered.filter((c) => c.status === "ACTIVE");
-  const comingSoon = filtered.filter((c) => c.status === "COMING_SOON");
+  // MINOR-tier cities only surface once the visitor is actively searching —
+  // otherwise the default list would grow unbounded as more cities go live.
+  const visible = isSearching ? filtered : filtered.filter((c) => c.tier === "MAJOR");
+  const active = visible.filter((c) => c.status === "ACTIVE");
+  const comingSoon = visible.filter((c) => c.status === "COMING_SOON");
 
   return (
     <>
@@ -48,12 +65,29 @@ export function CitySelectorSheet({ currentCitySlug, onClose }: CitySelectorShee
           </button>
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Festival year</span>
+          <div className="flex gap-2">
+            {availableYears.map((year) => (
+              <button
+                key={year}
+                onClick={() => selectYear(year)}
+                className={`h-10 flex-1 rounded-xl font-body text-sm font-bold ${
+                  year === selectedYear ? "bg-brand text-brand-ink" : "bg-card text-ink-dim"
+                }`}
+              >
+                {year}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div className="flex h-12 items-center gap-2.5 rounded-2xl bg-ink px-3.5">
           <span className="material-symbols-rounded text-ink-muted">search</span>
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search a city"
+            placeholder="Search any city"
             className="flex-1 bg-transparent font-body text-[15.5px] text-ground outline-none placeholder:text-ink-muted"
           />
         </div>

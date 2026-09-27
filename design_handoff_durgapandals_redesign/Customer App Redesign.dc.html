@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Symbols+Rounded" />
+  <style>
+    body { margin: 0; background: #0F050A; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+  </style>
+</helmet>
+
+<div style="font-family:'DM Sans',sans-serif;background:#0F050A;min-height:100vh;color:#FCEFE4;">
+
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:14px 20px;background:#0F050A;border-bottom:1px solid rgba(255,214,173,0.1);position:sticky;top:0;z-index:50;">
+    <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;color:#FFB547;letter-spacing:.04em;margin-right:8px;">STATIC MOCKUPS ▸ mobile + desktop</span>
+    <sc-for list="{{ screens }}" as="s" hint-placeholder-count="5">
+      <button onClick="{{ s.select }}" style="border:none;border-radius:999px;padding:8px 16px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;background:{{ s.bg }};color:{{ s.color }};">{{ s.label }}</button>
+    </sc-for>
+  </div>
+
+  <div style="display:flex;gap:36px;flex-wrap:wrap;align-items:flex-start;padding:36px 24px;overflow-x:auto;">
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex:none;">
+      <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;color:rgba(252,239,228,0.55);letter-spacing:.06em;">MOBILE · 390×844</span>
+      <div style="width:398px;height:850px;border-radius:46px;background:#000;padding:10px;box-shadow:0 30px 60px rgba(0,0,0,0.5);flex:none;">
+        <div style="position:relative;width:100%;height:100%;border-radius:36px;overflow:hidden;background:#170810;display:flex;flex-direction:column;">
+          <span style="position:absolute;top:8px;left:50%;transform:translateX(-50%);width:110px;height:22px;background:#000;border-radius:12px;z-index:30;"></span>
+
+          <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <div style="height:260px;position:relative;flex:none;">
+              <img src="assets/hero-durga.png" alt="" style="width:100%;height:100%;object-fit:cover;object-position:center 20%;" />
+              <div style="position:absolute;inset:0;background:linear-gradient(180deg,rgba(23,8,16,0.1),#170810 92%);"></div>
+            </div>
+            <div style="padding:0 22px 28px;display:flex;flex-direction:column;align-items:center;text-align:center;margin-top:-30px;">
+              <img src="assets/logo.png" alt="durgaPandals" style="width:76px;height:76px;object-fit:contain;filter:drop-shadow(0 8px 20px rgba(255,68,51,0.4));margin-bottom:10px;" />
+              <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:30px;font-weight:800;margin:0 0 6px;line-height:1.1;">durgaPandals</h1>
+              <p style="font-size:13.5px;color:rgba(252,239,228,0.7);margin:0 0 22px;">Shubho Sharadiya! Find every pandal, theme &amp; aarti timing — in your city, wherever that is.</p>
+              <div style="width:100%;display:flex;flex-direction:column;gap:10px;">
+                <div style="display:flex;align-items:center;gap:10px;background:#FCEFE4;border-radius:14px;padding:0 14px;height:48px;">
+                  <span class="material-symbols-rounded" style="color:#241019;opacity:.6;font-size:19px;">search</span>
+                  <input placeholder="Search your city…" style="border:none;outline:none;background:transparent;flex:1;font-size:14px;color:#241019;" />
+                </div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                  <sc-for list="{{ cityChips }}" as="c" hint-placeholder-count="6"><span style="padding:6px 12px;border-radius:999px;background:#341A28;border:1px solid rgba(255,214,173,0.15);font-size:12px;font-weight:600;">{{ c }}</span></sc-for>
+                </div>
+                <button onClick="{{ goHome }}" style="margin-top:8px;height:50px;border:none;border-radius:15px;background:linear-gradient(120deg,#FF4433,#FF7A3D);color:#FFF6EF;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;">Enter the map →</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;position:relative;background:linear-gradient(160deg,#1E2A1A,#141C12);overflow:hidden;">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:24px 24px;"></div>
+            <sc-for list="{{ mapPins }}" as="m" hint-placeholder-count="6">
+              <img src="assets/marker-icon.svg" alt="" style="position:absolute;left:{{ m.left }};top:{{ m.top }};width:30px;height:30px;transform:translate(-50%,-90%);filter:drop-shadow(0 3px 5px rgba(0,0,0,0.4));" />
+            </sc-for>
+            <div style="position:absolute;top:34px;left:14px;right:14px;display:flex;flex-direction:column;gap:8px;z-index:5;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <img src="assets/logo.png" style="width:30px;height:30px;object-fit:contain;flex:none;" />
+                <button style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:6px;background:#241019;border:none;border-radius:12px;padding:0 10px;height:36px;color:#FCEFE4;font-weight:700;font-size:12px;">
+                  <span style="display:flex;align-items:center;gap:4px;"><span class="material-symbols-rounded" style="font-size:16px;color:#FFB547;">location_on</span>Kolkata · 2026</span>
+                  <span class="material-symbols-rounded" style="font-size:15px;">expand_more</span>
+                </button>
+                <span class="material-symbols-rounded" style="background:#241019;border-radius:10px;padding:8px;font-size:16px;flex:none;">notifications</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;background:#241019;border-radius:13px;padding:0 12px;height:42px;"><span class="material-symbols-rounded" style="font-size:18px;opacity:.6;">search</span><span style="font-size:13px;color:rgba(252,239,228,0.5);">Search pandals…</span></div>
+            </div>
+            <button style="position:absolute;top:114px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:#FCEFE4;color:#241019;border:none;border-radius:999px;padding:8px 14px;font-size:11.5px;font-weight:800;box-shadow:0 6px 16px rgba(0,0,0,0.3);z-index:5;"><span class="material-symbols-rounded" style="font-size:15px;">refresh</span>Search this area</button>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:#241019;border-top:1px solid rgba(255,214,173,0.1);border-radius:22px 22px 0 0;padding:14px;display:flex;gap:12px;align-items:center;">
+              <img src="assets/logo.png" style="width:52px;height:52px;object-fit:contain;border-radius:12px;background:#341A28;flex:none;" />
+              <div style="flex:1;min-width:0;">
+                <div style="font-weight:800;font-size:14px;">Kumartuli Sarbojanin</div>
+                <div style="font-size:11.5px;color:rgba(252,239,228,0.6);">Rural Bengal theme · 0.4km · <span style="color:#FF8A75;">High crowd</span></div>
+              </div>
+              <button style="border:none;background:#FF4433;color:#FFF6EF;border-radius:11px;padding:9px 14px;font-weight:700;font-size:12px;flex:none;">View</button>
+            </div>
+          </div>
+          <div style="{{ bottomNavStyle }}">
+            <sc-for list="{{ bottomNav }}" as="b" hint-placeholder-count="5">
+              <span style="display:flex;flex-direction:column;align-items:center;gap:2px;color:{{ b.color }};"><span class="material-symbols-rounded" style="font-size:{{ b.size }};">{{ b.icon }}</span><span style="font-size:9.5px;font-weight:700;">{{ b.label }}</span></span>
+            </sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isExplore }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <div style="padding:16px 16px 10px;display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;align-items:center;gap:8px;"><img src="assets/logo.png" style="width:24px;height:24px;object-fit:contain;" /><h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:800;margin:0;">Explore Kolkata</h2></div>
+                <span class="material-symbols-rounded" style="background:#341A28;border-radius:10px;padding:6px;font-size:16px;">sort</span>
+              </div>
+              <div style="display:flex;gap:7px;overflow-x:auto;">
+                <sc-for list="{{ exploreFilters }}" as="f" hint-placeholder-count="6"><span style="flex:0 0 auto;padding:6px 12px;border-radius:999px;font-size:11.5px;font-weight:700;white-space:nowrap;background:{{ f.bg }};color:{{ f.color }};">{{ f.label }}</span></sc-for>
+              </div>
+            </div>
+            <div style="flex:1;padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ exploreCards }}" as="p" hint-placeholder-count="6">
+                <div style="display:flex;gap:10px;background:#241019;border-radius:15px;overflow:hidden;">
+                  <div style="width:88px;flex:none;background:linear-gradient(145deg,{{ p.c1 }},{{ p.c2 }});position:relative;"><span style="position:absolute;top:5px;left:5px;background:#FFB547;color:#241019;font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px;">{{ p.badge }}</span></div>
+                  <div style="flex:1;padding:10px 10px 10px 0;display:flex;flex-direction:column;gap:3px;min-width:0;">
+                    <span style="font-weight:700;font-size:13.5px;">{{ p.name }}</span>
+                    <span style="font-size:11px;color:rgba(252,239,228,0.55);">{{ p.theme }}</span>
+                    <span style="font-size:11px;color:#FF8A75;font-weight:700;display:flex;align-items:center;gap:3px;"><span class="material-symbols-rounded" style="font-size:13px;">favorite</span>{{ p.likes }} · {{ p.distance }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="{{ bottomNavStyle }}">
+            <sc-for list="{{ bottomNav }}" as="b" hint-placeholder-count="5"><span style="display:flex;flex-direction:column;align-items:center;gap:2px;color:{{ b.color }};"><span class="material-symbols-rounded" style="font-size:{{ b.size }};">{{ b.icon }}</span><span style="font-size:9.5px;font-weight:700;">{{ b.label }}</span></span></sc-for>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <div style="height:230px;flex:none;position:relative;background:linear-gradient(150deg,#FF4433,#7A1E14);">
+              <img src="assets/hero-durga.png" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.5;" />
+              <div style="position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;">
+                <span class="material-symbols-rounded" style="background:rgba(0,0,0,0.4);border-radius:50%;padding:7px;font-size:16px;">arrow_back</span>
+                <div style="display:flex;gap:6px;">
+                  <span class="material-symbols-rounded" style="background:rgba(0,0,0,0.4);border-radius:50%;padding:7px;font-size:16px;">share</span>
+                  <span style="display:flex;align-items:center;gap:4px;background:rgba(0,0,0,0.4);border-radius:999px;padding:7px 10px;font-size:12px;font-weight:700;"><span class="material-symbols-rounded" style="font-size:16px;color:#FF4433;">favorite</span>812</span>
+                  <span class="material-symbols-rounded" style="background:rgba(0,0,0,0.4);border-radius:50%;padding:7px;font-size:16px;">bookmark_border</span>
+                </div>
+              </div>
+              <div style="position:absolute;bottom:10px;left:12px;display:flex;gap:5px;">
+                <sc-for list="{{ galleryDots }}" as="g" hint-placeholder-count="5"><span style="width:{{ g.w }};height:4px;border-radius:3px;background:{{ g.c }};"></span></sc-for>
+              </div>
+            </div>
+            <div style="padding:16px;display:flex;flex-direction:column;gap:13px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:6px;"><h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:20px;font-weight:800;margin:0;">Kumartuli Sarbojanin</h1><span class="material-symbols-rounded" style="font-size:17px;color:#FFB547;font-variation-settings:'FILL' 1;" title="Verified">verified</span></div>
+                <span style="font-size:11.5px;color:rgba(252,239,228,0.6);">Kumartuli, Kolkata</span>
+                <div style="font-size:10.5px;color:rgba(252,239,228,0.4);margin-top:2px;">Added by organiser · verified by admin</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <span style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,68,51,0.15);color:#FF8A75;">High crowd</span>
+                <span style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#341A28;">1.1 km</span>
+                <span style="font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;background:#341A28;">Walking darshan</span>
+              </div>
+              <div style="background:linear-gradient(120deg,rgba(255,181,71,0.14),rgba(255,68,51,0.06));border-radius:14px;padding:12px;">
+                <div style="font-weight:800;font-size:13px;">Theme 2026 — Rural Bengal</div>
+                <p style="margin:4px 0 0;font-size:12px;color:rgba(252,239,228,0.7);line-height:1.5;">A hand-crafted village recreated in clay and bamboo.</p>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:13px;margin-bottom:8px;">Puja schedule <span style="font-weight:500;color:rgba(252,239,228,0.45);">· set by this pandal</span></div>
+                <sc-for list="{{ schedule }}" as="e" hint-placeholder-count="4"><div style="display:flex;gap:10px;align-items:center;padding:4px 0;"><span style="width:52px;font-size:11px;font-weight:700;color:#FFB547;">{{ e.time }}</span><span style="width:7px;height:7px;border-radius:50%;background:{{ e.color }};"></span><span style="font-size:12.5px;">{{ e.label }}</span></div></sc-for>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:13px;margin-bottom:8px;">Good to know</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                  <sc-for list="{{ amenities }}" as="a" hint-placeholder-count="5"><span style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:rgba(252,239,228,0.75);"><span class="material-symbols-rounded" style="font-size:16px;color:#FFB547;">{{ a.icon }}</span>{{ a.label }}</span></sc-for>
+                </div>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:13px;margin-bottom:8px;">Pandals near here (1–2km)</div>
+                <div style="display:flex;gap:8px;overflow-x:auto;">
+                  <sc-for list="{{ nearbyRadius }}" as="n" hint-placeholder-count="4">
+                    <div style="flex:0 0 100px;display:flex;flex-direction:column;gap:4px;">
+                      <div style="height:64px;border-radius:10px;background:linear-gradient(145deg,{{ n.c1 }},{{ n.c2 }});"></div>
+                      <span style="font-size:10.5px;font-weight:700;">{{ n.name }}</span>
+                      <span style="font-size:9.5px;color:rgba(252,239,228,0.5);">{{ n.distance }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:12px 16px;display:flex;gap:8px;background:#170810;border-top:1px solid rgba(255,214,173,0.1);">
+            <button style="flex:1;height:46px;border:none;border-radius:13px;background:#FF4433;color:#FFF6EF;font-weight:800;font-size:13px;">Directions</button>
+            <button style="flex:1;height:46px;border:1px solid rgba(255,214,173,0.2);border-radius:13px;background:transparent;color:#FCEFE4;font-weight:800;font-size:13px;">Add to route</button>
+          </div>
+          </sc-if>
+
+          <sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+          <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+            <div style="padding:16px;display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;align-items:center;gap:10px;"><span class="material-symbols-rounded" style="background:#341A28;border-radius:50%;padding:7px;font-size:16px;">arrow_back</span><img src="assets/logo.png" style="width:20px;height:20px;object-fit:contain;" /><span style="font-weight:800;font-size:13.5px;">Add your pandal</span></div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;"><div style="height:4px;border-radius:3px;background:#FF4433;"></div><div style="height:4px;border-radius:3px;background:#FF4433;"></div><div style="height:4px;border-radius:3px;background:#3A1F2B;"></div></div>
+
+              <span style="font-weight:800;font-size:12px;color:#FFB547;letter-spacing:.04em;">BASIC DETAILS</span>
+
+              <div style="background:#241019;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <span style="font-weight:800;font-size:13px;">Pin the location</span>
+                <div style="height:140px;border-radius:13px;overflow:hidden;position:relative;background:linear-gradient(160deg,#1E2A1A,#141C12);">
+                  <img src="assets/marker-icon.svg" style="position:absolute;left:50%;top:50%;width:30px;height:30px;transform:translate(-50%,-90%);" />
+                  <button style="position:absolute;top:8px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:5px;background:#FCEFE4;color:#241019;border:none;border-radius:999px;padding:5px 10px;font-size:10px;font-weight:800;"><span class="material-symbols-rounded" style="font-size:12px;">refresh</span>Search this area</button>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;height:42px;border:none;border-radius:12px;background:#FF4433;color:#FFF6EF;font-weight:700;font-size:12px;"><span class="material-symbols-rounded" style="font-size:16px;">my_location</span>Use my location</button>
+                  <button style="flex:1;height:42px;border:1px solid rgba(255,214,173,0.2);border-radius:12px;background:transparent;color:#FCEFE4;font-weight:700;font-size:12px;">Drop pin manually</button>
+                </div>
+              </div>
+
+              <div style="background:#241019;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <span style="font-weight:800;font-size:13px;">City &amp; festival year</span>
+                <div style="display:flex;align-items:center;gap:8px;background:#FCEFE4;border-radius:11px;padding:0 12px;height:44px;"><span class="material-symbols-rounded" style="color:#241019;opacity:.5;font-size:17px;">search</span><span style="font-size:12.5px;color:rgba(36,16,25,0.5);">Search any city…</span></div>
+                <select style="height:42px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13px;"><option>Festival year — 2026</option><option>2025</option></select>
+              </div>
+
+              <div style="background:#241019;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <span style="font-weight:800;font-size:13px;">Basics</span>
+                <input placeholder="Pandal name" style="height:44px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13.5px;" />
+                <input placeholder="Locality / area" style="height:44px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13.5px;" />
+                <input placeholder="Address" style="height:44px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13.5px;" />
+              </div>
+
+              <span style="font-weight:800;font-size:12px;color:#FFB547;letter-spacing:.04em;margin-top:6px;">OPTIONAL DETAILS</span>
+
+              <div style="background:#241019;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+                <span style="font-weight:800;font-size:13px;">Categories</span>
+                <div style="display:flex;gap:7px;flex-wrap:wrap;"><sc-for list="{{ addCategories }}" as="c" hint-placeholder-count="5"><span style="padding:7px 12px;border-radius:999px;font-size:12px;font-weight:700;background:{{ c.bg }};color:{{ c.color }};">{{ c.label }}</span></sc-for></div>
+              </div>
+
+              <div style="background:#241019;border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;">
+                <span style="font-weight:800;font-size:13px;">Good to know for visitors</span>
+                <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">Parking available<input type="checkbox" /></label>
+                <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">2-wheeler accessible<input type="checkbox" /></label>
+                <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">4-wheeler accessible<input type="checkbox" /></label>
+                <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">Food stalls nearby<input type="checkbox" /></label>
+                <label style="display:flex;align-items:center;justify-content:space-between;font-size:12.5px;">Street shops nearby<input type="checkbox" /></label>
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                  <span style="font-size:12.5px;">Visit type</span>
+                  <select style="height:42px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:12.5px;"><option>Walking darshan · quick visit</option><option>Park &amp; visit</option><option>Darshan &amp; go</option></select>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:none;padding:14px 16px;background:#170810;border-top:1px solid rgba(255,214,173,0.1);"><button style="width:100%;height:48px;border:none;border-radius:14px;background:linear-gradient(120deg,#FF4433,#FF7A3D);color:#FFF6EF;font-weight:800;font-size:14px;">Continue</button></div>
+          </sc-if>
+
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;align-items:center;gap:12px;flex:1 1 700px;min-width:700px;">
+      <span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:13px;color:rgba(252,239,228,0.55);letter-spacing:.06em;">DESKTOP · 1280×800</span>
+      <div style="width:100%;max-width:1280px;border-radius:16px;overflow:hidden;background:#170810;box-shadow:0 30px 60px rgba(0,0,0,0.5);">
+        <div style="height:38px;background:#0F050A;display:flex;align-items:center;gap:6px;padding:0 14px;">
+          <span style="width:11px;height:11px;border-radius:50%;background:#FF4433;"></span><span style="width:11px;height:11px;border-radius:50%;background:#FFB547;"></span><span style="width:11px;height:11px;border-radius:50%;background:#3A1F2B;"></span>
+        </div>
+
+        <sc-if value="{{ notOnboarding }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:20px;padding:0 24px;height:60px;border-bottom:1px solid rgba(255,214,173,0.08);">
+          <div style="display:flex;align-items:center;gap:8px;"><img src="assets/logo.png" style="width:30px;height:30px;object-fit:contain;" /><span style="font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:15px;">durgaPandals</span></div>
+          <button style="display:flex;align-items:center;gap:6px;background:#341A28;border:none;border-radius:11px;padding:7px 12px;color:#FCEFE4;font-weight:700;font-size:13px;"><span class="material-symbols-rounded" style="font-size:16px;color:#FFB547;">location_on</span>Kolkata · 2026<span class="material-symbols-rounded" style="font-size:15px;">expand_more</span></button>
+          <div style="flex:1;max-width:360px;display:flex;align-items:center;gap:8px;background:#241019;border-radius:11px;padding:0 12px;height:38px;"><span class="material-symbols-rounded" style="opacity:.5;font-size:17px;">search</span><span style="font-size:13px;color:rgba(252,239,228,0.4);">Search pandals, themes, localities</span></div>
+          <div style="display:flex;gap:22px;margin-left:8px;">
+            <sc-for list="{{ topNav }}" as="t" hint-placeholder-count="4"><span onClick="{{ t.select }}" style="font-size:13px;font-weight:700;cursor:pointer;color:{{ t.color }};">{{ t.label }}</span></sc-for>
+          </div>
+          <span style="width:32px;height:32px;border-radius:50%;background:#341A28;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;margin-left:auto;">EN</span>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;height:762px;">
+          <div style="flex:1;position:relative;"><img src="assets/hero-durga.png" style="width:100%;height:100%;object-fit:cover;" /><div style="position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(23,8,16,0.4));"></div></div>
+          <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:0 64px;gap:18px;">
+            <img src="assets/logo.png" style="width:80px;height:80px;object-fit:contain;" />
+            <h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:44px;font-weight:800;margin:0;line-height:1.05;">durgaPandals</h1>
+            <p style="font-size:16px;color:rgba(252,239,228,0.72);max-width:400px;margin:0;">Shubho Sharadiya! Find every pandal, theme &amp; aarti timing — in your city, wherever that is.</p>
+            <div style="width:100%;max-width:420px;display:flex;flex-direction:column;gap:12px;margin-top:6px;">
+              <div style="display:flex;align-items:center;gap:10px;background:#FCEFE4;border-radius:14px;padding:0 16px;height:52px;"><span class="material-symbols-rounded" style="color:#241019;opacity:.6;">search</span><input placeholder="Search your city — Kolkata, Delhi, Pune, anywhere…" style="border:none;outline:none;background:transparent;flex:1;font-size:15px;color:#241019;" /></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;"><sc-for list="{{ cityChips }}" as="c" hint-placeholder-count="6"><span style="padding:8px 14px;border-radius:999px;background:#341A28;font-size:13px;font-weight:600;">{{ c }}</span></sc-for></div>
+              <button onClick="{{ goHome }}" style="margin-top:6px;height:54px;border:none;border-radius:16px;background:linear-gradient(120deg,#FF4433,#FF7A3D);color:#FFF6EF;font-family:'Bricolage Grotesque',sans-serif;font-weight:800;font-size:16px;">Enter the map →</button>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;height:702px;">
+          <div style="flex:0 0 360px;display:flex;flex-direction:column;border-right:1px solid rgba(255,214,173,0.08);">
+            <div style="padding:14px;font-size:12px;color:rgba(252,239,228,0.5);border-bottom:1px solid rgba(255,214,173,0.08);">412 pandals live in Kolkata · 2026</div>
+            <div style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ nearbyPandals }}" as="p" hint-placeholder-count="4">
+                <div style="display:flex;gap:12px;background:#241019;border-radius:16px;padding:10px;">
+                  <img src="assets/logo.png" style="width:60px;height:60px;object-fit:contain;background:#341A28;border-radius:12px;flex:none;" />
+                  <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;">
+                    <span style="font-weight:700;font-size:14px;">{{ p.name }}</span>
+                    <span style="font-size:11.5px;color:rgba(252,239,228,0.6);">{{ p.locality }} · {{ p.distance }}</span>
+                    <span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;width:fit-content;background:{{ p.crowdBg }};color:{{ p.crowdColor }};">{{ p.crowd }} crowd</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="flex:1;position:relative;background:linear-gradient(160deg,#1E2A1A,#141C12);">
+            <div style="position:absolute;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px);background-size:26px 26px;"></div>
+            <sc-for list="{{ mapPins }}" as="m" hint-placeholder-count="6"><img src="assets/marker-icon.svg" alt="" style="position:absolute;left:{{ m.left }};top:{{ m.top }};width:34px;height:34px;transform:translate(-50%,-90%);" /></sc-for>
+            <button style="position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:#FCEFE4;color:#241019;border:none;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:800;box-shadow:0 8px 18px rgba(0,0,0,0.35);"><span class="material-symbols-rounded" style="font-size:16px;">refresh</span>Search this area</button>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isExplore }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;height:702px;">
+          <div style="flex:0 0 200px;padding:20px;border-right:1px solid rgba(255,214,173,0.08);display:flex;flex-direction:column;gap:10px;">
+            <div style="font-weight:800;font-size:12px;color:#FFB547;margin-bottom:4px;">CATEGORY</div>
+            <sc-for list="{{ categories }}" as="c" hint-placeholder-count="5"><label style="display:flex;gap:8px;font-size:13px;"><input type="checkbox" />{{ c }}</label></sc-for>
+          </div>
+          <div style="flex:1;overflow-y:auto;padding:22px;display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;justify-content:space-between;"><h2 style="font-family:'Bricolage Grotesque',sans-serif;font-size:24px;font-weight:800;margin:0;">Explore Kolkata</h2><select style="background:#341A28;color:#FCEFE4;border:none;border-radius:10px;padding:8px 12px;font-size:12.5px;"><option>Nearest</option><option>Most liked</option></select></div>
+            <div style="display:flex;gap:8px;"><sc-for list="{{ exploreFilters }}" as="f" hint-placeholder-count="6"><span style="padding:7px 14px;border-radius:999px;font-size:12.5px;font-weight:700;background:{{ f.bg }};color:{{ f.color }};">{{ f.label }}</span></sc-for></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+              <sc-for list="{{ exploreCards }}" as="p" hint-placeholder-count="6">
+                <div style="background:#241019;border-radius:18px;overflow:hidden;">
+                  <div style="height:120px;background:linear-gradient(145deg,{{ p.c1 }},{{ p.c2 }});position:relative;"><span style="position:absolute;top:8px;left:8px;background:#FFB547;color:#241019;font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px;">{{ p.badge }}</span></div>
+                  <div style="padding:12px;"><div style="font-weight:700;font-size:14.5px;">{{ p.name }}</div><div style="font-size:12px;color:rgba(252,239,228,0.6);">{{ p.theme }}</div><div style="font-size:11.5px;color:#FF8A75;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:4px;"><span class="material-symbols-rounded" style="font-size:14px;">favorite</span>{{ p.likes }} · {{ p.distance }}</div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isDetail }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;height:702px;">
+          <div style="flex:1.6;overflow-y:auto;">
+            <div style="height:280px;position:relative;">
+              <img src="assets/hero-durga.png" style="width:100%;height:100%;object-fit:cover;" />
+              <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px;">
+                <span class="material-symbols-rounded" style="background:rgba(0,0,0,0.4);border-radius:50%;padding:8px;">share</span>
+                <span style="display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.4);border-radius:999px;padding:8px 12px;font-size:13px;font-weight:700;"><span class="material-symbols-rounded" style="font-size:17px;color:#FF4433;">favorite</span>812</span>
+              </div>
+            </div>
+            <div style="padding:22px;display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <div style="display:flex;align-items:center;gap:8px;"><h1 style="font-family:'Bricolage Grotesque',sans-serif;font-size:28px;font-weight:800;margin:0;">Kumartuli Sarbojanin</h1><span class="material-symbols-rounded" style="font-size:22px;color:#FFB547;font-variation-settings:'FILL' 1;" title="Verified">verified</span></div>
+                <span style="font-size:13px;color:rgba(252,239,228,0.6);">Kumartuli, Kolkata · Kumartuli Sarbojanin Committee</span>
+                <div style="font-size:11.5px;color:rgba(252,239,228,0.4);margin-top:3px;">Added by organiser · verified by admin</div>
+              </div>
+              <div style="display:flex;gap:8px;"><span style="font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:999px;background:rgba(255,68,51,0.15);color:#FF8A75;">High crowd now</span><span style="font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:999px;background:#341A28;">1.1 km</span><span style="font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:999px;background:#341A28;">Walking darshan</span></div>
+              <div style="background:linear-gradient(120deg,rgba(255,181,71,0.14),rgba(255,68,51,0.06));border-radius:16px;padding:16px;"><div style="font-weight:800;font-size:15px;">Theme 2026 — Rural Bengal</div><p style="margin:4px 0 0;font-size:13.5px;color:rgba(252,239,228,0.72);">A hand-crafted village recreated in clay and bamboo, celebrating the artisans of Kumartuli themselves.</p></div>
+              <div>
+                <div style="font-weight:800;font-size:15px;margin-bottom:10px;">Puja schedule <span style="font-weight:500;color:rgba(252,239,228,0.45);font-size:12.5px;">· set by this pandal, varies by pandal</span></div>
+                <div style="display:flex;flex-direction:column;gap:8px;"><sc-for list="{{ schedule }}" as="e" hint-placeholder-count="4"><div style="display:flex;gap:12px;align-items:center;"><span style="width:60px;font-size:12px;font-weight:700;color:#FFB547;">{{ e.time }}</span><span style="width:8px;height:8px;border-radius:50%;background:{{ e.color }};"></span><span style="font-size:13.5px;">{{ e.label }}</span></div></sc-for></div>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:15px;margin-bottom:10px;">Good to know</div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;"><sc-for list="{{ amenities }}" as="a" hint-placeholder-count="5"><span style="display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(252,239,228,0.75);"><span class="material-symbols-rounded" style="font-size:18px;color:#FFB547;">{{ a.icon }}</span>{{ a.label }}</span></sc-for></div>
+              </div>
+              <div>
+                <div style="font-weight:800;font-size:15px;margin-bottom:10px;">Pandals near here (1–2km)</div>
+                <div style="display:flex;gap:12px;">
+                  <sc-for list="{{ nearbyRadius }}" as="n" hint-placeholder-count="4">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:5px;">
+                      <div style="height:70px;border-radius:12px;background:linear-gradient(145deg,{{ n.c1 }},{{ n.c2 }});"></div>
+                      <span style="font-size:12px;font-weight:700;">{{ n.name }}</span>
+                      <span style="font-size:11px;color:rgba(252,239,228,0.5);">{{ n.distance }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="flex:1;border-left:1px solid rgba(255,214,173,0.08);padding:22px;display:flex;flex-direction:column;gap:14px;">
+            <div style="height:180px;border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(160deg,#1E2A1A,#141C12);"><img src="assets/marker-icon.svg" style="position:absolute;left:50%;top:50%;width:36px;height:36px;transform:translate(-50%,-90%);" /></div>
+            <div style="display:flex;gap:10px;"><button style="flex:1;height:48px;border:none;border-radius:13px;background:#FF4433;color:#FFF6EF;font-weight:800;font-size:13.5px;">Directions</button><button style="flex:1;height:48px;border:1px solid rgba(255,214,173,0.2);border-radius:13px;background:transparent;color:#FCEFE4;font-weight:800;font-size:13.5px;">Add to route</button></div>
+            <div style="background:#241019;border-radius:16px;padding:14px;"><div style="font-weight:800;font-size:13px;margin-bottom:8px;">Visitor photos</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"><sc-for list="{{ visitorPhotos }}" as="v" hint-placeholder-count="6"><div style="aspect-ratio:1;border-radius:8px;background:linear-gradient(145deg,{{ v.c1 }},{{ v.c2 }});"></div></sc-for></div></div>
+          </div>
+        </div>
+        </sc-if>
+
+        <sc-if value="{{ isAdd }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;height:702px;">
+          <div style="flex:0 0 440px;overflow-y:auto;padding:26px;display:flex;flex-direction:column;gap:16px;border-right:1px solid rgba(255,214,173,0.08);">
+            <div><div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="font-weight:800;font-size:14px;">Add your pandal</span><span style="font-size:12px;color:rgba(252,239,228,0.5);">2/3</span></div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;"><div style="height:4px;border-radius:3px;background:#FF4433;"></div><div style="height:4px;border-radius:3px;background:#FF4433;"></div><div style="height:4px;border-radius:3px;background:#3A1F2B;"></div></div></div>
+
+            <span style="font-weight:800;font-size:12px;color:#FFB547;letter-spacing:.04em;">BASIC DETAILS</span>
+
+            <div style="background:#241019;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+              <span style="font-weight:800;font-size:13.5px;">City &amp; festival year</span>
+              <div style="display:flex;align-items:center;gap:8px;background:#FCEFE4;border-radius:11px;padding:0 12px;height:46px;"><span class="material-symbols-rounded" style="color:#241019;opacity:.5;">search</span><input placeholder="Search any city" style="border:none;outline:none;background:transparent;flex:1;color:#241019;font-size:14px;" /></div>
+              <select style="height:44px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13.5px;"><option>Festival year — 2026</option><option>2025</option></select>
+            </div>
+            <div style="background:#241019;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;"><span style="font-weight:800;font-size:13.5px;">Basics</span><input placeholder="Pandal name" style="height:46px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:14px;" /><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><input placeholder="Locality" style="height:46px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:14px;" /><input placeholder="Landmark" style="height:46px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:14px;" /></div></div>
+
+            <span style="font-weight:800;font-size:12px;color:#FFB547;letter-spacing:.04em;margin-top:4px;">OPTIONAL DETAILS</span>
+            <div style="background:#241019;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;"><span style="font-weight:800;font-size:13.5px;">Categories</span><div style="display:flex;gap:8px;flex-wrap:wrap;"><sc-for list="{{ addCategories }}" as="c" hint-placeholder-count="5"><span style="padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;background:{{ c.bg }};color:{{ c.color }};">{{ c.label }}</span></sc-for></div></div>
+            <div style="background:#241019;border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+              <span style="font-weight:800;font-size:13.5px;">Good to know for visitors</span>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">Parking available<input type="checkbox" /></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">2-wheeler accessible<input type="checkbox" /></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">4-wheeler accessible<input type="checkbox" /></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">Food stalls nearby<input type="checkbox" /></label>
+              <label style="display:flex;align-items:center;justify-content:space-between;font-size:13px;">Street shops nearby<input type="checkbox" /></label>
+              <select style="height:44px;border-radius:11px;border:none;background:#FCEFE4;color:#241019;padding:0 12px;font-size:13px;"><option>Visit type — Walking darshan</option><option>Park &amp; visit</option><option>Darshan &amp; go</option></select>
+            </div>
+            <button style="height:52px;border:none;border-radius:15px;background:linear-gradient(120deg,#FF4433,#FF7A3D);color:#FFF6EF;font-weight:800;font-size:15px;">Continue</button>
+          </div>
+          <div style="flex:1;position:relative;background:linear-gradient(160deg,#1E2A1A,#141C12);">
+            <img src="assets/marker-icon.svg" style="position:absolute;left:50%;top:50%;width:38px;height:38px;transform:translate(-50%,-90%);" />
+            <button style="position:absolute;top:16px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:#FCEFE4;color:#241019;border:none;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:800;"><span class="material-symbols-rounded" style="font-size:15px;">refresh</span>Search this area</button>
+            <button style="position:absolute;bottom:16px;left:16px;display:flex;align-items:center;gap:6px;background:#FF4433;color:#FFF6EF;border:none;border-radius:12px;padding:9px 14px;font-size:12.5px;font-weight:700;"><span class="material-symbols-rounded" style="font-size:16px;">my_location</span>Use my current location</button>
+          </div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  state = { screen: "onboarding" };
+  select(screen) { this.setState({ screen }); }
+
+  renderVals() {
+    const s = this.state.screen;
+    const screenDefs = [
+      { key: "onboarding", label: "Onboarding" },
+      { key: "home", label: "Home / Map" },
+      { key: "explore", label: "Explore" },
+      { key: "detail", label: "Pandal Detail" },
+      { key: "addpandal", label: "Add Pandal" },
+    ];
+    const screens = screenDefs.map(d => ({
+      label: d.label, select: () => this.select(d.key),
+      bg: s === d.key ? "#FF4433" : "#341A28",
+      color: s === d.key ? "#FFF6EF" : "#FCEFE4",
+    }));
+    const topNavDefs = [
+      { key: "home", label: "Home" }, { key: "explore", label: "Explore" },
+      { key: "addpandal", label: "Add Pandal" }, { key: "detail", label: "Saved" },
+    ];
+    const topNav = topNavDefs.map(d => ({ label: d.label, select: () => this.select(d.key), color: s === d.key ? "#FF8A75" : "#FCEFE4" }));
+
+    const bottomNavDefs = [
+      { key: "home", icon: "home", label: "Home" },
+      { key: "explore", icon: "explore", label: "Explore" },
+      { key: "addpandal", icon: "add_circle", label: "Add", size: "30px" },
+      { key: "detail", icon: "bookmark", label: "Saved" },
+      { key: "profile", icon: "person", label: "Profile" },
+    ];
+    const bottomNav = bottomNavDefs.map(d => ({ icon: d.icon, label: d.label, size: d.size || "22px", color: s === d.key ? "#FF4433" : "rgba(252,239,228,0.5)" }));
+
+    return {
+      screens, topNav, bottomNav,
+      bottomNavStyle: "flex:none;display:flex;justify-content:space-around;align-items:center;padding:10px 8px 18px;background:#170810;border-top:1px solid rgba(255,214,173,0.1);",
+      isOnboarding: s === "onboarding",
+      isHome: s === "home",
+      isExplore: s === "explore",
+      isDetail: s === "detail",
+      isAdd: s === "addpandal",
+      notOnboarding: s !== "onboarding",
+      goHome: () => this.select("home"),
+
+      cityChips: ["Kolkata","Mumbai","Delhi","Bhopal","Indore","Pune"],
+      mapPins: [
+        {left:"30%",top:"35%"},{left:"55%",top:"25%"},{left:"70%",top:"55%"},
+        {left:"45%",top:"65%"},{left:"20%",top:"60%"},{left:"62%",top:"75%"},
+      ],
+      nearbyPandals: [
+        { name: "Kumartuli Sarbojanin", locality: "Kumartuli", distance: "0.4km", crowd: "High", crowdBg:"rgba(255,68,51,0.18)", crowdColor:"#FF8A75" },
+        { name: "Bagbazar Sarbojanin", locality: "Bagbazar", distance: "1.1km", crowd: "Medium", crowdBg:"rgba(255,181,71,0.18)", crowdColor:"#FFB547" },
+        { name: "College Square", locality: "College St", distance: "1.8km", crowd: "Low", crowdBg:"rgba(120,220,150,0.18)", crowdColor:"#7FD99A" },
+        { name: "Santosh Mitra Sq.", locality: "Bowbazar", distance: "2.3km", crowd: "Medium", crowdBg:"rgba(255,181,71,0.18)", crowdColor:"#FFB547" },
+      ],
+      categories: ["Traditional","Theme / Creative","Community","Eco-Friendly","Historic"],
+      exploreFilters: [
+        { label: "All", bg:"#FF4433", color:"#FFF6EF" },
+        { label: "Trending", bg:"#341A28", color:"#FCEFE4" },
+        { label: "Low crowd", bg:"#341A28", color:"#FCEFE4" },
+        { label: "New", bg:"#341A28", color:"#FCEFE4" },
+      ],
+      exploreCards: [
+        { name:"Kumartuli Sarbojanin", theme:"Rural Bengal", likes:"812", distance:"0.4km", badge:"Trending", c1:"#FF4433", c2:"#7A1E14" },
+        { name:"Bagbazar Sarbojanin", theme:"Cosmic Durga", likes:"640", distance:"1.1km", badge:"New theme", c1:"#FFB547", c2:"#8A5A0E" },
+        { name:"College Square", theme:"Ancient Temples", likes:"705", distance:"1.8km", badge:"Iconic", c1:"#4A6B8A", c2:"#1E2A3A" },
+        { name:"Santosh Mitra Sq.", theme:"Eco Bamboo", likes:"398", distance:"2.3km", badge:"Eco", c1:"#4A8A5C", c2:"#1E3A24" },
+        { name:"Ekdalia Evergreen", theme:"Royal Rajasthan", likes:"921", distance:"3.0km", badge:"Popular", c1:"#8A4A6B", c2:"#3A1E2A" },
+        { name:"Md Ali Park", theme:"Modern Minimal", likes:"210", distance:"3.4km", badge:"New", c1:"#6B6B4A", c2:"#2A2A1E" },
+      ],
+      galleryDots: [{w:"22px",c:"#FFF6EF"},{w:"10px",c:"rgba(255,255,255,0.4)"},{w:"10px",c:"rgba(255,255,255,0.4)"},{w:"10px",c:"rgba(255,255,255,0.4)"},{w:"10px",c:"rgba(255,255,255,0.4)"}],
+      schedule: [
+        { time:"8:00 AM", label:"Morning Aarti", color:"#FF4433" },
+        { time:"7:00 PM", label:"Evening Aarti", color:"#FFB547" },
+      ],
+      amenities: [
+        { icon:"local_parking", label:"Parking available" },
+        { icon:"two_wheeler", label:"2-wheeler accessible" },
+        { icon:"directions_car", label:"4-wheeler accessible" },
+        { icon:"restaurant", label:"Food stalls nearby" },
+        { icon:"storefront", label:"Street shops nearby" },
+      ],
+      nearbyRadius: [
+        { name:"Bagbazar Sarbojanin", distance:"1.4km", c1:"#FFB547", c2:"#8A5A0E" },
+        { name:"College Square", distance:"1.7km", c1:"#4A6B8A", c2:"#1E2A3A" },
+        { name:"Ahiritola Sarbojanin", distance:"1.9km", c1:"#4A8A5C", c2:"#1E3A24" },
+        { name:"Sova Bazar Rajbari", distance:"2.0km", c1:"#8A4A6B", c2:"#3A1E2A" },
+      ],
+      visitorPhotos: [
+        {c1:"#FF4433",c2:"#7A1E14"},{c1:"#FFB547",c2:"#8A5A0E"},{c1:"#4A6B8A",c2:"#1E2A3A"},
+        {c1:"#4A8A5C",c2:"#1E3A24"},{c1:"#8A4A6B",c2:"#3A1E2A"},{c1:"#6B6B4A",c2:"#2A2A1E"},
+      ],
+      addCategories: [
+        { label:"Traditional", bg:"#FF4433", color:"#FFF6EF" },
+        { label:"Theme / Creative", bg:"#341A28", color:"#FCEFE4" },
+        { label:"Community", bg:"#341A28", color:"#FCEFE4" },
+        { label:"Eco-Friendly", bg:"#341A28", color:"#FCEFE4" },
+        { label:"Historic", bg:"#341A28", color:"#FCEFE4" },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -18,6 +18,7 @@ interface City {
   defaultMapZoom: number;
   status: "ACTIVE" | "COMING_SOON" | "DISABLED";
   activeFestivalYear: number;
+  tier: "MAJOR" | "MINOR";
 }
 
 const EMPTY_FORM = {
@@ -30,6 +31,7 @@ const EMPTY_FORM = {
   defaultMapZoom: "13",
   status: "ACTIVE" as City["status"],
   activeFestivalYear: String(new Date().getFullYear()),
+  tier: "MINOR" as City["tier"],
 };
 
 // This is the ONLY place cities get created (spec §5.1) — nothing about
@@ -84,31 +86,59 @@ export default function CitiesPage() {
     await loadCities();
   }
 
+  async function updateTier(id: string, tier: City["tier"]) {
+    await adminFetch(`/admin/cities/${id}`, { method: "PATCH", body: JSON.stringify({ tier }) });
+    await loadCities();
+  }
+
   if (!ready) return null;
 
   return (
     <AdminShell>
       <h1 className="mb-6 font-display text-3xl font-extrabold">Cities</h1>
+      <p className="mb-6 -mt-2 font-body text-sm text-ink-muted">
+        Any city can be enabled — not just a fixed pair. MAJOR cities are pinned in the app's city picker; MINOR
+        cities go live but only surface there once someone searches for them.
+      </p>
 
       <div className="mb-8 grid gap-4 md:grid-cols-2">
         {cities.map((city) => (
           <Card key={city._id} padding="sm">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="font-display text-lg font-bold">{city.name}</div>
+                <div className="flex items-center gap-2">
+                  <span className="font-display text-lg font-bold">{city.name}</span>
+                  <span
+                    className={`rounded-pill px-2 py-0.5 font-body text-[11px] font-bold ${
+                      city.tier === "MAJOR" ? "bg-accent text-accent-ink" : "bg-chip text-ink-dim"
+                    }`}
+                  >
+                    {city.tier}
+                  </span>
+                </div>
                 <div className="font-body text-sm text-ink-muted">
                   {city.state} · /{city.slug} · festival year {city.activeFestivalYear}
                 </div>
               </div>
-              <Select
-                value={city.status}
-                onChange={(e) => updateStatus(city._id, e.target.value as City["status"])}
-                className="h-10 w-40 text-sm"
-              >
-                <option value="ACTIVE">Active</option>
-                <option value="COMING_SOON">Coming soon</option>
-                <option value="DISABLED">Disabled</option>
-              </Select>
+              <div className="flex flex-none flex-col gap-2">
+                <Select
+                  value={city.status}
+                  onChange={(e) => updateStatus(city._id, e.target.value as City["status"])}
+                  className="h-10 w-40 text-sm"
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="COMING_SOON">Coming soon</option>
+                  <option value="DISABLED">Disabled</option>
+                </Select>
+                <Select
+                  value={city.tier}
+                  onChange={(e) => updateTier(city._id, e.target.value as City["tier"])}
+                  className="h-10 w-40 text-sm"
+                >
+                  <option value="MAJOR">Major</option>
+                  <option value="MINOR">Minor</option>
+                </Select>
+              </div>
             </div>
           </Card>
         ))}
@@ -174,6 +204,14 @@ export default function CitiesPage() {
               onChange={(e) => setForm({ ...form, activeFestivalYear: e.target.value })}
               className="h-11"
             />
+            <Select
+              value={form.tier}
+              onChange={(e) => setForm({ ...form, tier: e.target.value as City["tier"] })}
+              className="col-span-2 h-11"
+            >
+              <option value="MINOR">Minor — search-only in the city picker</option>
+              <option value="MAJOR">Major — pinned in the city picker</option>
+            </Select>
           </div>
           {error && <p className="mt-3 font-body text-sm text-brand">{error}</p>}
           <Button type="submit" disabled={saving} className="mt-4">

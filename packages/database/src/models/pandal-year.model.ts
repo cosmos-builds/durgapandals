@@ -11,6 +11,14 @@ const mediaAssetSchema = new Schema(
   { _id: true }
 );
 
+const scheduleEntrySchema = new Schema(
+  {
+    time: { type: String, required: true },
+    label: { type: String, required: true },
+  },
+  { _id: false }
+);
+
 const pandalYearSchema = new Schema(
   {
     pandalId: { type: Schema.Types.ObjectId, ref: "Pandal", required: true },
@@ -22,11 +30,12 @@ const pandalYearSchema = new Schema(
 
     startDate: { type: Date },
     endDate: { type: Date },
-    openingHours: { type: String },
 
-    parkingInfo: { type: String },
-    entryInfo: { type: String },
-    accessibilityInfo: { type: String },
+    // Free-length, 0..N entries — deliberately not a fixed template (Sandhya
+    // Aarti / Dhunuchi Naach / etc.), many pandals only run a morning +
+    // evening aarti and nothing else (spec §1). Supersedes the old
+    // openingHours/parkingInfo/entryInfo/accessibilityInfo free-text fields.
+    schedule: { type: [scheduleEntrySchema], default: [] },
 
     coverImage: { type: String },
     photos: { type: [mediaAssetSchema], default: [] },

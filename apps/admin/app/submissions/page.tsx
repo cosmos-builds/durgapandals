@@ -20,13 +20,24 @@ interface Submission {
   createdAt: string;
 }
 
+type Tab = "ALL" | "NEW_PANDAL" | "CORRECTION";
+
+const TABS: { key: Tab; label: string }[] = [
+  { key: "ALL", label: "All" },
+  { key: "NEW_PANDAL", label: "New pandal" },
+  { key: "CORRECTION", label: "Corrections" },
+];
+
 export default function SubmissionsPage() {
   const ready = useAdminGuard();
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [tab, setTab] = useState<Tab>("ALL");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+
+  const visibleSubmissions = submissions.filter((s) => tab === "ALL" || s.type === tab);
 
   async function load() {
     const res = await adminFetch("/admin/submissions?status=PENDING");
@@ -103,8 +114,25 @@ export default function SubmissionsPage() {
         )}
       </div>
 
+      <div className="mb-5 flex gap-2">
+        {TABS.map((t) => {
+          const count = t.key === "ALL" ? submissions.length : submissions.filter((s) => s.type === t.key).length;
+          return (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={`rounded-xl px-4 py-2 font-body text-sm font-bold ${
+                tab === t.key ? "bg-brand text-brand-ink" : "bg-chip text-ink-dim"
+              }`}
+            >
+              {t.label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col gap-4">
-        {submissions.map((submission) => {
+        {visibleSubmissions.map((submission) => {
           const data = submission.submittedData as {
             canonicalName?: string;
             locality?: string;
@@ -197,7 +225,11 @@ export default function SubmissionsPage() {
             </Card>
           );
         })}
-        {submissions.length === 0 && <p className="font-body text-ink-muted">Nothing pending review.</p>}
+        {visibleSubmissions.length === 0 && (
+          <p className="font-body text-ink-muted">
+            {submissions.length === 0 ? "Nothing pending review." : "No submissions of this type right now."}
+          </p>
+        )}
       </div>
     </AdminShell>
   );

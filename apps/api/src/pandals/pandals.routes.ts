@@ -1,7 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
 import { PandalModel, PandalYearModel, ReactionModel, CityModel, fromGeoPoint } from "@durgapandals/database";
-import { findNearbyDuplicates, findNearbyPandals } from "./pandals.service";
+import { findNearbyDuplicates, findNearbyPandals, findNearbyPublishedPandals } from "./pandals.service";
 
 const nearbyQuerySchema = z.object({
   cityId: z.string(),
@@ -46,6 +46,13 @@ async function withCurrentYear(pandal: InstanceType<typeof PandalModel>, year?: 
     locality: pandal.locality,
     landmark: pandal.landmark,
     verificationStatus: pandal.verificationStatus,
+    addedBy: pandal.addedBy,
+    parkingAvailable: pandal.parkingAvailable,
+    twoWheelerAccessible: pandal.twoWheelerAccessible,
+    fourWheelerAccessible: pandal.fourWheelerAccessible,
+    foodStallsNearby: pandal.foodStallsNearby,
+    streetShopsNearby: pandal.streetShopsNearby,
+    visitType: pandal.visitType,
     year: pandalYear
       ? {
           id: String(pandalYear._id),
@@ -57,9 +64,7 @@ async function withCurrentYear(pandal: InstanceType<typeof PandalModel>, year?: 
           categories: pandalYear.categories,
           tags: pandalYear.tags,
           featured: pandalYear.featured,
-          openingHours: pandalYear.openingHours,
-          parkingInfo: pandalYear.parkingInfo,
-          entryInfo: pandalYear.entryInfo,
+          schedule: pandalYear.schedule,
         }
       : null,
     likes,
@@ -122,5 +127,25 @@ export const pandalsRoutes: FastifyPluginAsync = async (app) => {
   app.get("/nearby", async (request) => {
     const query = nearbyOnlySchema.parse(request.query);
     return findNearbyPandals(query);
+  });
+
+  const nearbyRadiusSchema = z.object({
+    cityId: z.string(),
+    pandalId: z.string(),
+    latitude: z.coerce.number(),
+    longitude: z.coerce.number(),
+    year: z.coerce.number(),
+  });
+
+  // Powers the detail page's "Pandals near here (1-2km)" rail (spec §2).
+  app.get("/nearby-radius", async (request) => {
+    const query = nearbyRadiusSchema.parse(request.query);
+    return findNearbyPublishedPandals({
+      cityId: query.cityId,
+      excludePandalId: query.pandalId,
+      latitude: query.latitude,
+      longitude: query.longitude,
+      year: query.year,
+    });
   });
 };

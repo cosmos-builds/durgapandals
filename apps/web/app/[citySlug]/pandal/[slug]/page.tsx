@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchCityBySlug, fetchPandalDetail } from "@/lib/api";
+import { fetchCityBySlug, fetchPandalDetail, fetchNearbyRadiusPandals } from "@/lib/api";
 import { PandalDetail } from "@/components/pandal-detail";
 
 const MAP_TILES_URL =
@@ -41,5 +41,11 @@ export default async function PandalDetailPage({
   const pandal = await fetchPandalDetail(city._id, slug);
   if (!pandal) notFound();
 
-  return <PandalDetail citySlug={city.slug} cityName={city.name} pandal={pandal} mapTilesUrl={MAP_TILES_URL} />;
+  const nearby = pandal.year
+    ? await fetchNearbyRadiusPandals(city._id, pandal.id, pandal.latitude, pandal.longitude, pandal.year.year)
+    : [];
+
+  return (
+    <PandalDetail citySlug={city.slug} cityName={city.name} pandal={pandal} nearby={nearby} mapTilesUrl={MAP_TILES_URL} />
+  );
 }
