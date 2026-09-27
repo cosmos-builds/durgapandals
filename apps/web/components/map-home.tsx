@@ -322,25 +322,25 @@ export function MapHome({
             </span>
           }
         />
-        <div className="flex items-center gap-2">
-          <CityYearPill
-            citySlug={citySlug}
-            cityName={cityName}
-            activeFestivalYear={activeFestivalYear}
-            availableYears={availableYears}
-            className="flex h-9 flex-1 items-center justify-between gap-1.5 rounded-xl bg-card px-2.5 font-body text-xs font-bold"
-          />
-        </div>
-        <div className="relative">
-          <div className="flex h-[42px] items-center gap-2 rounded-2xl bg-card px-3">
+        {/* Search bar takes most of the width; the city/year pill is just
+            a compact button on the right, not a second full-width row. */}
+        <div className="relative flex items-center gap-2">
+          <div className="flex h-[42px] flex-1 items-center gap-2 rounded-2xl bg-card px-3">
             <span className="material-symbols-rounded text-lg text-ink-muted">search</span>
             <input
               value={pandalQuery}
               onChange={(e) => setPandalQuery(e.target.value)}
               placeholder="Search pandals…"
-              className="flex-1 bg-transparent font-body text-[13px] outline-none placeholder:text-ink-muted"
+              className="min-w-0 flex-1 bg-transparent font-body text-[13px] outline-none placeholder:text-ink-muted"
             />
           </div>
+          <CityYearPill
+            citySlug={citySlug}
+            cityName={cityName}
+            activeFestivalYear={activeFestivalYear}
+            availableYears={availableYears}
+            className="flex h-[42px] flex-none items-center gap-1 rounded-2xl bg-card px-2.5 font-body text-xs font-bold"
+          />
           {pandalMatches.length > 0 && (
             <div className="absolute inset-x-0 top-[calc(100%+6px)] flex flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
               {pandalMatches.map((p) => (
@@ -458,7 +458,7 @@ export function MapHome({
         {/* Positioned below the mobile floating header (~104px tall); desktop
             has no overlaid header on the map itself, so it starts at top:0. */}
         <FestiveBunting
-          className="pointer-events-none absolute inset-x-0 top-[144px] z-10 h-16 w-full px-4 md:top-0"
+          className="pointer-events-none absolute inset-x-0 top-[112px] z-10 h-16 w-full px-4 md:top-0"
           flagCount={17}
         />
 
@@ -468,7 +468,7 @@ export function MapHome({
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute left-1/2 top-[172px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+            className="absolute left-1/2 top-[140px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
           >
             <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}
