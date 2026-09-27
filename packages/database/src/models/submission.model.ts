@@ -25,6 +25,10 @@ const submissionSchema = new Schema(
 
     submittedData: { type: Schema.Types.Mixed, required: true },
 
+    // Recorded for admin triage only ("who keeps submitting from this IP")
+    // — never used as an authorization boundary on its own.
+    submitterIp: { type: String },
+
     status: {
       type: String,
       enum: ["PENDING", "APPROVED", "MERGED", "REJECTED"],

@@ -78,7 +78,11 @@ export const createSubmissionSchema = z.object({
     .string()
     .min(3)
     .max(120)
-    .describe("email or phone used for OTP verification"),
+    .describe("email or phone used to reach the contributor"),
+  // Honeypot — a real visitor never sees or fills this field (hidden via
+  // CSS on the form), but most naive scripted/bot submissions fill every
+  // input they can find. Any non-empty value here is treated as spam.
+  website: z.string().max(200).optional(),
 });
 
 export const verificationRequestSchema = z.object({

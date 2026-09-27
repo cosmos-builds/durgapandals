@@ -5,6 +5,10 @@ const contributorSchema = new Schema(
     identifier: { type: String, required: true, unique: true }, // email or phone
     verifiedAt: { type: Date },
 
+    // Admin anti-abuse control — a blocked contributor's submissions are
+    // rejected outright regardless of the OTP-verification flag.
+    blocked: { type: Boolean, default: false },
+
     // OTP abuse protection state (spec §16): short expiry, capped attempts,
     // resend cooldown — all enforced server-side, all on this one document.
     otpCodeHash: { type: String },

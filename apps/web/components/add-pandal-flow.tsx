@@ -16,6 +16,13 @@ import {
 } from "@/lib/api";
 import { LocationSearchBox } from "./location-search-box";
 
+// OTP verification is off by default (contributors submit directly) but the
+// code path stays in place — flip this back on with
+// NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION=true (and the matching
+// server-side REQUIRE_CONTRIBUTOR_VERIFICATION on the API) to require it
+// again without restoring any deleted code.
+const REQUIRE_VERIFICATION = process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
+
 export interface AddPandalFlowProps {
   cityId: string;
   citySlug: string;
@@ -68,6 +75,7 @@ export function AddPandalFlow({
   const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(null);
   const [details, setDetails] = useState(emptyDetails);
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState(""); // honeypot — real visitors never see or fill this
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -165,25 +173,7 @@ export function AddPandalFlow({
     setStep("verify");
   }
 
-  async function handleSendCode() {
-    setSending(true);
-    setError(null);
-    const result = await sendVerificationCode(email);
-    setSending(false);
-    if (!result.ok) return setError(result.error ?? "Could not send code");
-    setCodeSent(true);
-  }
-
-  async function handleVerifyAndSubmit() {
-    setSubmitting(true);
-    setError(null);
-
-    const verified = await verifyCode(email, code);
-    if (!verified.ok) {
-      setSubmitting(false);
-      return setError(verified.error ?? "Incorrect code");
-    }
-
+  async function doSubmit() {
     const submittedData = isNewPandal
       ? {
           canonicalName: details.canonicalName,
@@ -206,12 +196,43 @@ export function AddPandalFlow({
       possiblePandalId: selectedExisting?.id,
       submittedData,
       contributorContact: email,
+      website: website || undefined,
     });
 
     setSubmitting(false);
     if (!result.ok) return setError(result.error ?? "Could not submit");
     setSubmissionId(result.id ?? null);
     setStep("done");
+  }
+
+  // Direct-submit path (REQUIRE_VERIFICATION off): no OTP round-trip.
+  async function handleSubmitRequest() {
+    setSubmitting(true);
+    setError(null);
+    await doSubmit();
+  }
+
+  async function handleSendCode() {
+    setSending(true);
+    setError(null);
+    const result = await sendVerificationCode(email);
+    setSending(false);
+    if (!result.ok) return setError(result.error ?? "Could not send code");
+    setCodeSent(true);
+  }
+
+  // OTP path (REQUIRE_VERIFICATION on): confirm the code before submitting.
+  async function handleVerifyAndSubmit() {
+    setSubmitting(true);
+    setError(null);
+
+    const verified = await verifyCode(email, code);
+    if (!verified.ok) {
+      setSubmitting(false);
+      return setError(verified.error ?? "Incorrect code");
+    }
+
+    await doSubmit();
   }
 
   const progress = useMemo(() => {
@@ -421,9 +442,13 @@ export function AddPandalFlow({
       {step === "verify" && (
         <div className={formStepClass.replace("gap-4", "gap-5")}>
           <div className="flex flex-col gap-2">
-            <h2 className="font-display text-[28px] font-extrabold leading-tight">Quick check it's you</h2>
+            <h2 className="font-display text-[28px] font-extrabold leading-tight">
+              {REQUIRE_VERIFICATION ? "Quick check it's you" : "How can we reach you?"}
+            </h2>
             <p className="font-body text-sm text-ink-muted">
-              We only use this to confirm your submission and reach you if we have questions. No account, no newsletters.
+              {REQUIRE_VERIFICATION
+                ? "We only use this to confirm your submission and reach you if we have questions. No account, no newsletters."
+                : "We only use this to reach you if we have questions about your submission. No account, no newsletters."}
             </p>
           </div>
           <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-panel p-3.5 md:bg-card">
@@ -433,22 +458,44 @@ export function AddPandalFlow({
               required
               placeholder="you@example.com"
               value={email}
-              disabled={codeSent}
+              disabled={REQUIRE_VERIFICATION && codeSent}
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1 bg-transparent font-body outline-none"
             />
-            {codeSent && (
+            {REQUIRE_VERIFICATION && codeSent && (
               <button className="font-body text-sm font-bold text-brand" onClick={() => setCodeSent(false)}>
                 Change
               </button>
             )}
           </div>
 
-          {!codeSent ? (
+          {/* Honeypot — hidden from real visitors via CSS, off the tab order,
+              and skipped by screen readers; a script that fills every field
+              it finds trips this instead of a real one. */}
+          <input
+            type="text"
+            name="website"
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute -left-[9999px] h-0 w-0 opacity-0"
+          />
+
+          {!REQUIRE_VERIFICATION && (
+            <Button onClick={handleSubmitRequest} disabled={submitting || !email}>
+              {submitting ? "Submitting…" : "Submit request"}
+            </Button>
+          )}
+
+          {REQUIRE_VERIFICATION && !codeSent && (
             <Button onClick={handleSendCode} disabled={sending || !email}>
               {sending ? "Sending…" : "Send code"}
             </Button>
-          ) : (
+          )}
+
+          {REQUIRE_VERIFICATION && codeSent && (
             <>
               <label className="flex flex-col gap-2">
                 <span className="font-body text-xs font-semibold text-ink-muted">Enter the 6-digit code we sent</span>
@@ -493,6 +540,7 @@ export function AddPandalFlow({
                 setEmail("");
                 setCode("");
                 setCodeSent(false);
+                setWebsite("");
                 setSubmissionId(null);
               }}
             >

@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import {
   AdminUserModel,
+  ContributorModel,
   PandalModel,
   PandalYearModel,
   SubmissionModel,
@@ -16,6 +17,7 @@ import { requireAdmin } from "./require-admin";
 import { registerDashboardRoutes } from "./dashboard.admin-routes";
 import { registerCitiesAdminRoutes } from "./cities.admin-routes";
 import { registerPandalsAdminRoutes } from "./pandals.admin-routes";
+import { registerContributorsAdminRoutes } from "./contributors.admin-routes";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 const reviewSchema = z.object({
@@ -120,6 +122,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     registerDashboardRoutes(protectedRoutes);
     registerCitiesAdminRoutes(protectedRoutes);
     registerPandalsAdminRoutes(protectedRoutes);
+    registerContributorsAdminRoutes(protectedRoutes);
 
     // Duplicate candidates only ever carried a pandalId — the submissions
     // list showed nothing but a bare score/distance line, no way to tell
@@ -136,17 +139,29 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       const candidatePandals = await PandalModel.find({ _id: { $in: candidateIds } });
       const byId = new Map(candidatePandals.map((p) => [String(p._id), p]));
 
-      return submissions.map((submission) => ({
-        ...submission.toObject(),
-        duplicateCandidates: submission.duplicateCandidates.map((candidate) => {
-          const pandal = byId.get(String(candidate.pandalId));
-          return {
-            ...(candidate as unknown as Record<string, unknown>),
-            canonicalName: pandal?.canonicalName,
-            ...(pandal ? fromGeoPoint(pandal.location) : {}),
-          };
-        }),
-      }));
+      // Surfaces who to block: identifier + blocked state, not just a
+      // ContributorModel ObjectId the admin UI can't act on.
+      const contributorIds = [...new Set(submissions.map((s) => String(s.contributorId)))];
+      const contributors = await ContributorModel.find({ _id: { $in: contributorIds } });
+      const contributorById = new Map(contributors.map((c) => [String(c._id), c]));
+
+      return submissions.map((submission) => {
+        const contributor = contributorById.get(String(submission.contributorId));
+        return {
+          ...submission.toObject(),
+          contributor: contributor
+            ? { id: String(contributor._id), identifier: contributor.identifier, blocked: contributor.blocked }
+            : null,
+          duplicateCandidates: submission.duplicateCandidates.map((candidate) => {
+            const pandal = byId.get(String(candidate.pandalId));
+            return {
+              ...(candidate as unknown as Record<string, unknown>),
+              canonicalName: pandal?.canonicalName,
+              ...(pandal ? fromGeoPoint(pandal.location) : {}),
+            };
+          }),
+        };
+      });
     });
 
     protectedRoutes.post<{ Params: { id: string } }>(

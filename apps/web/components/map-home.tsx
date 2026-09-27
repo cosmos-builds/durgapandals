@@ -373,7 +373,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute left-1/2 top-[84px] z-10 flex h-11 -translate-x-1/2 items-center gap-1.5 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+            className="absolute left-1/2 top-[152px] z-10 flex h-11 -translate-x-1/2 items-center gap-1.5 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
           >
             <span className="material-symbols-rounded text-lg">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}

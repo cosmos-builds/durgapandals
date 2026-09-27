@@ -22,6 +22,16 @@ export const serverEnvSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
 
   MAP_TILES_URL: z.string().url().default("https://tiles.openfreemap.org/styles/liberty"),
+
+  // Toggles whether POST /submissions requires the contributor to have
+  // completed OTP verification first. The OTP flow (apps/api/src/auth,
+  // apps/web's send-code/verify-code UI) stays in place either way — this
+  // just decides whether it's enforced, so it can be flipped back on
+  // without restoring any deleted code.
+  REQUIRE_CONTRIBUTOR_VERIFICATION: z
+    .string()
+    .optional()
+    .transform((v) => v === "true"),
 });
 
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

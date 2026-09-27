@@ -171,6 +171,8 @@ export interface SubmitPandalInput {
   possiblePandalId?: string;
   submittedData: Record<string, unknown>;
   contributorContact: string;
+  /** Honeypot — always empty for real visitors, see add-pandal-flow.tsx. */
+  website?: string;
 }
 
 export async function submitPandal(

@@ -14,6 +14,8 @@ interface Submission {
   type: string;
   status: string;
   submittedData: Record<string, unknown>;
+  submitterIp?: string;
+  contributor: { id: string; identifier: string; blocked: boolean } | null;
   duplicateCandidates: (Candidate & { reasons: string[]; distanceMeters: number; canonicalName?: string })[];
   createdAt: string;
 }
@@ -61,6 +63,16 @@ export default function SubmissionsPage() {
     } finally {
       setBulkBusy(false);
     }
+  }
+
+  async function toggleBlock(contributorId: string, blocked: boolean) {
+    await adminFetch(`/admin/contributors/${contributorId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ blocked }),
+    });
+    setSubmissions((prev) =>
+      prev.map((s) => (s.contributor?.id === contributorId ? { ...s, contributor: { ...s.contributor!, blocked } } : s))
+    );
   }
 
   function toggleSelected(id: string) {
@@ -122,6 +134,24 @@ export default function SubmissionsPage() {
                       {data.canonicalName ?? "(update / correction)"}
                     </div>
                     <div className="font-body text-sm text-ink-muted">{data.locality}</div>
+                    {submission.contributor && (
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="font-body text-xs text-ink-muted">
+                          {submission.contributor.identifier}
+                          {submission.submitterIp ? ` · ${submission.submitterIp}` : ""}
+                        </span>
+                        <button
+                          onClick={() => toggleBlock(submission.contributor!.id, !submission.contributor!.blocked)}
+                          className={`rounded-pill px-2 py-0.5 font-body text-[11px] font-bold ${
+                            submission.contributor.blocked
+                              ? "bg-accent text-accent-ink"
+                              : "border border-border text-ink-muted hover:border-brand hover:text-brand"
+                          }`}
+                        >
+                          {submission.contributor.blocked ? "Unblock" : "Block"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <Button
