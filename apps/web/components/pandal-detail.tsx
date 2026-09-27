@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import maplibregl from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
-import { externalDirectionsUrl } from "@durgapandals/maps";
 import type { PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
+import { DirectionsButton } from "./directions-button";
+import { PhotoCarousel } from "./photo-carousel";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
@@ -76,29 +77,18 @@ export function PandalDetail({ citySlug, cityName, pandal, mapTilesUrl }: Pandal
           that scrolls independently of the map beside it. */}
       <div className="pb-28 md:h-full md:w-[460px] md:flex-none md:overflow-y-auto md:border-r md:border-border md:pb-10">
         <div className="relative h-[340px] w-full overflow-hidden md:h-[280px]">
-          {pandal.year?.coverImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={pandal.year.coverImage} alt={pandal.canonicalName} className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full bg-panel" />
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-ground via-ground/10 to-transparent" />
+          <PhotoCarousel
+            photos={pandal.year?.photos ?? []}
+            fallbackImage={pandal.year?.coverImage}
+            alt={pandal.canonicalName}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ground via-ground/10 to-transparent" />
           <div className="absolute inset-x-4 top-4 flex justify-between">
             <button onClick={() => router.back()} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
               <span className="material-symbols-rounded">arrow_back</span>
             </button>
             <div className="flex gap-2">
-              <a
-                href={externalDirectionsUrl(pandal)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden h-11 items-center gap-1.5 rounded-full bg-brand px-4 font-body text-sm font-bold text-brand-ink md:flex"
-              >
-                <span className="material-symbols-rounded text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                  directions
-                </span>
-                Directions
-              </a>
+              <DirectionsButton pandal={pandal} variant="full" className="hidden md:flex" />
               <button onClick={toggleSave} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
                 <span
                   className={`material-symbols-rounded ${saved ? "text-brand" : ""}`}
@@ -153,7 +143,9 @@ export function PandalDetail({ citySlug, cityName, pandal, mapTilesUrl }: Pandal
 
           <div className="flex items-center justify-between gap-3 rounded-2xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-4">
             <div className="flex flex-col gap-0.5">
-              <span className="font-display text-base font-bold">Did you like this pandal?</span>
+              <span className="font-display text-base font-bold">
+                {likes > 0 ? `${likes} ${likes === 1 ? "person has" : "people have"} liked this` : "Did you like this pandal?"}
+              </span>
               <span className="font-body text-xs text-ink-muted">One tap. No login.</span>
             </div>
             <button
@@ -222,17 +214,7 @@ export function PandalDetail({ citySlug, cityName, pandal, mapTilesUrl }: Pandal
 
       {/* Sticky action bar — mobile only, desktop's Directions button lives in the hero */}
       <div className="fixed inset-x-0 bottom-0 z-30 flex gap-2.5 border-t border-border bg-ground/95 p-4 backdrop-blur md:hidden">
-        <a
-          href={externalDirectionsUrl(pandal)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand py-3.5 font-body font-bold text-brand-ink"
-        >
-          <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-            directions
-          </span>
-          Directions
-        </a>
+        <DirectionsButton pandal={pandal} variant="block" />
       </div>
     </main>
   );

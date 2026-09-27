@@ -15,6 +15,13 @@ const nearbyQuerySchema = z.object({
 const listQuerySchema = z.object({
   citySlug: z.string(),
   year: z.coerce.number().optional(),
+  // Optional viewport box for "search this area" (Google-Maps-style
+  // re-search-on-pan) — backward compatible, omitting these keeps the old
+  // "every published pandal in the city" behavior.
+  minLat: z.coerce.number().optional(),
+  minLng: z.coerce.number().optional(),
+  maxLat: z.coerce.number().optional(),
+  maxLng: z.coerce.number().optional(),
 });
 
 // Shared shape the map, explore list, and preview sheet all render from —
@@ -68,7 +75,19 @@ export const pandalsRoutes: FastifyPluginAsync = async (app) => {
     const city = await CityModel.findOne({ slug: query.citySlug });
     if (!city) return reply.code(404).send({ error: "City not found" });
 
-    const pandals = await PandalModel.find({ cityId: city._id, publicationStatus: "PUBLISHED" });
+    const filter: Record<string, unknown> = { cityId: city._id, publicationStatus: "PUBLISHED" };
+    if (query.minLat != null && query.minLng != null && query.maxLat != null && query.maxLng != null) {
+      filter.location = {
+        $geoWithin: {
+          $box: [
+            [query.minLng, query.minLat],
+            [query.maxLng, query.maxLat],
+          ],
+        },
+      };
+    }
+
+    const pandals = await PandalModel.find(filter);
     const year = query.year ?? city.activeFestivalYear;
     const enriched = await Promise.all(pandals.map((pandal) => withCurrentYear(pandal, year)));
     return enriched.filter((item) => item.year != null);

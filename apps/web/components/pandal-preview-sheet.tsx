@@ -2,9 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { externalDirectionsUrl } from "@durgapandals/maps";
 import type { PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
+import { DirectionsButton } from "./directions-button";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const DISMISS_THRESHOLD_PX = 110;
@@ -121,17 +121,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
         )}
 
         <div className="flex gap-2">
-          <a
-            href={externalDirectionsUrl(pandal)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand py-3 font-body font-bold text-brand-ink"
-          >
-            <span className="material-symbols-rounded" style={{ fontVariationSettings: "'FILL' 1" }}>
-              directions
-            </span>
-            Directions
-          </a>
+          <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleLike}
             className={`flex items-center gap-1.5 rounded-2xl px-3.5 font-body font-bold ${liked ? "bg-accent text-accent-ink" : "bg-card"}`}

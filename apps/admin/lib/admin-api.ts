@@ -39,3 +39,20 @@ export async function adminFetch(path: string, init: RequestInit = {}) {
     },
   });
 }
+
+export interface ReverseGeocodeResult {
+  label: string;
+  latitude: number;
+  longitude: number;
+  locality?: string;
+  road?: string;
+}
+
+// Backs the map picker's "drag map, address fills in" behavior (same
+// /geocode/reverse route apps/web already uses — it isn't admin- or
+// web-specific, just a general geocoding proxy).
+export async function reverseGeocode(latitude: number, longitude: number): Promise<ReverseGeocodeResult | null> {
+  const res = await adminFetch(`/geocode/reverse?lat=${latitude}&lon=${longitude}`);
+  if (!res.ok) return null;
+  return res.json();
+}

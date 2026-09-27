@@ -1,7 +1,15 @@
 import type { FastifyPluginAsync } from "fastify";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { AdminUserModel, PandalModel, PandalYearModel, SubmissionModel } from "@durgapandals/database";
+import {
+  AdminUserModel,
+  PandalModel,
+  PandalYearModel,
+  SubmissionModel,
+  fromGeoPoint,
+  type SubmissionDocument,
+} from "@durgapandals/database";
+import type { HydratedDocument } from "mongoose";
 import { signAdminSession } from "@durgapandals/auth";
 import { uniqueSlug } from "@durgapandals/utils";
 import { requireAdmin } from "./require-admin";
@@ -14,6 +22,83 @@ const reviewSchema = z.object({
   action: z.enum(["APPROVE", "REJECT"]),
   reviewNotes: z.string().max(1000).optional(),
 });
+const bulkReviewSchema = z.object({
+  ids: z.array(z.string().min(1)).min(1),
+  action: z.enum(["APPROVE", "REJECT"]),
+  reviewNotes: z.string().max(1000).optional(),
+});
+
+// Shared by the single-submission review route and the bulk-review route —
+// the only place a canonical Pandal gets created from contributor data
+// (spec §17.4, §23). Returns null if the submission wasn't PENDING (caller
+// decides how to report that).
+async function reviewSubmission(
+  submission: HydratedDocument<SubmissionDocument>,
+  action: "APPROVE" | "REJECT",
+  reviewerId: string,
+  reviewNotes?: string
+) {
+  if (submission.status !== "PENDING") return null;
+
+  if (action === "REJECT") {
+    submission.status = "REJECTED";
+    submission.reviewedBy = reviewerId as never;
+    submission.reviewedAt = new Date();
+    submission.reviewNotes = reviewNotes;
+    await submission.save();
+    return submission;
+  }
+
+  if (submission.type === "NEW_PANDAL") {
+    const data = submission.submittedData as Record<string, any>;
+    const slug = await uniqueSlug(
+      data.canonicalName,
+      async (candidate) => Boolean(await PandalModel.exists({ cityId: submission.cityId, slug: candidate }))
+    );
+
+    const pandal = await PandalModel.create({
+      cityId: submission.cityId,
+      slug,
+      canonicalName: data.canonicalName,
+      alternateNames: data.alternateNames ?? [],
+      organizerName: data.organizerName,
+      location: { type: "Point", coordinates: [data.longitude, data.latitude] },
+      address: data.address,
+      locality: data.locality,
+      landmark: data.landmark,
+      publicContact: data.publicContact,
+      instagramUrl: data.instagramUrl,
+      facebookUrl: data.facebookUrl,
+      websiteUrl: data.websiteUrl,
+      verificationStatus: "UNVERIFIED",
+      publicationStatus: "PUBLISHED",
+    });
+
+    if (data.year) {
+      await PandalYearModel.create({
+        pandalId: pandal._id,
+        year: data.year,
+        theme: data.theme,
+        description: data.description,
+        parkingInfo: data.parkingInfo,
+        entryInfo: data.entryInfo,
+        categories: data.categories ?? [],
+        tags: data.tags ?? [],
+        publicationStatus: "PUBLISHED",
+        verificationStatus: "UNVERIFIED",
+      });
+    }
+
+    submission.possiblePandalId = pandal._id as never;
+  }
+
+  submission.status = "APPROVED";
+  submission.reviewedBy = reviewerId as never;
+  submission.reviewedAt = new Date();
+  submission.reviewNotes = reviewNotes;
+  await submission.save();
+  return submission;
+}
 
 export const adminRoutes: FastifyPluginAsync = async (app) => {
   app.post("/login", async (request, reply) => {
@@ -36,85 +121,62 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     registerCitiesAdminRoutes(protectedRoutes);
     registerPandalsAdminRoutes(protectedRoutes);
 
+    // Duplicate candidates only ever carried a pandalId — the submissions
+    // list showed nothing but a bare score/distance line, no way to tell
+    // *which* pandal that was without opening a second tab. Batch-fetch the
+    // candidate pandals once per request and attach name + coordinates so
+    // the admin UI can render them as map pins instead of raw text.
     protectedRoutes.get("/submissions", async (request) => {
       const status = (request.query as { status?: string }).status ?? "PENDING";
-      return SubmissionModel.find({ status }).sort({ createdAt: -1 }).limit(100);
+      const submissions = await SubmissionModel.find({ status }).sort({ createdAt: -1 }).limit(100);
+
+      const candidateIds = [
+        ...new Set(submissions.flatMap((s) => s.duplicateCandidates.map((c) => String(c.pandalId)))),
+      ];
+      const candidatePandals = await PandalModel.find({ _id: { $in: candidateIds } });
+      const byId = new Map(candidatePandals.map((p) => [String(p._id), p]));
+
+      return submissions.map((submission) => ({
+        ...submission.toObject(),
+        duplicateCandidates: submission.duplicateCandidates.map((candidate) => {
+          const pandal = byId.get(String(candidate.pandalId));
+          return {
+            ...(candidate as unknown as Record<string, unknown>),
+            canonicalName: pandal?.canonicalName,
+            ...(pandal ? fromGeoPoint(pandal.location) : {}),
+          };
+        }),
+      }));
     });
 
-    // Approving a NEW_PANDAL submission is the one place a canonical Pandal
-    // gets created from contributor data — it still runs through the same
-    // slug/geo setup as a direct admin create (spec §17.4, §23).
     protectedRoutes.post<{ Params: { id: string } }>(
       "/submissions/:id/review",
       async (request, reply) => {
         const body = reviewSchema.parse(request.body);
         const submission = await SubmissionModel.findById(request.params.id);
         if (!submission) return reply.code(404).send({ error: "Submission not found" });
-        if (submission.status !== "PENDING") {
-          return reply.code(409).send({ error: "Submission already reviewed" });
-        }
 
-        if (body.action === "REJECT") {
-          submission.status = "REJECTED";
-          submission.reviewedBy = request.admin!.sub as never;
-          submission.reviewedAt = new Date();
-          submission.reviewNotes = body.reviewNotes;
-          await submission.save();
-          return submission;
-        }
-
-        if (submission.type === "NEW_PANDAL") {
-          const data = submission.submittedData as Record<string, any>;
-          const slug = await uniqueSlug(
-            data.canonicalName,
-            async (candidate) =>
-              Boolean(await PandalModel.exists({ cityId: submission.cityId, slug: candidate }))
-          );
-
-          const pandal = await PandalModel.create({
-            cityId: submission.cityId,
-            slug,
-            canonicalName: data.canonicalName,
-            alternateNames: data.alternateNames ?? [],
-            organizerName: data.organizerName,
-            location: { type: "Point", coordinates: [data.longitude, data.latitude] },
-            address: data.address,
-            locality: data.locality,
-            landmark: data.landmark,
-            publicContact: data.publicContact,
-            instagramUrl: data.instagramUrl,
-            facebookUrl: data.facebookUrl,
-            websiteUrl: data.websiteUrl,
-            verificationStatus: "UNVERIFIED",
-            publicationStatus: "PUBLISHED",
-          });
-
-          if (data.year) {
-            await PandalYearModel.create({
-              pandalId: pandal._id,
-              year: data.year,
-              theme: data.theme,
-              description: data.description,
-              parkingInfo: data.parkingInfo,
-              entryInfo: data.entryInfo,
-              categories: data.categories ?? [],
-              tags: data.tags ?? [],
-              publicationStatus: "PUBLISHED",
-              verificationStatus: "UNVERIFIED",
-            });
-          }
-
-          submission.possiblePandalId = pandal._id as never;
-        }
-
-        submission.status = "APPROVED";
-        submission.reviewedBy = request.admin!.sub as never;
-        submission.reviewedAt = new Date();
-        submission.reviewNotes = body.reviewNotes;
-        await submission.save();
-        return submission;
+        const result = await reviewSubmission(submission, body.action, request.admin!.sub, body.reviewNotes);
+        if (!result) return reply.code(409).send({ error: "Submission already reviewed" });
+        return result;
       }
     );
+
+    // Lets an admin clear the review queue in one action instead of
+    // one-at-a-time — skips (rather than fails) anything already reviewed,
+    // since a bulk selection can go stale between load and click.
+    protectedRoutes.post("/submissions/bulk-review", async (request) => {
+      const body = bulkReviewSchema.parse(request.body);
+      const submissions = await SubmissionModel.find({ _id: { $in: body.ids } });
+
+      const results = await Promise.all(
+        submissions.map(async (submission) => ({
+          id: String(submission._id),
+          reviewed: Boolean(await reviewSubmission(submission, body.action, request.admin!.sub, body.reviewNotes)),
+        }))
+      );
+      return { results };
+    });
 
     // Merge preserves associated records rather than deleting them (spec §24):
     // the losing pandal is archived and pointed at the surviving one, its

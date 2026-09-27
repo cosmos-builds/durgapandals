@@ -32,8 +32,17 @@ export function BottomNav({ citySlug }: BottomNavProps) {
           <Link
             key={item.key}
             href={href}
-            className="flex h-[54px] flex-col items-center justify-center gap-1"
+            className="relative flex h-[54px] flex-col items-center justify-center gap-1"
           >
+            {/* Marigold glow dot instead of a flat color swap — reads as a
+                lit marker under the active tab rather than a generic
+                selected-state highlight. */}
+            {isActive && (
+              <span
+                className="absolute top-1.5 h-1.5 w-1.5 rounded-full bg-accent"
+                style={{ boxShadow: "0 0 8px 2px rgba(255,181,71,.7)" }}
+              />
+            )}
             <span
               className={`material-symbols-rounded text-[22px] ${isActive ? "text-brand" : "text-ink-muted"}`}
               style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}

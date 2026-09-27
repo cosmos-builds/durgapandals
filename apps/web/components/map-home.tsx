@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
-import type { LocationSearchResult, PandalSummary } from "@/lib/api";
+import { buildClusterIndex, getClusters } from "@durgapandals/maps";
+import { fetchPandalsForCity, type LocationSearchResult, type PandalSummary } from "@/lib/api";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
 
@@ -26,7 +27,7 @@ const DESKTOP_QUERY = "(min-width: 768px)";
 // scrolls/highlights the matching row instead of opening a floating card,
 // and picking a row flies the map to it — both directions of the same
 // selection state.
-export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals }: MapHomeProps) {
+export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals: initialPandals }: MapHomeProps) {
   const searchParams = useSearchParams();
   const focusSlug = searchParams.get("pandal");
   const [isDesktop, setIsDesktop] = useState(false);
@@ -34,12 +35,22 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
   const [locationOn, setLocationOn] = useState(false);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [pandals, setPandals] = useState(initialPandals);
+  const [showSearchArea, setShowSearchArea] = useState(false);
+  const [searchingArea, setSearchingArea] = useState(false);
 
   const mapRef = useRef<maplibregl.Map | null>(null);
   const meMarkerRef = useRef<maplibregl.Marker | null>(null);
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
-  const markerRefs = useRef<Record<string, maplibregl.Marker>>({});
+  const clusterMarkersRef = useRef<maplibregl.Marker[]>([]);
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const byId = useRef<Record<string, PandalSummary>>({});
+  byId.current = Object.fromEntries(pandals.map((p) => [p.id, p]));
+
+  const clusterIndex = useMemo(
+    () => buildClusterIndex(pandals.map((p) => ({ id: p.id, latitude: p.latitude, longitude: p.longitude }))),
+    [pandals]
+  );
 
   useEffect(() => {
     const mql = window.matchMedia(DESKTOP_QUERY);
@@ -51,7 +62,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
 
   function selectPandal(id: string, { fly = false }: { fly?: boolean } = {}) {
     setSelectedId(id);
-    const pandal = pandals.find((p) => p.id === id);
+    const pandal = byId.current[id];
     if (!pandal) return;
 
     if (isDesktop) {
@@ -60,23 +71,84 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
     }
   }
 
+  // Google-Maps-style clustering instead of one raw pin per pandal — the
+  // clustering index (@durgapandals/maps) already existed but had no
+  // caller anywhere in the app. Clusters collapse nearby pins at low zoom
+  // (tap -> zoom in); individual pins keep the existing tap-to-preview
+  // behavior once zoomed in far enough to separate.
+  const renderMarkers = useCallback(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    clusterMarkersRef.current.forEach((m) => m.remove());
+    clusterMarkersRef.current = [];
+
+    const bounds = map.getBounds();
+    const bbox: [number, number, number, number] = [
+      bounds.getWest(),
+      bounds.getSouth(),
+      bounds.getEast(),
+      bounds.getNorth(),
+    ];
+    const clusters = getClusters(clusterIndex, bbox, map.getZoom());
+
+    for (const cluster of clusters) {
+      const el = document.createElement("button");
+      el.style.cursor = "pointer";
+      el.style.border = "2px solid #0F0C15";
+      el.style.display = "flex";
+      el.style.alignItems = "center";
+      el.style.justifyContent = "center";
+
+      if (cluster.isCluster) {
+        const size = 34 + Math.min(26, Math.log2(cluster.count) * 6);
+        el.style.width = `${size}px`;
+        el.style.height = `${size}px`;
+        el.style.borderRadius = "50%";
+        el.style.background = "linear-gradient(135deg, #FFB547, #FF4433)";
+        el.style.color = "#1A0710";
+        el.style.fontWeight = "800";
+        el.style.fontFamily = "'DM Sans', sans-serif";
+        el.style.fontSize = "13px";
+        el.textContent = String(cluster.count);
+        el.onclick = () => {
+          const expansionZoom = Math.min(clusterIndex.getClusterExpansionZoom(cluster.id as number), 18);
+          map.flyTo({ center: [cluster.longitude, cluster.latitude], zoom: expansionZoom });
+        };
+      } else {
+        const pandal = cluster.markerId ? byId.current[cluster.markerId] : undefined;
+        el.setAttribute("aria-label", pandal?.canonicalName ?? "Pandal");
+        el.className = "pandal-marker";
+        el.style.width = "34px";
+        el.style.height = "34px";
+        el.style.borderRadius = "50%";
+        el.style.background = "linear-gradient(135deg, #FFB547, #FF4433)";
+        el.innerHTML =
+          '<span class="material-symbols-rounded" style="font-size:18px;color:#1A0710;font-variation-settings:\'FILL\' 1">local_fire_department</span>';
+        el.onclick = () => {
+          if (pandal) selectPandal(pandal.id);
+        };
+      }
+
+      clusterMarkersRef.current.push(
+        new maplibregl.Marker({ element: el }).setLngLat([cluster.longitude, cluster.latitude]).addTo(map)
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusterIndex]);
+
+  // MapCanvas only calls onMapReady once (on mount), so a listener attached
+  // there would otherwise close over the very first render's clusterIndex
+  // forever — this ref lets it always dispatch to the latest renderMarkers
+  // (e.g. after "Search this area" swaps the pandal list mid-session).
+  const renderMarkersRef = useRef(renderMarkers);
+  renderMarkersRef.current = renderMarkers;
+
   function handleMapReady(map: maplibregl.Map) {
     mapRef.current = map;
-    for (const pandal of pandals) {
-      const el = document.createElement("button");
-      el.setAttribute("aria-label", pandal.canonicalName);
-      el.style.width = "34px";
-      el.style.height = "34px";
-      el.style.borderRadius = "50%";
-      el.style.background = "#FF4433";
-      el.style.border = "2px solid #0F0C15";
-      el.style.cursor = "pointer";
-      el.style.boxShadow = "0 4px 12px rgba(0,0,0,.4)";
-      el.onclick = () => selectPandal(pandal.id);
-
-      const marker = new maplibregl.Marker({ element: el }).setLngLat([pandal.longitude, pandal.latitude]).addTo(map);
-      markerRefs.current[pandal.id] = marker;
-    }
+    map.on("moveend", () => renderMarkersRef.current());
+    map.on("dragend", () => setShowSearchArea(true));
+    renderMarkers();
 
     // Deep link from the pandal detail page's "View on map" action — unlike
     // a marker/list click, the map hasn't necessarily visited this pandal
@@ -88,6 +160,31 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
         setSelectedId(target.id);
         rowRefs.current[target.id]?.scrollIntoView({ behavior: "smooth", block: "center" });
       }
+    }
+  }
+
+  // Re-cluster whenever the underlying pandal list changes (e.g. after
+  // "Search this area" swaps it out) — moveend won't fire on its own here.
+  useEffect(() => {
+    renderMarkers();
+  }, [renderMarkers]);
+
+  async function searchThisArea() {
+    const map = mapRef.current;
+    if (!map) return;
+    setSearchingArea(true);
+    try {
+      const bounds = map.getBounds();
+      const results = await fetchPandalsForCity(citySlug, {
+        minLat: bounds.getSouth(),
+        minLng: bounds.getWest(),
+        maxLat: bounds.getNorth(),
+        maxLng: bounds.getEast(),
+      });
+      setPandals(results);
+      setShowSearchArea(false);
+    } finally {
+      setSearchingArea(false);
     }
   }
 
@@ -190,7 +287,10 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex items-center gap-1.5">
                     {pandal.year?.featured && (
-                      <span className="material-symbols-rounded flex-none text-sm text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      <span
+                        className="material-symbols-rounded festive-shimmer flex-none text-sm text-accent"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
                         star
                       </span>
                     )}
@@ -253,12 +353,32 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           className="absolute inset-0"
         />
 
-        {/* Mobile-only chrome — desktop uses the sidebar instead */}
+        {/* Mobile-only chrome — desktop uses the sidebar instead. Warm diya
+            glow layered under the fade instead of a flat dark gradient,
+            matching the same treatment Explore uses. */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-[240px] bg-gradient-to-b from-ground via-ground/80 to-transparent md:hidden" />
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 h-[240px] opacity-70 md:hidden"
+          style={{
+            background:
+              "radial-gradient(60% 60% at 50% -10%, rgba(255,181,71,.16), transparent 70%), radial-gradient(40% 50% at 85% 5%, rgba(255,68,51,.14), transparent 70%)",
+          }}
+        />
 
-        <div className="absolute inset-x-4 top-[64px] z-10 flex flex-col gap-2.5 md:hidden">
+        <div className="absolute inset-x-4 top-[84px] z-10 flex flex-col gap-2.5 md:hidden">
           <LocationSearchBox citySlug={citySlug} placeholder="Search a location…" onSelect={handleLocationSelect} biasCenter={center} />
         </div>
+
+        {showSearchArea && (
+          <button
+            onClick={searchThisArea}
+            disabled={searchingArea}
+            className="absolute left-1/2 top-[84px] z-10 flex h-11 -translate-x-1/2 items-center gap-1.5 rounded-pill bg-ink pl-3.5 pr-4 font-body text-sm font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+          >
+            <span className="material-symbols-rounded text-lg">{searchingArea ? "sync" : "search"}</span>
+            {searchingArea ? "Searching…" : "Search this area"}
+          </button>
+        )}
 
         {!locationOn && (
           <div className="absolute inset-x-4 bottom-[160px] z-10 flex items-center gap-2.5 rounded-2xl border border-border bg-card p-3 shadow-lg md:bottom-4 md:left-4 md:right-auto md:w-[320px]">

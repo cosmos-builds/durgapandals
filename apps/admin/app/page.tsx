@@ -5,6 +5,17 @@ import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
+import { Card } from "@durgapandals/ui";
+import {
+  SubmissionsTimeseriesChart,
+  StatusBreakdownChart,
+  LikesLeaderboardChart,
+  TopLocalitiesChart,
+} from "@/components/dashboard-charts";
+import { PandalsClusterMap, type DashboardPandal } from "@/components/pandals-cluster-map";
+
+const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
+const INDIA_CENTER = { latitude: 22.9734, longitude: 78.6569 };
 
 interface DashboardData {
   publishedPandals: number;
@@ -26,15 +37,31 @@ const STAT_CARDS = [
 export default function AdminDashboardPage() {
   const ready = useAdminGuard();
   const [data, setData] = useState<DashboardData | null>(null);
+  const [timeseries, setTimeseries] = useState<{ date: string; count: number }[]>([]);
+  const [byStatus, setByStatus] = useState<{ status: string; count: number }[]>([]);
+  const [leaderboard, setLeaderboard] = useState<{ canonicalName: string; likes: number }[]>([]);
+  const [topLocalities, setTopLocalities] = useState<{ locality: string; count: number }[]>([]);
+  const [mapPandals, setMapPandals] = useState<DashboardPandal[]>([]);
 
   useEffect(() => {
     if (!ready) return;
-    adminFetch("/admin/dashboard")
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setData);
+    adminFetch("/admin/dashboard").then((res) => (res.ok ? res.json() : null)).then(setData);
+    adminFetch("/admin/dashboard/submissions-timeseries").then((res) => (res.ok ? res.json() : [])).then(setTimeseries);
+    adminFetch("/admin/dashboard/submissions-by-status").then((res) => (res.ok ? res.json() : [])).then(setByStatus);
+    adminFetch("/admin/dashboard/likes-leaderboard").then((res) => (res.ok ? res.json() : [])).then(setLeaderboard);
+    adminFetch("/admin/dashboard/top-localities").then((res) => (res.ok ? res.json() : [])).then(setTopLocalities);
+    adminFetch("/admin/pandals-map").then((res) => (res.ok ? res.json() : [])).then(setMapPandals);
   }, [ready]);
 
   if (!ready) return null;
+
+  const mapCenter =
+    mapPandals.length > 0
+      ? {
+          latitude: mapPandals.reduce((sum, p) => sum + p.latitude, 0) / mapPandals.length,
+          longitude: mapPandals.reduce((sum, p) => sum + p.longitude, 0) / mapPandals.length,
+        }
+      : INDIA_CENTER;
 
   return (
     <AdminShell>
@@ -54,16 +81,60 @@ export default function AdminDashboardPage() {
         <>
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
             {STAT_CARDS.map((card) => (
-              <div key={card.key} className="rounded-card border border-border bg-panel p-5">
+              <Card key={card.key} padding="sm">
                 <div className="font-display text-3xl font-extrabold">{data[card.key]}</div>
                 <div className="mt-1 font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
                   {card.label}
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
 
-          <div className="rounded-card border border-border bg-panel p-6">
+          <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card padding="sm">
+              <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+                Submissions, last 30 days
+              </h2>
+              <SubmissionsTimeseriesChart data={timeseries} />
+            </Card>
+            <Card padding="sm">
+              <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+                Submissions by status
+              </h2>
+              <StatusBreakdownChart data={byStatus} />
+            </Card>
+            <Card padding="sm">
+              <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+                Likes leaderboard
+              </h2>
+              {leaderboard.length > 0 ? (
+                <LikesLeaderboardChart data={leaderboard} />
+              ) : (
+                <p className="font-body text-sm text-ink-muted">No likes yet.</p>
+              )}
+            </Card>
+            <Card padding="sm">
+              <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+                Top localities by submissions
+              </h2>
+              {topLocalities.length > 0 ? (
+                <TopLocalitiesChart data={topLocalities} />
+              ) : (
+                <p className="font-body text-sm text-ink-muted">No submissions yet.</p>
+              )}
+            </Card>
+          </div>
+
+          <Card padding="sm" className="mb-8">
+            <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+              All pandals — click a cluster to zoom in, a pin to open it
+            </h2>
+            {mapPandals.length > 0 && (
+              <PandalsClusterMap mapTilesUrl={MAP_TILES_URL} center={mapCenter} zoom={4} pandals={mapPandals} />
+            )}
+          </Card>
+
+          <Card padding="md">
             <h2 className="mb-4 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
               By city
             </h2>
@@ -90,7 +161,7 @@ export default function AdminDashboardPage() {
                 ))}
               </ul>
             )}
-          </div>
+          </Card>
         </>
       )}
     </AdminShell>

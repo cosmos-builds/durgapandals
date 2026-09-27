@@ -21,9 +21,12 @@ export function TopHeader({ citySlug, cityName }: TopHeaderProps) {
   const [citySheetOpen, setCitySheetOpen] = useState(false);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-ground px-4 pb-3 pt-3">
+    <header className="fixed inset-x-0 top-0 z-30 flex items-center justify-between gap-3 bg-ground px-4 pb-3 pt-3">
       {/* Solid background — this previously had none, so scrolled page
           content (e.g. Explore's list) showed straight through behind it. */}
+      {/* Marigold-to-brand gradient hairline instead of a flat border. */}
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-brand via-accent to-brand" />
+
       <Link href={`/${citySlug}`} className="font-display text-[19px] font-extrabold tracking-tight">
         durga<span className="text-brand">pandals</span>
       </Link>

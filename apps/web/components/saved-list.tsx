@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { externalDirectionsUrl } from "@durgapandals/maps";
 import type { PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, toggleSavedPandal } from "@/lib/visitor";
+import { DirectionsButton } from "./directions-button";
 
 export interface SavedListProps {
   citySlug: string;
@@ -30,9 +30,18 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
   }
 
   return (
-    <div className="relative min-h-dvh bg-ground pb-[100px] pt-[76px] md:pb-16">
+    <div className="relative min-h-dvh overflow-hidden bg-ground pb-[100px] pt-[76px] md:pb-16">
+      {/* Same warm diya glow as Explore instead of flat dark — otherwise
+          Saved was the one screen with zero festive treatment. */}
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-[420px] opacity-70"
+        style={{
+          background:
+            "radial-gradient(60% 50% at 50% -10%, rgba(255,181,71,.16), transparent 70%), radial-gradient(40% 40% at 85% 5%, rgba(255,68,51,.14), transparent 70%)",
+        }}
+      />
       {/* Constrained + centered on desktop instead of stretching edge to edge */}
-      <div className="mx-auto max-w-5xl px-4 md:px-8">
+      <div className="relative mx-auto max-w-5xl px-4 md:px-8">
         <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[40px]">Saved</h1>
         <p className="mt-1 flex items-center gap-1.5 font-body text-sm text-ink-muted">
           <span className="material-symbols-rounded text-[17px]">smartphone</span>
@@ -63,17 +72,7 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
                   </Link>
                   <span className="truncate font-body text-sm text-ink-muted">{pandal.locality}</span>
                 </div>
-                <a
-                  href={externalDirectionsUrl(pandal)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-11 flex-none items-center gap-1.5 rounded-2xl bg-brand px-3.5 font-body text-sm font-bold text-brand-ink"
-                >
-                  <span className="material-symbols-rounded text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    directions
-                  </span>
-                  Go
-                </a>
+                <DirectionsButton pandal={pandal} variant="compact" />
               </div>
             </div>
           ))}

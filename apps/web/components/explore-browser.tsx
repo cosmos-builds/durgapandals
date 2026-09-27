@@ -24,11 +24,28 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
   const [query, setQuery] = useState("");
   const [area, setArea] = useState("all");
   const [sort, setSort] = useState<SortKey>("featured");
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
 
   const areas = useMemo(() => {
     const set = new Set(pandals.map((p) => p.locality).filter(Boolean));
     return Array.from(set).sort();
   }, [pandals]);
+
+  // Categories were already fetched (PandalYear.categories) but had no
+  // filter UI anywhere — read-only tag pills only, never clickable.
+  const categories = useMemo(() => {
+    const set = new Set(pandals.flatMap((p) => p.year?.categories ?? []));
+    return Array.from(set).sort();
+  }, [pandals]);
+
+  function toggleCategory(category: string) {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(category)) next.delete(category);
+      else next.add(category);
+      return next;
+    });
+  }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -41,7 +58,9 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
         (p.year?.theme?.toLowerCase().includes(q) ?? false) ||
         (p.year?.tags.some((t) => t.toLowerCase().includes(q)) ?? false);
       const matchesArea = area === "all" || p.locality === area;
-      return matchesQuery && matchesArea;
+      const matchesCategory =
+        activeCategories.size === 0 || (p.year?.categories.some((c) => activeCategories.has(c)) ?? false);
+      return matchesQuery && matchesArea && matchesCategory;
     });
 
     list = [...list].sort((a, b) => {
@@ -59,10 +78,10 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
     });
 
     return list;
-  }, [pandals, query, area, sort]);
+  }, [pandals, query, area, sort, activeCategories]);
 
   const featured = pandals.filter((p) => p.year?.featured);
-  const isFiltering = query.trim() !== "" || area !== "all";
+  const isFiltering = query.trim() !== "" || area !== "all" || activeCategories.size > 0;
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-ground pb-[100px] pt-[76px] md:pb-16">
@@ -141,6 +160,29 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
           </div>
         </div>
 
+        {/* Category filter chips — categories were already fetched and shown
+            as read-only pills per-card, but never usable as a filter. */}
+        {categories.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2 px-4 md:px-0">
+            {categories.map((category) => {
+              const isActive = activeCategories.has(category);
+              return (
+                <button
+                  key={category}
+                  onClick={() => toggleCategory(category)}
+                  className={`rounded-pill border px-3 py-1.5 font-body text-sm font-semibold transition-colors ${
+                    isActive
+                      ? "border-brand bg-brand text-brand-ink"
+                      : "border-border bg-panel text-ink-dim hover:border-accent/40"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         {/* Featured — festive treatment, only shown when not actively filtering */}
         {!isFiltering && featured.length > 0 && (
           <div className="mt-9">
@@ -175,7 +217,7 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
 
                   {/* Ribbon badge instead of a flat pill */}
                   <div className="absolute left-4 top-4 flex items-center gap-1 rounded-r-md rounded-bl-md bg-accent px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-wide text-accent-ink shadow-lg before:absolute before:-left-[7px] before:top-0 before:border-y-[10px] before:border-r-[7px] before:border-y-transparent before:border-r-accent before:content-['']">
-                    <span className="material-symbols-rounded text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span className="material-symbols-rounded festive-shimmer text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
                       star
                     </span>
                     Featured
@@ -224,7 +266,10 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                 <div className="flex items-center gap-1.5">
                   {pandal.year?.featured && (
-                    <span className="material-symbols-rounded flex-none text-sm text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span
+                      className="material-symbols-rounded festive-shimmer flex-none text-sm text-accent"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
                       star
                     </span>
                   )}

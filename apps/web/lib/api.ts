@@ -53,9 +53,27 @@ export interface PandalSummary {
   likes: number;
 }
 
-export async function fetchPandalsForCity(citySlug: string): Promise<PandalSummary[]> {
-  const response = await fetch(`${API_BASE_URL}/pandals?citySlug=${citySlug}`, {
-    next: { revalidate: 30 },
+export interface BoundingBox {
+  minLat: number;
+  minLng: number;
+  maxLat: number;
+  maxLng: number;
+}
+
+// `bbox` powers "Search this area" on the Map page — omitting it keeps the
+// original "every published pandal in the city" behavior (the initial load
+// still wants the whole city, not just the starting viewport).
+export async function fetchPandalsForCity(citySlug: string, bbox?: BoundingBox): Promise<PandalSummary[]> {
+  const params = new URLSearchParams({ citySlug });
+  if (bbox) {
+    params.set("minLat", String(bbox.minLat));
+    params.set("minLng", String(bbox.minLng));
+    params.set("maxLat", String(bbox.maxLat));
+    params.set("maxLng", String(bbox.maxLng));
+  }
+  const response = await fetch(`${API_BASE_URL}/pandals?${params}`, {
+    cache: bbox ? "no-store" : undefined,
+    next: bbox ? undefined : { revalidate: 30 },
   });
   if (!response.ok) return [];
   return response.json();
