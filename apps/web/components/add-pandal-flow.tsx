@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { distanceMeters } from "@durgapandals/deduplication";
-import { Button } from "@durgapandals/ui";
+import { Button, Input, Textarea } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
   reverseGeocode,
@@ -110,6 +110,7 @@ export function AddPandalFlow({
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const nearbyMarkersRef = useRef<maplibregl.Marker[]>([]);
 
   const isNewPandal = !selectedExisting;
   const distanceFromCityKm = distanceMeters(coords, center) / 1000;
@@ -181,6 +182,30 @@ export function AddPandalFlow({
     setSelectedExisting(candidate);
     setStep("update-choice");
   }
+
+  // Plots whatever the live proximity check just found — same marker style
+  // used everywhere else in the app, so it's immediately readable as "an
+  // existing pandal is right here" instead of just a name buried in the
+  // list below the map. Tapping one is the same as tapping "It's mine".
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    nearbyMarkersRef.current.forEach((marker) => marker.remove());
+    nearbyMarkersRef.current = nearby.map((candidate) => {
+      const el = document.createElement("button");
+      el.setAttribute("aria-label", candidate.canonicalName);
+      el.style.width = "26px";
+      el.style.height = "26px";
+      el.style.cursor = "pointer";
+      el.innerHTML = '<img src="/images/marker-icon.svg" alt="" style="width:26px;height:26px" />';
+      el.onclick = () => pickExisting(candidate);
+      return new maplibregl.Marker({ element: el })
+        .setLngLat([candidate.longitude, candidate.latitude])
+        .addTo(map);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearby]);
 
   function continueAsNew() {
     setSelectedExisting(null);
@@ -378,24 +403,21 @@ export function AddPandalFlow({
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
             <div className="grid grid-cols-2 gap-3">
-              <input
+              <Input
                 placeholder="Locality / area"
                 value={details.locality}
                 onChange={(e) => setDetails({ ...details, locality: e.target.value })}
-                className="h-12 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
               />
-              <input
+              <Input
                 placeholder="Landmark (optional)"
                 value={details.landmark}
                 onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
-                className="h-12 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
               />
             </div>
-            <input
+            <Input
               placeholder="Address"
               value={details.address}
               onChange={(e) => setDetails({ ...details, address: e.target.value })}
-              className="h-12 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
 
             {geocoding && (
@@ -501,18 +523,16 @@ export function AddPandalFlow({
               </span>
               <span className="font-display text-base font-bold">Basics</span>
             </div>
-            <input
+            <Input
               required
               placeholder="Pandal name"
               value={details.canonicalName}
               onChange={(e) => setDetails({ ...details, canonicalName: e.target.value })}
-              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-            <input
+            <Input
               placeholder="Organiser / committee · optional"
               value={details.organizerName}
               onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
-              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
           </div>
 
@@ -524,17 +544,15 @@ export function AddPandalFlow({
               <span className="font-display text-base font-bold">Theme for {activeFestivalYear}</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            <input
+            <Input
               placeholder="Theme name — e.g. Rural Bengal"
               value={details.theme}
               onChange={(e) => setDetails({ ...details, theme: e.target.value })}
-              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-            <textarea
+            <Textarea
               placeholder="Theme details — what makes it worth visiting?"
               value={details.description}
               onChange={(e) => setDetails({ ...details, description: e.target.value })}
-              className="min-h-24 rounded-2xl border border-border bg-panel px-4 py-3 font-body md:bg-card"
             />
           </div>
 
@@ -619,17 +637,15 @@ export function AddPandalFlow({
               <span className="font-display text-base font-bold">Good to know</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            <input
+            <Input
               placeholder="Parking — e.g. Street parking available near the entrance"
               value={details.parkingInfo}
               onChange={(e) => setDetails({ ...details, parkingInfo: e.target.value })}
-              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
-            <input
+            <Input
               placeholder="Public contact number"
               value={details.publicContact}
               onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
-              className="h-13 rounded-2xl border border-border bg-panel px-4 font-body md:bg-card"
             />
           </div>
 
@@ -702,7 +718,7 @@ export function AddPandalFlow({
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="h-16 rounded-2xl border border-border bg-panel text-center font-mono text-2xl tracking-[0.4em] md:bg-card"
+                  className="h-16 rounded-2xl bg-ink text-center font-mono text-2xl text-ground tracking-[0.4em]"
                   placeholder="000000"
                 />
               </label>

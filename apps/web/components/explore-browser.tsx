@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Select } from "@durgapandals/ui";
 import type { PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
 
@@ -107,13 +108,13 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
 
         {/* Search + filter + sort bar */}
         <div className="mt-5 flex flex-col gap-2.5 px-4 md:flex-row md:px-0">
-          <div className="flex h-13 flex-1 items-center gap-2.5 rounded-2xl border border-border bg-panel px-4">
+          <div className="flex h-13 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-4">
             <span className="material-symbols-rounded text-ink-muted">search</span>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name, area, committee, theme…"
-              className="flex-1 bg-transparent font-body text-[15px] outline-none placeholder:text-ink-muted"
+              className="flex-1 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ink-muted"
             />
             {query && (
               <button onClick={() => setQuery("")} className="text-ink-muted">
@@ -123,40 +124,26 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
           </div>
 
           <div className="flex gap-2.5">
-            <div className="relative flex-1 md:flex-none">
-              <select
-                value={area}
-                onChange={(e) => setArea(e.target.value)}
-                className="h-13 w-full appearance-none rounded-2xl border border-border bg-panel pl-4 pr-9 font-body text-sm font-semibold md:w-[180px]"
-              >
-                <option value="all">All areas</option>
-                {areas.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-rounded pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted">
-                expand_more
-              </span>
-            </div>
+            <Select value={area} onChange={(e) => setArea(e.target.value)} className="h-13 text-sm font-semibold md:w-[180px]">
+              <option value="all">All areas</option>
+              {areas.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
+            </Select>
 
-            <div className="relative flex-1 md:flex-none">
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                className="h-13 w-full appearance-none rounded-2xl border border-border bg-panel pl-4 pr-9 font-body text-sm font-semibold md:w-[190px]"
-              >
-                {SORT_OPTIONS.map((o) => (
-                  <option key={o.key} value={o.key}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-              <span className="material-symbols-rounded pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-muted">
-                swap_vert
-              </span>
-            </div>
+            <Select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="h-13 text-sm font-semibold md:w-[190px]"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.key} value={o.key}>
+                  {o.label}
+                </option>
+              ))}
+            </Select>
           </div>
         </div>
 

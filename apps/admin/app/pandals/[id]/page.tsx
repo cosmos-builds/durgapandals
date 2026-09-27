@@ -7,6 +7,7 @@ import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
 import { Button, Card, Dialog, Input, Select, Textarea } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
+import type { ReverseGeocodeResult } from "@/lib/admin-api";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
 
@@ -59,6 +60,13 @@ export default function PandalDetailPage() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [pandal, setPandal] = useState<Pandal | null>(null);
+  // Snapshot of what's actually saved in the DB, separate from `pandal`
+  // (which starts mutating the moment an admin drags the pin) — this is
+  // what "reset to saved location" reverts to, and what's shown so a
+  // mis-drag doesn't quietly get lost.
+  const [savedPandal, setSavedPandal] = useState<Pandal | null>(null);
+  const [draggedAddress, setDraggedAddress] = useState<ReverseGeocodeResult | null>(null);
+  const [mapKey, setMapKey] = useState(0);
   const [years, setYears] = useState<PandalYear[]>([]);
   const [yearForm, setYearForm] = useState(EMPTY_YEAR_FORM);
   const [savingYear, setSavingYear] = useState(false);
@@ -77,7 +85,10 @@ export default function PandalDetailPage() {
     // it into latitude/longitude here so the rest of this component can
     // treat them like any other plain field.
     const [longitude, latitude] = data.pandal.location.coordinates as [number, number];
-    setPandal({ ...data.pandal, latitude, longitude });
+    const flattened = { ...data.pandal, latitude, longitude };
+    setPandal(flattened);
+    setSavedPandal(flattened);
+    setDraggedAddress(null);
     setYears(data.years);
   }
 
@@ -119,11 +130,26 @@ export default function PandalDetailPage() {
         longitude: pandal.longitude,
       }),
     });
+    setSavedPandal(pandal);
+    setDraggedAddress(null);
   }
 
   function updateLocation(coords: { latitude: number; longitude: number }) {
     setPandal((prev) => (prev ? { ...prev, ...coords } : prev));
   }
+
+  // Dragging moves the pin immediately, with no confirm step — this is the
+  // undo for "oops, wrong spot" without having to remember/retype the
+  // original coordinates.
+  function resetLocation() {
+    if (!savedPandal) return;
+    setPandal((prev) => (prev ? { ...prev, latitude: savedPandal.latitude, longitude: savedPandal.longitude } : prev));
+    setDraggedAddress(null);
+    setMapKey((k) => k + 1); // forces LocationPicker to remount centered on the reset point
+  }
+
+  const hasMovedFromSaved =
+    !!savedPandal && (pandal?.latitude !== savedPandal.latitude || pandal?.longitude !== savedPandal.longitude);
 
   async function setStatus(field: "publicationStatus" | "verificationStatus", value: string) {
     if (!pandal) return;
@@ -229,55 +255,91 @@ export default function PandalDetailPage() {
         </Select>
       </div>
 
-      <Card className="mb-8 max-w-2xl">
+      <Card className="mb-8 max-w-5xl">
         <h2 className="mb-4 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Canonical details
         </h2>
-        <div className="grid grid-cols-2 gap-3">
-          <Input
-            value={pandal.canonicalName}
-            onChange={(e) => updateField("canonicalName", e.target.value)}
-            className="col-span-2 h-11"
-          />
-          <Input
-            placeholder="Organizer"
-            value={pandal.organizerName ?? ""}
-            onChange={(e) => updateField("organizerName", e.target.value)}
-            className="col-span-2 h-11"
-          />
-          <Input
-            placeholder="Address"
-            value={pandal.address}
-            onChange={(e) => updateField("address", e.target.value)}
-            className="col-span-2 h-11"
-          />
-          <Input
-            placeholder="Locality"
-            value={pandal.locality}
-            onChange={(e) => updateField("locality", e.target.value)}
-            className="h-11"
-          />
-          <Input
-            placeholder="Landmark"
-            value={pandal.landmark ?? ""}
-            onChange={(e) => updateField("landmark", e.target.value)}
-            className="h-11"
-          />
-          <Input
-            placeholder="Public contact"
-            value={pandal.publicContact ?? ""}
-            onChange={(e) => updateField("publicContact", e.target.value)}
-            className="col-span-2 h-11"
-          />
-          <div className="col-span-2">
-            <span className="mb-2 block font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              Location
-            </span>
+        <div className="flex flex-col gap-6 md:flex-row">
+          <div className="grid flex-1 grid-cols-2 gap-3">
+            <Input
+              value={pandal.canonicalName}
+              onChange={(e) => updateField("canonicalName", e.target.value)}
+              className="col-span-2 h-11"
+            />
+            <Input
+              placeholder="Organizer"
+              value={pandal.organizerName ?? ""}
+              onChange={(e) => updateField("organizerName", e.target.value)}
+              className="col-span-2 h-11"
+            />
+            <Input
+              placeholder="Address"
+              value={pandal.address}
+              onChange={(e) => updateField("address", e.target.value)}
+              className="col-span-2 h-11"
+            />
+            <Input
+              placeholder="Locality"
+              value={pandal.locality}
+              onChange={(e) => updateField("locality", e.target.value)}
+              className="h-11"
+            />
+            <Input
+              placeholder="Landmark"
+              value={pandal.landmark ?? ""}
+              onChange={(e) => updateField("landmark", e.target.value)}
+              className="h-11"
+            />
+            <Input
+              placeholder="Public contact"
+              value={pandal.publicContact ?? ""}
+              onChange={(e) => updateField("publicContact", e.target.value)}
+              className="col-span-2 h-11"
+            />
+          </div>
+
+          {/* Map lives beside the form instead of stacked above/below it —
+              side by side, not one-above-the-other. */}
+          <div className="flex flex-col gap-2 md:w-[380px] md:flex-none">
+            <div className="flex items-center justify-between">
+              <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                Location
+              </span>
+              {hasMovedFromSaved && (
+                <button
+                  type="button"
+                  onClick={resetLocation}
+                  className="flex items-center gap-1 font-body text-xs font-bold text-brand"
+                >
+                  <span className="material-symbols-rounded text-sm">undo</span>
+                  Reset to saved
+                </button>
+              )}
+            </div>
             <LocationPicker
+              key={mapKey}
               center={{ latitude: pandal.latitude, longitude: pandal.longitude }}
               mapTilesUrl={MAP_TILES_URL}
               onChange={updateLocation}
+              onAddressResolved={setDraggedAddress}
             />
+            {/* Always visible, not just after a drag — so an admin who
+                hasn't touched the map yet still sees what's currently
+                saved, and one who has can compare against it. */}
+            <div className="flex flex-col gap-1 rounded-xl bg-card px-3 py-2 font-body text-xs">
+              <div className="flex items-start gap-1.5 text-ink-muted">
+                <span className="material-symbols-rounded flex-none text-sm">bookmark</span>
+                <span>
+                  Saved: {savedPandal?.address}, {savedPandal?.locality}
+                </span>
+              </div>
+              {hasMovedFromSaved && (
+                <div className="flex items-start gap-1.5 text-accent">
+                  <span className="material-symbols-rounded flex-none text-sm">pin_drop</span>
+                  <span>{draggedAddress ? `New: ${draggedAddress.label}` : "Locating new address…"}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <Button className="mt-4" onClick={saveCanonical}>

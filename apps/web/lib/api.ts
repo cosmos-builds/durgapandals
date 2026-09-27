@@ -111,6 +111,8 @@ export interface NearbyPandal {
   id: string;
   canonicalName: string;
   locality: string;
+  latitude: number;
+  longitude: number;
 }
 
 // Live duplicate check as a pin is dropped (spec §17.1) — location-only, no
