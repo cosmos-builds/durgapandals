@@ -11,7 +11,7 @@ import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
 import { IntroHero } from "./intro-hero";
-
+import { FestiveBunting } from "./festive-bunting";
 export interface MapHomeProps {
   citySlug: string;
   cityName: string;
@@ -356,6 +356,14 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
           onMapReady={handleMapReady}
           className="absolute inset-0"
         />
+
+        {/* Same crossing-corner garland treatment as the intro hero, scaled
+            down — decorative only (pointer-events-none) so it never blocks
+            map drag/tap underneath it, and kept compact since map space is
+            the whole point of this screen. */}
+        <div className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-28 md:top-0">
+           <FestiveBunting className="h-16 w-full" flagCount={19} />
+        </div>
 
 
         {showSearchArea && (
