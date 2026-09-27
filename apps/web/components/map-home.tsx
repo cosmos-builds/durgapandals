@@ -356,7 +356,7 @@ export function MapHome({ citySlug, cityName, center, zoom, mapTilesUrl, pandals
         {/* Positioned below the fixed header (which sits on top, not in
             flow, so top-0 here would render hidden behind it). */}
         <FestiveBunting
-          className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-16 px-4 md:top-0"
+          className="pointer-events-none absolute inset-x-0 top-[64px] z-10 h-16 w-full px-4 md:top-0"
           flagCount={17}
         />
 
