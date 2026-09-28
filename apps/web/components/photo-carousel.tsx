@@ -39,6 +39,19 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dots
     el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
   }
 
+  // Swipe/dot-click only before this — left/right arrow keys move to the
+  // adjacent photo when the carousel (or a dot) has focus, matching the
+  // same keyboard-nav pass the city search dropdowns got.
+  function handleKeyDown(event: React.KeyboardEvent) {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      scrollTo(Math.min(active + 1, images.length - 1));
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      scrollTo(Math.max(active - 1, 0));
+    }
+  }
+
   if (images.length === 0) {
     return <div className={`h-full w-full bg-panel ${className}`} />;
   }
@@ -48,7 +61,12 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dots
       <div
         ref={scrollerRef}
         onScroll={handleScroll}
-        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth"
+        onKeyDown={handleKeyDown}
+        tabIndex={images.length > 1 ? 0 : -1}
+        role="group"
+        aria-roledescription="carousel"
+        aria-label={alt}
+        className="flex h-full w-full snap-x snap-mandatory overflow-x-auto scroll-smooth outline-none"
         style={{ scrollbarWidth: "none" }}
       >
         {images.map((photo, index) => (

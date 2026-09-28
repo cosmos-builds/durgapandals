@@ -6,7 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { buildClusterIndex, getClusters } from "@durgapandals/maps";
-import { fetchPandalsForCity, type LocationSearchResult, type PandalSummary } from "@/lib/api";
+import { fetchPandalsForCity, pandalDetailHref, type LocationSearchResult, type PandalSummary } from "@/lib/api";
 import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
@@ -436,7 +436,7 @@ export function MapHome({
                   </span>
                   {isSelected && (
                     <Link
-                      href={`/${citySlug}/pandal/${pandal.slug}`}
+                      href={pandalDetailHref(citySlug, pandal)}
                       className="mt-1 flex w-fit items-center gap-1 font-body text-xs font-bold text-brand"
                     >
                       View details

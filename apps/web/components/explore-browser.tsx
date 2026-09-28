@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@durgapandals/ui";
-import type { PandalSummary } from "@/lib/api";
+import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
 import { MobileHeader } from "./mobile-header";
 
@@ -320,7 +320,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                 {featured.map((pandal) => (
                   <Link
                     key={pandal.id}
-                    href={`/${citySlug}/pandal/${pandal.slug}`}
+                    href={pandalDetailHref(citySlug, pandal)}
                     className="group relative h-[320px] w-[264px] flex-none overflow-hidden rounded-[28px] border border-accent/25 shadow-[0_20px_50px_-15px_rgba(255,181,71,.25)]"
                   >
                     {pandal.year?.coverImage ? (
@@ -375,7 +375,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
             {filtered.map((pandal) => (
               <Link
                 key={pandal.id}
-                href={`/${citySlug}/pandal/${pandal.slug}`}
+                href={pandalDetailHref(citySlug, pandal)}
                 className="flex items-center gap-3 border-b border-border py-3 md:rounded-2xl md:border md:border-border md:bg-panel md:p-3 md:hover:border-accent/40"
               >
                 <div className="relative h-[68px] w-[68px] flex-none overflow-hidden rounded-2xl bg-card">

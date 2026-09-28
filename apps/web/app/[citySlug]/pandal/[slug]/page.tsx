@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchCityBySlug, fetchPandalDetail, fetchNearbyRadiusPandals } from "@/lib/api";
+import { fetchCityBySlug, fetchPandalDetail, fetchPandalDetailOrThrow, fetchNearbyRadiusPandals } from "@/lib/api";
 import { PandalDetail } from "@/components/pandal-detail";
 
 const MAP_TILES_URL =
@@ -31,14 +31,21 @@ export async function generateMetadata({
 
 export default async function PandalDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ citySlug: string; slug: string }>;
+  searchParams: Promise<{ year?: string }>;
 }) {
   const { citySlug, slug } = await params;
+  const { year: yearParam } = await searchParams;
   const city = await fetchCityBySlug(citySlug);
   if (!city) notFound();
 
-  const pandal = await fetchPandalDetail(city._id, slug);
+  // Matches whichever festival year the visitor was browsing on Explore/Map
+  // (they link here with `?year=`) instead of always showing this pandal's
+  // latest published year regardless of where the link came from.
+  const year = yearParam ? Number(yearParam) : undefined;
+  const pandal = await fetchPandalDetailOrThrow(city._id, slug, year);
   if (!pandal) notFound();
 
   const nearby = pandal.year

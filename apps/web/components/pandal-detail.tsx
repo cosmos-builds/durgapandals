@@ -4,13 +4,18 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import maplibregl from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
-import { ADDED_BY_LABELS, VISIT_TYPE_LABELS, type NearbyRadiusPandal, type PandalSummary } from "@/lib/api";
+import {
+  ADDED_BY_LABELS,
+  VISIT_TYPE_LABELS,
+  fetchLikedStatus,
+  toggleReaction,
+  type NearbyRadiusPandal,
+  type PandalSummary,
+} from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { PhotoCarousel } from "./photo-carousel";
 import { MobileHeader } from "./mobile-header";
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 
 export interface PandalDetailProps {
   citySlug: string;
@@ -41,6 +46,7 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
   const [likes, setLikes] = useState(pandal.likes);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<"copied" | "unavailable" | null>(null);
 
   // Same class of bug as MapHome's pandal list: navigating pandal-to-pandal
   // (e.g. via "Pandals near here") reuses this component instance rather
@@ -48,24 +54,35 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
   // the newly-loaded pandal instead of quietly showing the previous one's.
   useEffect(() => {
     setLikes(pandal.likes);
-    setLiked(false);
     setSaved(getSavedPandalSlugs(citySlug).includes(pandal.slug));
-  }, [pandal.slug, pandal.likes, citySlug]);
+
+    // Hydrates whether *this* visitor already liked this pandal — without
+    // it, a returning visitor always saw an unfilled heart and tapping it
+    // would silently un-like instead of liking, since the server already
+    // knew but the client had just assumed "no."
+    setLiked(false);
+    if (pandal.year) {
+      fetchLikedStatus(pandal.year.id, getVisitorId()).then(setLiked);
+    }
+  }, [pandal.slug, pandal.year?.id, pandal.likes, citySlug]);
 
   async function toggleLike() {
     if (!pandal.year) return;
-    setLiked((prev) => !prev);
-    setLikes((prev) => (liked ? prev - 1 : prev + 1));
+    const yearId = pandal.year.id;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikes((prev) => (wasLiked ? prev - 1 : prev + 1));
 
-    const response = await fetch(`${API_BASE_URL}/reactions/toggle`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pandalYearId: pandal.year.id, anonymousVisitorId: getVisitorId() }),
-    });
-    if (response.ok) {
-      const body = await response.json();
-      setLiked(body.liked);
-      setLikes(body.count);
+    try {
+      const result = await toggleReaction(yearId, getVisitorId());
+      setLiked(result.liked);
+      setLikes(result.count);
+    } catch {
+      // Roll back the optimistic update — a network/server failure must
+      // not leave the heart showing a state the server never actually
+      // recorded.
+      setLiked(wasLiked);
+      setLikes((prev) => (wasLiked ? prev + 1 : prev - 1));
     }
   }
 
@@ -81,9 +98,19 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
       } catch {
         // User cancelled the native share sheet — nothing to do.
       }
-    } else if (navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
+      return;
     }
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(url);
+        setShareFeedback("copied");
+      } catch {
+        setShareFeedback("unavailable");
+      }
+    } else {
+      setShareFeedback("unavailable");
+    }
+    setTimeout(() => setShareFeedback(null), 2000);
   }
 
   function handleMapReady(map: maplibregl.Map) {
@@ -123,10 +150,15 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
               <span className="material-symbols-rounded">arrow_back</span>
             </Link>
             <MobileHeader citySlug={citySlug} variant="overlay" className="md:hidden" />
-            <div className="ml-auto flex items-center gap-2">
+            <div className="relative ml-auto flex items-center gap-2">
               <button onClick={handleShare} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
                 <span className="material-symbols-rounded">share</span>
               </button>
+              {shareFeedback && (
+                <span className="absolute right-0 top-[calc(100%+6px)] whitespace-nowrap rounded-xl bg-ground/90 px-3 py-1.5 font-body text-xs font-semibold shadow-lg">
+                  {shareFeedback === "copied" ? "Link copied" : "Couldn't copy link"}
+                </span>
+              )}
               <button
                 onClick={toggleLike}
                 className="flex h-11 items-center gap-1.5 rounded-pill bg-ground/70 px-3.5 font-body text-sm font-bold"
@@ -240,7 +272,7 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
                 {nearby.map((n) => (
                   <Link
                     key={n.id}
-                    href={`/${citySlug}/pandal/${n.slug}`}
+                    href={pandal.year ? `/${citySlug}/pandal/${n.slug}?year=${pandal.year.year}` : `/${citySlug}/pandal/${n.slug}`}
                     className="flex w-[110px] flex-none flex-col gap-1.5"
                   >
                     <div className="h-16 w-full overflow-hidden rounded-xl bg-card">
@@ -261,7 +293,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
             <span className="font-display text-lg font-extrabold">Address</span>
             <p className="font-body text-sm leading-relaxed text-ink-dim">{pandal.address}</p>
             <Link
-              href={`/${citySlug}?pandal=${pandal.slug}`}
+              href={
+                pandal.year
+                  ? `/${citySlug}?pandal=${pandal.slug}&year=${pandal.year.year}`
+                  : `/${citySlug}?pandal=${pandal.slug}`
+              }
               className="flex w-fit items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 py-2.5 font-body text-sm font-bold text-brand"
             >
               <span className="material-symbols-rounded text-lg">map</span>

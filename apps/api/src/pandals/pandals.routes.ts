@@ -99,7 +99,16 @@ export const pandalsRoutes: FastifyPluginAsync = async (app) => {
     return enriched.filter((item) => item.year != null);
   });
 
-  app.get<{ Params: { cityId: string; slug: string } }>(
+  const detailQuerySchema = z.object({ year: z.coerce.number().optional() });
+
+  // `year` lets the detail page match whatever festival year the visitor
+  // was actually browsing on Explore/Map (spec gap: without this, the
+  // detail page always showed the pandal's *latest* published year
+  // regardless of where the link came from). Falls back to the latest
+  // published year if the requested one doesn't exist for this pandal,
+  // rather than a bare 404 — a pandal that's real but wasn't published in
+  // that specific year should still be reachable.
+  app.get<{ Params: { cityId: string; slug: string }; Querystring: { year?: number } }>(
     "/:cityId/:slug",
     async (request, reply) => {
       const pandal = await PandalModel.findOne({
@@ -108,7 +117,11 @@ export const pandalsRoutes: FastifyPluginAsync = async (app) => {
         publicationStatus: "PUBLISHED",
       });
       if (!pandal) return reply.code(404).send({ error: "Pandal not found" });
-      return withCurrentYear(pandal);
+
+      const { year } = detailQuerySchema.parse(request.query);
+      const result = await withCurrentYear(pandal, year);
+      if (year && !result.year) return withCurrentYear(pandal);
+      return result;
     }
   );
 

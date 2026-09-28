@@ -159,6 +159,16 @@ export interface PandalSummary {
   likes: number;
 }
 
+// The pandal detail page always showed a pandal's *latest* published year
+// regardless of which festival year the visitor was actually browsing on
+// Explore/Map — every link into it now carries `?year=` (the detail page
+// and its API call both respect it, see pandals.routes.ts) so the year
+// context survives the navigation instead of silently jumping to "latest."
+export function pandalDetailHref(citySlug: string, pandal: Pick<PandalSummary, "slug" | "year">): string {
+  const base = `/${citySlug}/pandal/${pandal.slug}`;
+  return pandal.year ? `${base}?year=${pandal.year.year}` : base;
+}
+
 export const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   WALKING_DARSHAN: "Walking darshan",
   PARK_AND_VISIT: "Park & visit",
@@ -227,11 +237,33 @@ export async function fetchPandalsForCityOrThrow(
   return response.json();
 }
 
-export async function fetchPandalDetail(cityId: string, slug: string): Promise<PandalSummary | null> {
-  const response = await fetch(`${API_BASE_URL}/pandals/${cityId}/${slug}`, {
-    next: { revalidate: 30 },
-  });
+function pandalDetailUrl(cityId: string, slug: string, year?: number): string {
+  const params = year ? `?year=${year}` : "";
+  return `${API_BASE_URL}/pandals/${cityId}/${slug}${params}`;
+}
+
+// `year` matches whatever festival year the visitor was browsing (Explore/
+// Map's `?year=`) instead of always showing the pandal's latest — see
+// pandals.routes.ts on the API side for the "falls back to latest if that
+// year isn't published" behavior. Used by generateMetadata/opengraph-image,
+// where the existing graceful-fallback-to-null is appropriate (a broken
+// link preview is much lower stakes than the page itself 404ing).
+export async function fetchPandalDetail(cityId: string, slug: string, year?: number): Promise<PandalSummary | null> {
+  const response = await fetch(pandalDetailUrl(cityId, slug, year), { next: { revalidate: 30 } });
   return safeJson(response, null);
+}
+
+// For the page's own initial render: a real 404 (pandal genuinely doesn't
+// exist) still resolves to null so the caller can call notFound(), but any
+// other failure throws instead of also resolving to null — otherwise a
+// transient API error was indistinguishable from "this pandal was never
+// real," rendering Next's permanent-looking 404 page for what might just be
+// a momentary outage.
+export async function fetchPandalDetailOrThrow(cityId: string, slug: string, year?: number): Promise<PandalSummary | null> {
+  const response = await fetch(pandalDetailUrl(cityId, slug, year), { next: { revalidate: 30 } });
+  if (response.status === 404) return null;
+  if (!response.ok) throw new Error(`Failed to load pandal (${response.status})`);
+  return response.json();
 }
 
 export interface NearbyPandal {
@@ -409,4 +441,34 @@ export async function deletePhoto(url: string): Promise<void> {
   } catch {
     // best-effort — nothing the caller can do about a failed cleanup call
   }
+}
+
+// Whether *this* anonymous visitor already liked this pandal year — without
+// this, the detail/preview screens had no way to tell apart "never liked"
+// from "liked in a previous visit," so the heart always rendered unliked
+// for a returning visitor and tapping it would silently un-like instead.
+export async function fetchLikedStatus(pandalYearId: string, anonymousVisitorId: string): Promise<boolean> {
+  const params = new URLSearchParams({ pandalYearId, anonymousVisitorId });
+  const response = await fetch(`${API_BASE_URL}/reactions/mine?${params}`, { cache: "no-store" });
+  const body = await safeJson<{ liked: boolean }>(response, { liked: false });
+  return body.liked;
+}
+
+export interface ReactionToggleResult {
+  liked: boolean;
+  count: number;
+}
+
+// Throws on failure (network error or non-2xx) instead of resolving to
+// something fake — the caller applies an optimistic update before this
+// resolves and needs to be able to tell a real failure apart from success
+// in order to roll that update back.
+export async function toggleReaction(pandalYearId: string, anonymousVisitorId: string): Promise<ReactionToggleResult> {
+  const response = await fetch(`${API_BASE_URL}/reactions/toggle`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pandalYearId, anonymousVisitorId }),
+  });
+  if (!response.ok) throw new Error(`Failed to toggle reaction (${response.status})`);
+  return response.json();
 }

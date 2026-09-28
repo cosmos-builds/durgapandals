@@ -39,4 +39,20 @@ export const reactionsRoutes: FastifyPluginAsync = async (app) => {
     });
     return { count };
   });
+
+  // The detail/preview screens render a heart that reflects *this*
+  // visitor's like, not just the total count — without a way to ask "did I
+  // already like this," they had no choice but to always assume "no,"
+  // which silently un-liked an already-liked pandal for a returning
+  // visitor the moment they tapped the heart again.
+  app.get<{ Querystring: { pandalYearId: string; anonymousVisitorId: string } }>(
+    "/mine",
+    async (request) => {
+      const existing = await ReactionModel.findOne({
+        pandalYearId: request.query.pandalYearId,
+        anonymousVisitorId: request.query.anonymousVisitorId,
+      });
+      return { liked: existing != null };
+    }
+  );
 };

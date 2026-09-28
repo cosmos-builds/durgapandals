@@ -2,11 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import type { PandalSummary } from "@/lib/api";
+import { fetchLikedStatus, pandalDetailHref, toggleReaction, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000";
 const DISMISS_THRESHOLD_PX = 110;
 
 export interface PandalPreviewSheetProps {
@@ -28,24 +27,32 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
 
   useEffect(() => {
     setLikes(pandal.likes);
-    setLiked(false);
     setSaved(getSavedPandalSlugs(citySlug).includes(pandal.slug));
     setDragY(0);
+
+    // See pandal-detail.tsx for why this can't just stay hardcoded to
+    // false — a returning visitor who already liked this pandal would
+    // otherwise see an unfilled heart and un-like it by tapping again.
+    setLiked(false);
+    if (pandal.year) {
+      fetchLikedStatus(pandal.year.id, getVisitorId()).then(setLiked);
+    }
   }, [pandal, citySlug]);
 
   async function toggleLike() {
     if (!pandal.year) return;
-    setLiked((prev) => !prev);
-    setLikes((prev) => (liked ? prev - 1 : prev + 1));
-    const response = await fetch(`${API_BASE_URL}/reactions/toggle`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pandalYearId: pandal.year.id, anonymousVisitorId: getVisitorId() }),
-    });
-    if (response.ok) {
-      const body = await response.json();
-      setLiked(body.liked);
-      setLikes(body.count);
+    const yearId = pandal.year.id;
+    const wasLiked = liked;
+    setLiked(!wasLiked);
+    setLikes((prev) => (wasLiked ? prev - 1 : prev + 1));
+
+    try {
+      const result = await toggleReaction(yearId, getVisitorId());
+      setLiked(result.liked);
+      setLikes(result.count);
+    } catch {
+      setLiked(wasLiked);
+      setLikes((prev) => (wasLiked ? prev + 1 : prev - 1));
     }
   }
 
@@ -153,7 +160,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
         </div>
 
         <Link
-          href={`/${citySlug}/pandal/${pandal.slug}`}
+          href={pandalDetailHref(citySlug, pandal)}
           className="flex items-center justify-center gap-1 py-1 font-body text-sm font-bold text-brand"
         >
           View full details

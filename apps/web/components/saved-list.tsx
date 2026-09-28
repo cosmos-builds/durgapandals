@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { PandalSummary } from "@/lib/api";
+import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, pruneSavedSlugs, toggleSavedPandal, SAVED_KEY_BY_CITY } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { MobileHeader } from "./mobile-header";
@@ -94,7 +94,7 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
               </div>
               <div className="flex items-center gap-2.5 p-3.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <Link href={`/${citySlug}/pandal/${pandal.slug}`} className="truncate font-display text-lg font-bold">
+                  <Link href={pandalDetailHref(citySlug, pandal)} className="truncate font-display text-lg font-bold">
                     {pandal.canonicalName}
                   </Link>
                   <span className="truncate font-body text-sm text-ink-muted">{pandal.locality}</span>
