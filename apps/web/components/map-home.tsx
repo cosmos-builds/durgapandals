@@ -439,9 +439,17 @@ export function MapHome({
             );
           })}
           {pandals.length === 0 && (
-            <p className="px-2 py-8 text-center font-body text-sm text-ink-muted">
-              No pandals published yet in {cityName}.
-            </p>
+            <div className="flex flex-col items-center gap-2 px-2 py-8 text-center">
+              <p className="font-body text-sm text-ink-muted">
+                No pandals added yet for {cityName} in {year}. Know one? Be the first to add it.
+              </p>
+              <Link
+                href={`/${citySlug}/add`}
+                className="rounded-pill bg-brand px-4 py-2 font-body text-sm font-bold text-brand-ink"
+              >
+                Add a pandal
+              </Link>
+            </div>
           )}
         </div>
       </aside>
@@ -462,13 +470,33 @@ export function MapHome({
           flagCount={17}
         />
 
-        {/* Matches the design: sits just under the header, not at the bottom
-            of the screen (Google-Maps-style "search this area" placement). */}
+        {/* Mobile-only empty-state banner — desktop already shows the same
+            message in the sidebar list (see the `pandals.length === 0` block
+            above), so this exists purely because mobile has no sidebar to
+            show it in. Sits above the "search this area"/"locate me" row so
+            the two never overlap. */}
+        {pandals.length === 0 && (
+          <div className="absolute inset-x-4 bottom-[130px] z-10 flex flex-col items-center gap-2 rounded-2xl bg-panel/95 p-4 text-center shadow-2xl md:hidden">
+            <p className="font-body text-sm text-ink-muted">
+              No pandals added yet for {cityName} in {year}. Know one? Be the first to add it.
+            </p>
+            <Link
+              href={`/${citySlug}/add`}
+              className="rounded-pill bg-brand px-4 py-2 font-body text-sm font-bold text-brand-ink"
+            >
+              Add a pandal
+            </Link>
+          </div>
+        )}
+
+        {/* Bottom of the screen on mobile (thumb-reachable, matches the
+            "locate me" button's row) — desktop keeps it near the top,
+            beside the persistent nav bar. */}
         {showSearchArea && (
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute left-1/2 top-[140px] z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4"
+            className="absolute bottom-[70px] left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4 md:bottom-auto"
           >
             <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}

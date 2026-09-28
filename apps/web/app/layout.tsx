@@ -9,7 +9,7 @@ import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandals.com";
-const SITE_DESCRIPTION = "Discover Durga Puja pandals in Bhopal and Indore — map-first, no login needed.";
+const SITE_DESCRIPTION = "Discover Durga Puja pandals across India — map-first, no login needed.";
 
 // Site-wide link-preview defaults (WhatsApp/Facebook/Twitter card) — every
 // route inherits these unless it exports its own `metadata`/`generateMetadata`

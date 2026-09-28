@@ -11,6 +11,7 @@ import { MobileHeader } from "./mobile-header";
 export interface ExploreBrowserProps {
   citySlug: string;
   cityName: string;
+  year?: number;
   pandals: PandalSummary[];
 }
 
@@ -23,7 +24,7 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "newest", label: "Recently added" },
 ];
 
-export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserProps) {
+export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBrowserProps) {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [area, setArea] = useState("all");
@@ -203,7 +204,7 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, area, committee, theme…"
-                className="flex-1 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ground/50"
+                className="flex-1 py-3 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ground/50"
               />
               {query && (
                 <button onClick={() => setQuery("")} className="text-ground/50">
@@ -364,9 +365,21 @@ export function ExploreBrowser({ citySlug, cityName, pandals }: ExploreBrowserPr
               </Link>
             ))}
             {filtered.length === 0 && (
-              <p className="py-8 text-center font-body text-ink-muted md:col-span-full">
-                {isFiltering ? "No pandals match your search." : `No pandals published yet in ${cityName}.`}
-              </p>
+              <div className="flex flex-col items-center gap-2 py-8 text-center md:col-span-full">
+                <p className="font-body text-ink-muted">
+                  {isFiltering
+                    ? "No pandals match your search."
+                    : `No pandals added yet for ${cityName}${year ? ` in ${year}` : ""}. Know one? Be the first to add it.`}
+                </p>
+                {!isFiltering && (
+                  <Link
+                    href={`/${citySlug}/add`}
+                    className="rounded-pill bg-brand px-4 py-2 font-body text-sm font-bold text-brand-ink"
+                  >
+                    Add a pandal
+                  </Link>
+                )}
+              </div>
             )}
           </div>
         </div>

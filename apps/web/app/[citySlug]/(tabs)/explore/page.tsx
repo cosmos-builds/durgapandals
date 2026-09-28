@@ -17,5 +17,5 @@ export default async function ExplorePage({
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
   const pandals = await fetchPandalsForCity(city.slug, undefined, year);
 
-  return <ExploreBrowser citySlug={city.slug} cityName={city.name} pandals={pandals} />;
+  return <ExploreBrowser citySlug={city.slug} cityName={city.name} year={year} pandals={pandals} />;
 }

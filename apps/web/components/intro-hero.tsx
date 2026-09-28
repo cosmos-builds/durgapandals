@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fetchCities, type CityApiModel } from "@/lib/api";
+import { useCitySearch } from "@/lib/use-city-search";
 import { markIntroSeen } from "@/lib/visitor";
 
 export interface IntroHeroProps {
@@ -20,7 +21,7 @@ export interface IntroHeroProps {
 export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
   const router = useRouter();
   const [cities, setCities] = useState<CityApiModel[]>([]);
-  const [query, setQuery] = useState("");
+  const { query, setQuery, results, loading: searching, resolving, selectAndGo } = useCitySearch();
 
   useEffect(() => {
     fetchCities().then(setCities);
@@ -34,12 +35,6 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
       .slice(0, 6);
   }, [activeCities]);
 
-  const searchResults = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return activeCities.filter((c) => c.name.toLowerCase().includes(q));
-  }, [activeCities, query]);
-
   function selectCity(city: CityApiModel) {
     // Picking any city — including a different one — means onboarding is
     // done; without this, navigating away re-triggers the intro on the
@@ -51,6 +46,12 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
     } else {
       router.push(`/${city.slug}`);
     }
+  }
+
+  async function selectSearchResult(result: (typeof results)[number]) {
+    if (result.source === "db" && result.status !== "ACTIVE") return;
+    markIntroSeen();
+    await selectAndGo(result);
   }
 
   return (
@@ -99,18 +100,26 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
                   className="flex-1 bg-transparent font-body text-sm text-ground outline-none placeholder:text-ground/50 md:text-[15px]"
                 />
               </div>
-              {query.trim() !== "" && (
+              {query.trim().length >= 2 && (
                 <div className="absolute inset-x-0 top-[calc(100%+8px)] z-10 flex max-h-52 flex-col gap-0.5 overflow-y-auto rounded-2xl border border-border bg-panel p-1.5 text-left shadow-2xl">
-                  {searchResults.length === 0 ? (
-                    <p className="px-3 py-3 font-body text-sm text-ink-muted">No live city matches "{query}" yet.</p>
+                  {searching ? (
+                    <p className="px-3 py-3 font-body text-sm text-ink-muted">Searching…</p>
+                  ) : results.length === 0 ? (
+                    <p className="px-3 py-3 font-body text-sm text-ink-muted">
+                      No matching places in India — try a different spelling.
+                    </p>
                   ) : (
-                    searchResults.map((city) => (
+                    results.map((city, index) => (
                       <button
-                        key={city._id}
-                        onClick={() => selectCity(city)}
-                        className="rounded-xl px-3 py-2.5 text-left font-body text-sm font-semibold hover:bg-card"
+                        key={`${city.name}-${index}`}
+                        onClick={() => selectSearchResult(city)}
+                        disabled={resolving}
+                        className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left font-body text-sm font-semibold hover:bg-card disabled:opacity-60"
                       >
                         {city.name}
+                        {city.source === "nominatim" && (
+                          <span className="font-body text-xs font-normal text-ink-muted">new</span>
+                        )}
                       </button>
                     ))
                   )}

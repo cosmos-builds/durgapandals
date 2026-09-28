@@ -46,6 +46,48 @@ export async function fetchCityBySlug(slug: string): Promise<CityApiModel | null
   return safeJson(response, null);
 }
 
+// A "db" result is already a real city (has a slug, navigate directly); a
+// "nominatim" result is live from OpenStreetMap and has no City row yet —
+// call resolveCity() with it before navigating.
+export type CitySearchResult =
+  | (Pick<CityApiModel, "slug" | "name" | "status" | "tier" | "activeFestivalYear"> & {
+      source: "db";
+      _id: string;
+      state: string;
+      latitude: number;
+      longitude: number;
+    })
+  | {
+      source: "nominatim";
+      name: string;
+      state: string;
+      latitude: number;
+      longitude: number;
+    };
+
+export async function searchCities(q: string): Promise<CitySearchResult[]> {
+  if (q.trim().length < 2) return [];
+  const response = await fetch(`${API_BASE_URL}/cities/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+  return safeJson(response, []);
+}
+
+// Materializes a "nominatim" search result into a real City row — idempotent,
+// safe to call again for a city that already exists (e.g. two people search
+// for the same not-yet-listed city around the same time).
+export async function resolveCity(candidate: {
+  name: string;
+  state: string;
+  latitude: number;
+  longitude: number;
+}): Promise<CityApiModel | null> {
+  const response = await fetch(`${API_BASE_URL}/cities/resolve`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(candidate),
+  });
+  return safeJson(response, null);
+}
+
 export interface ScheduleEntry {
   time: string;
   label: string;

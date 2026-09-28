@@ -80,6 +80,20 @@ export const citySchema = z.object({
   tier: z.enum(["MAJOR", "MINOR"]).default("MINOR"),
 });
 
+export const citySearchQuerySchema = z.object({
+  q: z.string().min(2).max(80),
+});
+
+// Body shape of an unresolved (Nominatim-sourced) city search result —
+// exactly what `POST /cities/resolve` needs to find-or-create a City row
+// outside the admin panel.
+export const cityResolveSchema = z.object({
+  name: z.string().min(2).max(80),
+  state: z.string().min(2).max(80),
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+});
+
 export const submissionTypeSchema = z.enum([
   "NEW_PANDAL",
   "UPDATE_PANDAL",
@@ -121,5 +135,6 @@ export type CreatePandalInput = z.infer<typeof createPandalSchema>;
 export type UpdatePandalInput = z.infer<typeof updatePandalSchema>;
 export type PandalYearInput = z.infer<typeof pandalYearSchema>;
 export type CityInput = z.infer<typeof citySchema>;
+export type CityResolveInput = z.infer<typeof cityResolveSchema>;
 export type CreateSubmissionInput = z.infer<typeof createSubmissionSchema>;
 export type ReactionToggleInput = z.infer<typeof reactionToggleSchema>;

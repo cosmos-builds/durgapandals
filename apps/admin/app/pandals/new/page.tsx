@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
 import { Button, Card, Field, Input, Select } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
+import { CityCombobox, type SelectedCity } from "@/components/city-combobox";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
-
-interface City {
-  _id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  defaultMapZoom: number;
-}
 
 interface DuplicateCandidate {
   pandalId: string;
@@ -57,21 +50,21 @@ const AMENITY_FIELDS: { key: "parkingAvailable" | "twoWheelerAccessible" | "four
 export default function NewPandalPage() {
   const ready = useAdminGuard();
   const router = useRouter();
-  const [cities, setCities] = useState<City[]>([]);
+  const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!ready) return;
-    adminFetch("/admin/cities")
-      .then((res) => (res.ok ? res.json() : []))
-      .then(setCities);
-  }, [ready]);
-
-  const selectedCity = cities.find((city) => city._id === form.cityId) ?? null;
+  // Seed lat/lng from the city's centre right away instead of waiting on the
+  // map to finish loading and fire its first moveend — otherwise
+  // Check-duplicates/Create would stay disabled/empty until the admin drags
+  // the pin at least once.
+  function handleCitySelect(city: SelectedCity) {
+    setSelectedCity(city);
+    setForm((prev) => ({ ...prev, cityId: city._id, latitude: String(city.latitude), longitude: String(city.longitude) }));
+  }
 
   function handleLocationChange(coords: { latitude: number; longitude: number }) {
     setForm((prev) => ({ ...prev, latitude: String(coords.latitude), longitude: String(coords.longitude) }));
@@ -157,31 +150,7 @@ export default function NewPandalPage() {
         <Card padding="md">
         <div className="grid grid-cols-2 gap-3">
           <Field label="City" className="col-span-2">
-            <Select
-              required
-              value={form.cityId}
-              onChange={(e) => {
-                const cityId = e.target.value;
-                const city = cities.find((c) => c._id === cityId);
-                // Seed lat/lng from the city's centre right away instead of
-                // waiting on the map to finish loading and fire its first
-                // moveend — otherwise Check-duplicates/Create would stay
-                // disabled/empty until the admin drags the pin at least once.
-                setForm({
-                  ...form,
-                  cityId,
-                  latitude: city ? String(city.latitude) : "",
-                  longitude: city ? String(city.longitude) : "",
-                });
-              }}
-            >
-              <option value="">Select city…</option>
-              {cities.map((city) => (
-                <option key={city._id} value={city._id}>
-                  {city.name}
-                </option>
-              ))}
-            </Select>
+            <CityCombobox value={selectedCity} onSelect={handleCitySelect} />
           </Field>
           <Field label="Pandal name" className="col-span-2">
             <Input

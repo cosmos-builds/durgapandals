@@ -22,6 +22,31 @@ export interface City {
   updatedAt: string;
 }
 
+// Result shape of GET /cities/search — a tagged union so callers know
+// whether a result is already a real City ("db") or still needs to be
+// materialized via POST /cities/resolve before it can be navigated to
+// ("nominatim", live from OpenStreetMap, no City row yet).
+export type CitySearchResult =
+  | {
+      source: "db";
+      _id: string;
+      slug: string;
+      name: string;
+      state: string;
+      status: CityStatus;
+      tier: CityTier;
+      activeFestivalYear: number;
+      latitude: number;
+      longitude: number;
+    }
+  | {
+      source: "nominatim";
+      name: string;
+      state: string;
+      latitude: number;
+      longitude: number;
+    };
+
 export type PublicationStatus =
   | "DRAFT"
   | "PENDING"
