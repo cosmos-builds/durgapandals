@@ -307,6 +307,14 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
               View on map
             </Link>
           </div>
+
+          <p className="font-body text-xs text-ink-muted/70">
+            Details here are crowdsourced and not independently verified — timings and themes may
+            change. Please confirm with the organizer before visiting.{" "}
+            <Link href="/disclaimer" className="underline">
+              Learn more
+            </Link>
+          </p>
         </div>
       </div>
 

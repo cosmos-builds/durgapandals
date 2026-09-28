@@ -21,7 +21,7 @@ const STEPS = [
   {
     icon: "group",
     title: "Built by the community",
-    body: "Every listing starts as a submission from a visitor, organiser, or committee member — not scraped or guessed. Anyone can add a pandal or correct one that's wrong.",
+    body: "Listings come from visitors, organisers, and committee members, plus information we gather from public sources. Anyone can add a pandal or correct one that's wrong.",
   },
   {
     icon: "verified",
@@ -100,6 +100,10 @@ export default function AboutPage() {
             {CONTACT_EMAIL}
           </a>
         </div>
+
+        <Link href="/disclaimer" className="mt-6 font-body text-xs text-ink-muted underline">
+          Data accuracy disclaimer
+        </Link>
 
         <Link
           href="/"
