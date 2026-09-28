@@ -48,6 +48,14 @@ export const scheduleEntrySchema = z.object({
   label: z.string().min(1).max(80),
 });
 
+export const mediaAssetSchema = z.object({
+  url: z.string().url(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  altText: z.string().max(200).optional(),
+  caption: z.string().max(300).optional(),
+});
+
 export const pandalYearSchema = z.object({
   pandalId: z.string().min(1),
   year: z.number().int().min(2000).max(2100),
@@ -58,7 +66,11 @@ export const pandalYearSchema = z.object({
   endDate: z.string().datetime().optional(),
   // Free-length, 0..N rows — no fixed template (spec §1).
   schedule: z.array(scheduleEntrySchema).max(10).default([]),
-  coverImage: z.string().url().optional(),
+  // .nullable() lets a client explicitly clear the cover (e.g. its photo was
+  // just removed) — plain .optional() alone can't express "unset this",
+  // since an absent key in a PATCH body means "leave unchanged".
+  coverImage: z.string().url().nullable().optional(),
+  photos: z.array(mediaAssetSchema).max(20).default([]),
   categories: z.array(z.string()).max(10).default([]),
   tags: z.array(z.string()).max(20).default([]),
   featured: z.boolean().default(false),

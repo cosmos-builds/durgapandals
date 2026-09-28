@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch, adminMutate } from "@/lib/admin-api";
+import { adminFetch, adminMutate, uploadAdminPhoto, deleteAdminPhoto } from "@/lib/admin-api";
 import { Button, Card, Dialog, Field, Input, Select, Textarea } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import type { ReverseGeocodeResult } from "@/lib/admin-api";
@@ -40,6 +40,14 @@ interface ScheduleEntry {
   label: string;
 }
 
+interface MediaAsset {
+  url: string;
+  width?: number;
+  height?: number;
+  altText?: string;
+  caption?: string;
+}
+
 interface PandalYear {
   _id: string;
   year: number;
@@ -49,6 +57,8 @@ interface PandalYear {
   publicationStatus: string;
   likes: number;
   schedule: ScheduleEntry[];
+  coverImage?: string;
+  photos: MediaAsset[];
 }
 
 interface MergeCandidate {
@@ -79,6 +89,11 @@ const AMENITY_FIELDS: { key: keyof Pick<Pandal, "parkingAvailable" | "twoWheeler
 // described nearly every pandal, so it wasn't a useful filter.
 const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
 
+// Same limits as the public Add Pandal flow (apps/web/components/add-pandal-flow.tsx).
+const MAX_YEAR_PHOTOS = 20;
+const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
+
 export default function PandalDetailPage() {
   const ready = useAdminGuard();
   const router = useRouter();
@@ -94,6 +109,7 @@ export default function PandalDetailPage() {
   const [years, setYears] = useState<PandalYear[]>([]);
   const [yearForm, setYearForm] = useState(EMPTY_YEAR_FORM);
   const [savingYear, setSavingYear] = useState(false);
+  const [uploadingYearId, setUploadingYearId] = useState<string | null>(null);
 
   const [mergeOpen, setMergeOpen] = useState(false);
   const [mergeQuery, setMergeQuery] = useState("");
@@ -216,6 +232,70 @@ export default function PandalDetailPage() {
       body: JSON.stringify({ featured: !featured }),
     });
     if (!result.ok) setError(result.error ?? "Couldn't update featured status.");
+    await load();
+  }
+
+  async function handleYearPhotoSelect(year: PandalYear, event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = ""; // lets the same file be re-picked after removal
+    if (files.length === 0) return;
+
+    setError(null);
+    setUploadingYearId(year._id);
+    let nextPhotos = year.photos;
+    for (const file of files) {
+      if (nextPhotos.length >= MAX_YEAR_PHOTOS) {
+        setError(`Up to ${MAX_YEAR_PHOTOS} photos per year.`);
+        break;
+      }
+      if (!ALLOWED_PHOTO_TYPES.has(file.type)) {
+        setError("Only JPEG, PNG, or WebP images are supported.");
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE_BYTES) {
+        setError(`"${file.name}" is larger than 8MB.`);
+        continue;
+      }
+      const result = await uploadAdminPhoto(file);
+      if (!result.ok || !result.photo) {
+        setError(result.error ?? "Could not upload photo.");
+        continue;
+      }
+      nextPhotos = [...nextPhotos, result.photo];
+    }
+
+    const saveResult = await adminMutate(`/admin/pandal-years/${year._id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ photos: nextPhotos }),
+    });
+    if (!saveResult.ok) setError(saveResult.error ?? "Uploaded, but couldn't save photos.");
+    setUploadingYearId(null);
+    await load();
+  }
+
+  // Uploaded to Cloudinary immediately on selection, same as the public Add
+  // Pandal flow — removing it here would otherwise leave it orphaned in
+  // storage with nothing pointing to it, so it's deleted best-effort.
+  async function removeYearPhoto(year: PandalYear, url: string) {
+    setError(null);
+    const nextPhotos = year.photos.filter((p) => p.url !== url);
+    const clearingCover = year.coverImage === url;
+    void deleteAdminPhoto(url);
+    const result = await adminMutate(`/admin/pandal-years/${year._id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ photos: nextPhotos, ...(clearingCover ? { coverImage: null } : {}) }),
+    });
+    if (!result.ok) setError(result.error ?? "Couldn't remove photo.");
+    await load();
+  }
+
+  async function setCoverImage(year: PandalYear, url: string) {
+    setError(null);
+    const result = await adminMutate(`/admin/pandal-years/${year._id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ coverImage: url }),
+    });
+    if (!result.ok) setError(result.error ?? "Couldn't set cover photo.");
     await load();
   }
 
@@ -451,36 +531,88 @@ export default function PandalDetailPage() {
         </Button>
       </Card>
 
-      <Card className="max-w-2xl">
+      <Card className="max-w-3xl">
         <h2 className="mb-4 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Festival years
         </h2>
         <div className="mb-4 flex flex-col gap-2">
           {years.map((year) => (
-            <div key={year._id} className="flex items-center justify-between rounded-xl bg-card px-4 py-3">
-              <div>
-                <div className="font-body font-semibold">
-                  {year.year} {year.theme && `· ${year.theme}`}
-                </div>
-                <div className="flex items-center gap-2 font-body text-xs text-ink-muted">
-                  <span>{year.publicationStatus}</span>
-                  <span className="flex items-center gap-0.5 text-brand">
-                    <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      favorite
+            <div key={year._id} className="flex flex-col gap-3 rounded-xl bg-card px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="font-body font-semibold">
+                    {year.year} {year.theme && `· ${year.theme}`}
+                  </div>
+                  <div className="flex items-center gap-2 font-body text-xs text-ink-muted">
+                    <span>{year.publicationStatus}</span>
+                    <span className="flex items-center gap-0.5 text-brand">
+                      <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        favorite
+                      </span>
+                      {year.likes}
                     </span>
-                    {year.likes}
-                  </span>
-                  {year.schedule.length > 0 && <span>{year.schedule.length} schedule rows</span>}
+                    {year.schedule.length > 0 && <span>{year.schedule.length} schedule rows</span>}
+                  </div>
                 </div>
+                <button
+                  onClick={() => toggleFeatured(year._id, year.featured)}
+                  className={`rounded-lg px-3 py-1.5 font-body text-xs font-bold ${
+                    year.featured ? "bg-accent text-accent-ink" : "border border-border text-ink-muted"
+                  }`}
+                >
+                  {year.featured ? "Featured" : "Feature"}
+                </button>
               </div>
-              <button
-                onClick={() => toggleFeatured(year._id, year.featured)}
-                className={`rounded-lg px-3 py-1.5 font-body text-xs font-bold ${
-                  year.featured ? "bg-accent text-accent-ink" : "border border-border text-ink-muted"
-                }`}
-              >
-                {year.featured ? "Featured" : "Feature"}
-              </button>
+
+              <div className="flex flex-wrap gap-2">
+                {year.photos.map((photo) => (
+                  <div key={photo.url} className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-panel">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo.url} alt={photo.altText ?? ""} className="h-full w-full object-cover" />
+                    {year.coverImage === photo.url && (
+                      <span className="absolute left-1 top-1 rounded bg-brand px-1 py-0.5 font-body text-[9px] font-bold text-brand-ink">
+                        Cover
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => removeYearPhoto(year, photo.url)}
+                      className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ground/80"
+                    >
+                      <span className="material-symbols-rounded text-xs">close</span>
+                    </button>
+                    {year.coverImage !== photo.url && (
+                      <button
+                        type="button"
+                        onClick={() => setCoverImage(year, photo.url)}
+                        className="absolute inset-x-0 bottom-0 bg-ground/70 py-0.5 font-body text-[9px] font-bold text-white"
+                      >
+                        Set cover
+                      </button>
+                    )}
+                  </div>
+                ))}
+                {year.photos.length < MAX_YEAR_PHOTOS && (
+                  <label className="flex h-20 w-20 flex-none cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-ink-muted">
+                    {uploadingYearId === year._id ? (
+                      <span className="material-symbols-rounded animate-spin text-xl">progress_activity</span>
+                    ) : (
+                      <>
+                        <span className="material-symbols-rounded text-xl">add_photo_alternate</span>
+                        <span className="font-body text-[10px] font-semibold">Add</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      multiple
+                      disabled={uploadingYearId === year._id}
+                      onChange={(e) => handleYearPhotoSelect(year, e)}
+                      className="hidden"
+                    />
+                  </label>
+                )}
+              </div>
             </div>
           ))}
           {years.length === 0 && <p className="font-body text-sm text-ink-muted">No years added yet.</p>}

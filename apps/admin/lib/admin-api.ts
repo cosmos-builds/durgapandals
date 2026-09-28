@@ -136,3 +136,46 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
   if (!res.ok) return null;
   return res.json();
 }
+
+export interface UploadedPhoto {
+  url: string;
+  width: number;
+  height: number;
+}
+
+// Bypasses adminFetch: a multipart upload needs the browser to set its own
+// Content-Type boundary, which adminFetch's hardcoded "application/json"
+// header would break. Hits the same public, unauthenticated /media/upload
+// route apps/web's Add Pandal flow uses (apps/api/src/media/media.routes.ts)
+// — the actual admin-authorized action is the PATCH that attaches the
+// resulting URL to a PandalYear, which still goes through adminMutate.
+export async function uploadAdminPhoto(
+  file: File
+): Promise<{ ok: boolean; photo?: UploadedPhoto; error?: string }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE_URL}/media/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    return { ok: false, error: body.error ?? "Could not upload photo" };
+  }
+  const photo = await response.json().catch(() => null);
+  if (!photo) return { ok: false, error: "Could not upload photo" };
+  return { ok: true, photo };
+}
+
+// Best-effort cleanup for a photo uploaded but never saved onto a
+// PandalYear (removed before the PATCH, or the admin navigates away) — same
+// fire-and-forget pattern as apps/web's deletePhoto.
+export async function deleteAdminPhoto(url: string) {
+  await fetch(`${API_BASE_URL}/media/delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+    keepalive: true,
+  }).catch(() => {});
+}
