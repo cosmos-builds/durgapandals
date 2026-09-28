@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { fetchCityBySlug, fetchPandalsForCity } from "@/lib/api";
+import { fetchCityBySlug, fetchPandalsForCityOrThrow } from "@/lib/api";
 import { ExploreBrowser } from "@/components/explore-browser";
 
 export default async function ExplorePage({
@@ -15,7 +15,7 @@ export default async function ExplorePage({
   if (!city) notFound();
 
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
-  const pandals = await fetchPandalsForCity(city.slug, undefined, year);
+  const pandals = await fetchPandalsForCityOrThrow(city.slug, undefined, year);
 
   return <ExploreBrowser citySlug={city.slug} cityName={city.name} year={year} pandals={pandals} />;
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Select } from "@durgapandals/ui";
 import type { PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
@@ -24,23 +24,70 @@ const SORT_OPTIONS: { key: SortKey; label: string }[] = [
   { key: "newest", label: "Recently added" },
 ];
 
+function parseCategoriesParam(value: string | null): Set<string> {
+  return new Set((value ?? "").split(",").filter(Boolean));
+}
+
+function sameSet(a: Set<string>, b: Set<string>): boolean {
+  return a.size === b.size && [...a].every((item) => b.has(item));
+}
+
 export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBrowserProps) {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
+
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [area, setArea] = useState("all");
-  const [sort, setSort] = useState<SortKey>("featured");
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(new Set());
+  const [area, setArea] = useState(searchParams.get("area") ?? "all");
+  const [sort, setSort] = useState<SortKey>((searchParams.get("sort") as SortKey) ?? "featured");
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => parseCategoriesParam(searchParams.get("categories")));
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
-  // The desktop TopHeader's search bar (spec §5) lands here via `?q=` — this
-  // re-syncs whenever it changes (not just on mount), so searching again
-  // from the header while already on Explore actually updates the field
-  // instead of being silently ignored. The field is still freely editable
-  // afterwards; this only reacts to the URL param itself changing.
+  // Every filter on this page (not just `q`) now round-trips through the
+  // URL — this effect pulls in a change that came from outside this
+  // component's own inputs (the header's search box navigating here with a
+  // new `?q=`, or the browser back/forward button restoring an earlier
+  // filter state). The write-back effect below is the other half.
   useEffect(() => {
-    const q = searchParams.get("q");
-    if (q) setQuery(q);
+    const urlQuery = searchParams.get("q") ?? "";
+    const urlArea = searchParams.get("area") ?? "all";
+    const urlSort = (searchParams.get("sort") as SortKey) ?? "featured";
+    const urlCategories = parseCategoriesParam(searchParams.get("categories"));
+
+    setQuery((prev) => (prev === urlQuery ? prev : urlQuery));
+    setArea((prev) => (prev === urlArea ? prev : urlArea));
+    setSort((prev) => (prev === urlSort ? prev : urlSort));
+    setActiveCategories((prev) => (sameSet(prev, urlCategories) ? prev : urlCategories));
   }, [searchParams]);
+
+  // ...and this writes local filter state back to the URL (replace, not
+  // push, so filtering doesn't spam the back button with one entry per
+  // keystroke/click) — debounced so free typing doesn't thrash the router.
+  // Without this, refreshing the page, sharing a link, or hitting back lost
+  // every filter except a `q` that had come from the header search box.
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      // Starts from the current params (not a blank slate) so an unrelated
+      // one this component doesn't own — `year`, set by the city/year
+      // picker — survives instead of getting silently stripped the moment
+      // any filter here changes.
+      const params = new URLSearchParams(searchParams.toString());
+      if (query.trim()) params.set("q", query.trim());
+      else params.delete("q");
+      if (area !== "all") params.set("area", area);
+      else params.delete("area");
+      if (sort !== "featured") params.set("sort", sort);
+      else params.delete("sort");
+      if (activeCategories.size > 0) params.set("categories", [...activeCategories].join(","));
+      else params.delete("categories");
+      const next = params.toString();
+      if (next !== searchParams.toString()) {
+        router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+      }
+    }, 300);
+    return () => clearTimeout(timeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, area, sort, activeCategories]);
 
   const areas = useMemo(() => {
     const set = new Set(pandals.map((p) => p.locality).filter(Boolean));
@@ -89,7 +136,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
         case "name":
           return a.canonicalName.localeCompare(b.canonicalName);
         case "newest":
-          return b.id.localeCompare(a.id);
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case "featured":
         default:
           return Number(b.year?.featured ?? false) - Number(a.year?.featured ?? false) || b.likes - a.likes;
@@ -134,7 +181,18 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                 <span className="material-symbols-rounded text-lg">sort</span>
               </button>
               {sortMenuOpen && (
-                <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
+                <>
+                  {/* Invisible full-screen backdrop — clicking anywhere
+                      outside the menu closes it, matching every other
+                      dropdown/sheet in the app instead of only closing via
+                      the trigger button itself. */}
+                  <button
+                    aria-hidden
+                    tabIndex={-1}
+                    onClick={() => setSortMenuOpen(false)}
+                    className="fixed inset-0 z-10 cursor-default"
+                  />
+                  <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
                   {SORT_OPTIONS.map((o) => (
                     <button
                       key={o.key}
@@ -149,7 +207,8 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                       {o.label}
                     </button>
                   ))}
-                </div>
+                  </div>
+                </>
               )}
             </div>
           }

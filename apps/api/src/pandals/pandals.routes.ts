@@ -39,6 +39,7 @@ async function withCurrentYear(pandal: InstanceType<typeof PandalModel>, year?: 
   return {
     id: String(pandal._id),
     slug: pandal.slug,
+    createdAt: pandal.createdAt,
     canonicalName: pandal.canonicalName,
     organizerName: pandal.organizerName,
     ...fromGeoPoint(pandal.location),

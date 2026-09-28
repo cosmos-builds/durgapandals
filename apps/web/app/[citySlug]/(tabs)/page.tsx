@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
-import { fetchCityBySlug, fetchPandalsForCity } from "@/lib/api";
+import { fetchCityBySlug, fetchPandalsForCityOrThrow } from "@/lib/api";
 import { MapHome } from "@/components/map-home";
 import { SEEN_INTRO_COOKIE } from "@/lib/visitor";
 
@@ -28,7 +28,7 @@ export default async function CityMapPage({
   // (cookie present) get the normal eager fetch.
   const hasSeenIntro = (await cookies()).get(SEEN_INTRO_COOKIE)?.value === "1";
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
-  const pandals = hasSeenIntro ? await fetchPandalsForCity(city.slug, undefined, year) : [];
+  const pandals = hasSeenIntro ? await fetchPandalsForCityOrThrow(city.slug, undefined, year) : [];
   const availableYears = [city.activeFestivalYear, city.activeFestivalYear - 1, city.activeFestivalYear - 2];
 
   return (

@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
-import { useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { CityYearPill } from "./city-year-pill";
 
 export interface TopHeaderProps {
@@ -29,7 +29,16 @@ const NAV_LINKS = [
 export function TopHeader({ citySlug, cityName, activeFestivalYear, availableYears }: TopHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+
+  // Stays in sync with Explore's own `?q=` (including its debounced
+  // write-back as you type there) — without this, the header box looked
+  // empty even while Explore was actively filtered by a search someone
+  // typed directly into the page instead of into this box.
+  useEffect(() => {
+    setQuery(searchParams.get("q") ?? "");
+  }, [searchParams]);
 
   function handleSearch(event: React.FormEvent) {
     event.preventDefault();

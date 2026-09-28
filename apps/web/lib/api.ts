@@ -139,6 +139,7 @@ export type VisitType = "WALKING_DARSHAN" | "PARK_AND_VISIT" | "DARSHAN_AND_GO";
 export interface PandalSummary {
   id: string;
   slug: string;
+  createdAt: string;
   canonicalName: string;
   organizerName?: string;
   latitude: number;
@@ -177,16 +178,14 @@ export interface BoundingBox {
   maxLng: number;
 }
 
-// `bbox` powers "Search this area" on the Map page — omitting it keeps the
-// original "every published pandal in the city" behavior (the initial load
-// still wants the whole city, not just the starting viewport). `year`
-// switches to a historical festival year instead of the city's active one
-// (spec §4's combined city+year control).
-export async function fetchPandalsForCity(
-  citySlug: string,
-  bbox?: BoundingBox,
-  year?: number
-): Promise<PandalSummary[]> {
+function pandalsFetchInit(bbox?: BoundingBox, year?: number): RequestInit {
+  return {
+    cache: bbox || year ? "no-store" : undefined,
+    next: bbox || year ? undefined : { revalidate: 30 },
+  };
+}
+
+function pandalsUrl(citySlug: string, bbox?: BoundingBox, year?: number): string {
   const params = new URLSearchParams({ citySlug });
   if (year) params.set("year", String(year));
   if (bbox) {
@@ -195,11 +194,37 @@ export async function fetchPandalsForCity(
     params.set("maxLat", String(bbox.maxLat));
     params.set("maxLng", String(bbox.maxLng));
   }
-  const response = await fetch(`${API_BASE_URL}/pandals?${params}`, {
-    cache: bbox || year ? "no-store" : undefined,
-    next: bbox || year ? undefined : { revalidate: 30 },
-  });
+  return `${API_BASE_URL}/pandals?${params}`;
+}
+
+// `bbox` powers "Search this area" on the Map page — omitting it keeps the
+// original "every published pandal in the city" behavior (the initial load
+// still wants the whole city, not just the starting viewport). `year`
+// switches to a historical festival year instead of the city's active one
+// (spec §4's combined city+year control). Silently falls back to [] on
+// failure — appropriate for a client-triggered incremental refetch (e.g.
+// "search this area"), where the page is already rendered and an unhandled
+// rejection would be worse than a stale/empty list. For an initial
+// server-rendered load, use fetchPandalsForCityOrThrow instead so a real
+// API failure can render an actual error state instead of looking like an
+// empty city.
+export async function fetchPandalsForCity(
+  citySlug: string,
+  bbox?: BoundingBox,
+  year?: number
+): Promise<PandalSummary[]> {
+  const response = await fetch(pandalsUrl(citySlug, bbox, year), pandalsFetchInit(bbox, year));
   return safeJson(response, []);
+}
+
+export async function fetchPandalsForCityOrThrow(
+  citySlug: string,
+  bbox?: BoundingBox,
+  year?: number
+): Promise<PandalSummary[]> {
+  const response = await fetch(pandalsUrl(citySlug, bbox, year), pandalsFetchInit(bbox, year));
+  if (!response.ok) throw new Error(`Failed to load pandals (${response.status})`);
+  return response.json();
 }
 
 export async function fetchPandalDetail(cityId: string, slug: string): Promise<PandalSummary | null> {
