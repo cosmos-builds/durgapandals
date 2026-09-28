@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 export interface Photo {
   url: string;
@@ -53,7 +54,7 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dots
   }
 
   if (images.length === 0) {
-    return <div className={`h-full w-full bg-panel ${className}`} />;
+    return <PandalPhotoPlaceholder className={`h-full w-full ${className}`} />;
   }
 
   return (

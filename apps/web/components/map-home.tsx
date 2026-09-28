@@ -14,6 +14,7 @@ import { CityYearPill } from "./city-year-pill";
 import { MobileHeader } from "./mobile-header";
 import { IntroHero } from "./intro-hero";
 import { FestiveBunting } from "./festive-bunting";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 export interface MapHomeProps {
   citySlug: string;
   cityName: string;
@@ -390,9 +391,11 @@ export function MapHome({
                 }`}
               >
                 <div className="h-20 w-20 flex-none overflow-hidden rounded-xl bg-panel">
-                  {pandal.year?.coverImage && (
+                  {pandal.year?.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={pandal.year.coverImage} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <PandalPhotoPlaceholder className="h-full w-full" />
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">

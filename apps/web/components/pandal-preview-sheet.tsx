@@ -5,6 +5,7 @@ import Link from "next/link";
 import { fetchLikedStatus, pandalDetailHref, toggleReaction, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 const DISMISS_THRESHOLD_PX = 110;
 
@@ -98,9 +99,11 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
 
         <div className="flex gap-3.5">
           <div className="h-[92px] w-[92px] flex-none overflow-hidden rounded-2xl bg-card">
-            {pandal.year?.coverImage && (
+            {pandal.year?.coverImage ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={pandal.year.coverImage} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <PandalPhotoPlaceholder className="h-full w-full" />
             )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1">

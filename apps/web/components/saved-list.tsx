@@ -6,6 +6,7 @@ import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, pruneSavedSlugs, toggleSavedPandal, SAVED_KEY_BY_CITY } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { MobileHeader } from "./mobile-header";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 export interface SavedListProps {
   citySlug: string;
@@ -79,9 +80,11 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
           {saved.map((pandal) => (
             <div key={pandal.id} className="overflow-hidden rounded-3xl border border-border bg-panel">
               <div className="relative h-[150px] md:h-[140px]">
-                {pandal.year?.coverImage && (
+                {pandal.year?.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={pandal.year.coverImage} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <PandalPhotoPlaceholder className="h-full w-full" />
                 )}
                 <button
                   onClick={() => unsave(pandal.slug)}

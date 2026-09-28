@@ -16,6 +16,7 @@ import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visi
 import { DirectionsButton } from "./directions-button";
 import { PhotoCarousel } from "./photo-carousel";
 import { MobileHeader } from "./mobile-header";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 export interface PandalDetailProps {
   citySlug: string;
@@ -276,9 +277,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
                     className="flex w-[110px] flex-none flex-col gap-1.5"
                   >
                     <div className="h-16 w-full overflow-hidden rounded-xl bg-card">
-                      {n.coverImage && (
+                      {n.coverImage ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={n.coverImage} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <PandalPhotoPlaceholder className="h-full w-full" />
                       )}
                     </div>
                     <span className="truncate font-body text-xs font-bold">{n.canonicalName}</span>

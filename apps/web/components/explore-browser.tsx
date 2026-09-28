@@ -7,6 +7,7 @@ import { Select } from "@durgapandals/ui";
 import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
 import { MobileHeader } from "./mobile-header";
+import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 export interface ExploreBrowserProps {
   citySlug: string;
@@ -331,7 +332,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                         className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     ) : (
-                      <div className="absolute inset-0 bg-panel" />
+                      <PandalPhotoPlaceholder className="absolute inset-0" />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-ground via-ground/20 to-transparent" />
                     <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-transparent" />
@@ -379,9 +380,11 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                 className="flex items-center gap-3 border-b border-border py-3 md:rounded-2xl md:border md:border-border md:bg-panel md:p-3 md:hover:border-accent/40"
               >
                 <div className="relative h-[68px] w-[68px] flex-none overflow-hidden rounded-2xl bg-card">
-                  {pandal.year?.coverImage && (
+                  {pandal.year?.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={pandal.year.coverImage} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <PandalPhotoPlaceholder className="h-full w-full" />
                   )}
                   {pandal.year?.featured && (
                     <span className="absolute left-1 top-1 rounded-pill bg-accent px-1.5 py-0.5 font-body text-[9px] font-extrabold uppercase text-accent-ink">
