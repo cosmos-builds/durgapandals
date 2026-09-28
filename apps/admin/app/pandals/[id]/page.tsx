@@ -806,7 +806,7 @@ export default function PandalDetailPage() {
             })}
           </div>
           <Button type="submit" disabled={savingYear}>
-            {savingYear ? "Adding…" : "Add year"}
+            {savingYear ? "Adding festival year…" : "Add festival year"}
           </Button>
         </form>
       </Card>
