@@ -1,4 +1,4 @@
-# DurgaPandals.com
+# DurgaPandal.com
 
 Turborepo monorepo: `apps/web` (public), `apps/admin`, `apps/api` (Fastify), plus
 shared `packages/*`. See `DurgaPandals-V1-Product-UX-Engineering-Spec.md` for

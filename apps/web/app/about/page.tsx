@@ -4,13 +4,13 @@ import { FestiveBunting } from "@/components/festive-bunting";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "About DurgaPandals.com — a free, community-sourced, map-first directory of Durga Puja pandals.",
+  description: "About DurgaPandal.com — a free, community-sourced, map-first directory of Durga Puja pandals.",
 };
 
 // Not city-scoped on purpose — this is the one page that's about the whole
 // site rather than any single city's festival, so it lives outside
 // [citySlug] instead of inheriting that layout's tabs/header.
-const CONTACT_EMAIL = "hello@durgapandals.com";
+const CONTACT_EMAIL = "hello@durgapandal.com";
 
 const STEPS = [
   {

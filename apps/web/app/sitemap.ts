@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { fetchCities, fetchPandalsForCity } from "@/lib/api";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandals.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 
 export const revalidate = 3600;
 

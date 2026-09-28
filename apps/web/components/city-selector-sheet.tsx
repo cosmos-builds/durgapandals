@@ -225,7 +225,7 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
           onClick={onClose}
           className="flex items-center justify-center gap-1 border-t border-border pt-4 font-body text-sm font-semibold text-ink-muted"
         >
-          About DurgaPandals.com
+          About DurgaPandal.com
         </Link>
       </div>
     </>

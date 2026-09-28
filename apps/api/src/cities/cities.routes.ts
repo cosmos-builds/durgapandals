@@ -90,7 +90,7 @@ async function searchExternalCities(q: string): Promise<ExternalCityCandidate[]>
   );
 
   const response = await fetch(url, {
-    headers: { "User-Agent": "DurgaPandals.com (contact: verify@durgapandals.com)" },
+    headers: { "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)" },
   });
   if (!response.ok) return [];
 

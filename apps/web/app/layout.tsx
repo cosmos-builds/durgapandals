@@ -8,7 +8,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandals.com";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 const SITE_DESCRIPTION = "Discover Durga Puja pandals across India — map-first, no login needed.";
 
 // Site-wide link-preview defaults (WhatsApp/Facebook/Twitter card) — every
@@ -20,12 +20,12 @@ const SITE_DESCRIPTION = "Discover Durga Puja pandals across India — map-first
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "DurgaPandals.com",
-    template: "%s · DurgaPandals.com",
+    default: "DurgaPandal.com",
+    template: "%s · DurgaPandal.com",
   },
   description: SITE_DESCRIPTION,
   openGraph: {
-    siteName: "DurgaPandals.com",
+    siteName: "DurgaPandal.com",
     type: "website",
     locale: "en_IN",
   },

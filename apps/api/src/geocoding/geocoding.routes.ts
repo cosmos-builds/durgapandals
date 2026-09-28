@@ -66,7 +66,7 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "DurgaPandals.com (contact: verify@durgapandals.com)",
+        "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)",
         "Accept-Language": "en",
       },
     });
@@ -93,7 +93,7 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
 
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "DurgaPandals.com (contact: verify@durgapandals.com)",
+        "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)",
         "Accept-Language": "en",
       },
     });

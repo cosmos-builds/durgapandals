@@ -53,7 +53,7 @@ export default async function Image({ params }: { params: Promise<{ citySlug: st
             display: "flex",
           }}
         >
-          durgapandals.com · map-first, no login needed
+          durgapandal.com · map-first, no login needed
         </div>
       </div>
     ),

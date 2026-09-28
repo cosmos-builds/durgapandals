@@ -15,7 +15,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   const env = app.env;
   const provider = new ResendEmailProvider({
     apiKey: env.RESEND_API_KEY ?? "",
-    fromAddress: env.RESEND_FROM_ADDRESS ?? "verify@durgapandals.com",
+    fromAddress: env.RESEND_FROM_ADDRESS ?? "verify@durgapandal.com",
   });
 
   app.post("/send-code", async (request, reply) => {
