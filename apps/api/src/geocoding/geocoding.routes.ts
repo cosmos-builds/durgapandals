@@ -32,8 +32,11 @@ interface NominatimResult {
 
 // Free-tier geocoding behind a provider boundary (spec §5.4, §31.5) — the
 // browser can't send Nominatim's required User-Agent header itself, so this
-// proxies the request server-side, biased to the selected city's viewbox so
-// "MP Nagar" resolves near Bhopal and not some other MP Nagar worldwide.
+// proxies the request server-side. Pandals can be added anywhere in India
+// (not just near the visitor's currently-selected city), so this searches
+// all of India like Google Maps would — the live pin (when present) only
+// nudges ranking toward it for disambiguating same-named places, it never
+// excludes a legitimately distant, correctly-named result.
 export const geocodingRoutes: FastifyPluginAsync = async (app) => {
   await app.register(import("@fastify/rate-limit"), {
     max: 30,
@@ -45,24 +48,26 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
     const city = await CityModel.findOne({ slug: query.citySlug });
     if (!city) return reply.code(404).send({ error: "City not found" });
 
-    // Tight box (~6km) around the bias point when we have one (the live pin),
-    // wider (~35km, city-scale) when we only know the city centre.
-    const biasLat = query.lat ?? city.latitude;
-    const biasLon = query.lon ?? city.longitude;
-    const delta = query.lat != null ? 0.06 : 0.35;
-    const viewbox = [biasLon - delta, biasLat + delta, biasLon + delta, biasLat - delta].join(",");
-
     const url = new URL("https://nominatim.openstreetmap.org/search");
     url.searchParams.set("q", query.q);
     url.searchParams.set("format", "jsonv2");
     url.searchParams.set("addressdetails", "1");
-    url.searchParams.set("limit", "6");
-    url.searchParams.set("viewbox", viewbox);
-    // Hard-restrict to the viewbox — bounded=0 only "prefers" it, which let
-    // a textually-closer match on the other side of the country outrank an
-    // actually-nearby result. This is what was causing far-away results.
-    url.searchParams.set("bounded", "1");
+    url.searchParams.set("limit", "8");
     url.searchParams.set("countrycodes", city.countryCode.toLowerCase());
+
+    // Only nudge ranking toward the live pin when we actually have one (mid-
+    // flow, dragging the map) — a same-named locality near the pin should
+    // outrank an unrelated one elsewhere. No pin yet (first search) means no
+    // bias at all: unrestricted India-wide search, same as Google Maps.
+    // `bounded` is intentionally omitted — setting it to 1 hard-excludes
+    // anything outside the box (e.g. searching "Bhopal" while a Pune pin is
+    // active returned zero results); leaving it unset makes viewbox a soft
+    // ranking preference instead of a filter.
+    if (query.lat != null && query.lon != null) {
+      const delta = 0.06;
+      const viewbox = [query.lon - delta, query.lat + delta, query.lon + delta, query.lat - delta].join(",");
+      url.searchParams.set("viewbox", viewbox);
+    }
 
     const response = await fetch(url, {
       headers: {

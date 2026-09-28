@@ -508,7 +508,7 @@ export function MapHome({
           <button
             onClick={searchThisArea}
             disabled={searchingArea}
-            className="absolute bottom-[70px] left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ink pl-2.5 pr-3 font-body text-xs font-bold text-ground shadow-lg disabled:opacity-70 md:top-4 md:bottom-auto"
+            className="absolute bottom-[70px] left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ground/80 pl-2.5 pr-3 font-body text-xs font-bold text-ink shadow-lg disabled:opacity-70 md:top-4 md:bottom-auto"
           >
             <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
             {searchingArea ? "Searching…" : "Search this area"}
