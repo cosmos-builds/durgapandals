@@ -295,9 +295,12 @@ export function AddPandalFlow({
   }
 
   function applyGeocodedDetails(result: LocationSearchResult) {
+    // Always overwrite from the new pin position, even with an empty string —
+    // falling back to `prev.locality` here would leave a moved pin showing
+    // the *previous* location's locality with no sign it's stale.
     setDetails((prev) => ({
       ...prev,
-      locality: result.locality ?? prev.locality,
+      locality: result.locality ?? "",
       address: result.road ?? result.label,
     }));
   }
