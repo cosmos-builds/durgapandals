@@ -21,6 +21,8 @@ async function main() {
 
   const app = Fastify({ logger: true });
 
+  app.get("/health", async () => ({ status: "ok" }));
+
   await app.register(cors, { origin: true });
   // Global floor; sensitive endpoints (OTP, submissions) set tighter limits
   // of their own inside each domain module (spec §16).
