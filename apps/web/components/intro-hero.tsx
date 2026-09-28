@@ -131,9 +131,9 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
                           index === highlightedIndex ? "bg-card" : "hover:bg-card"
                         }`}
                       >
-                        {city.name}
+                        <span className="min-w-0 flex-1 truncate">{city.name}</span>
                         {city.source === "nominatim" && (
-                          <span className="font-body text-xs font-normal text-ink-muted">new</span>
+                          <span className="flex-none font-body text-xs font-normal text-ink-muted">new</span>
                         )}
                       </button>
                     ))
@@ -157,7 +157,7 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
                   <button
                     key={city._id}
                     onClick={() => selectCity(city)}
-                    className={`rounded-pill border px-3 py-1.5 font-body text-xs font-semibold md:text-sm ${
+                    className={`max-w-[45vw] truncate rounded-pill border px-3 py-1.5 font-body text-xs font-semibold md:max-w-[200px] md:text-sm ${
                       city.slug === citySlug ? "border-brand bg-brand/15 text-brand" : "border-border bg-chip text-ink-dim"
                     }`}
                   >

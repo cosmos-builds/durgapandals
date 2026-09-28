@@ -163,9 +163,9 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
                   <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip font-display text-lg font-extrabold text-brand">
                     {city.name.charAt(0)}
                   </span>
-                  <span className="flex flex-1 flex-col">
-                    <span className="font-body text-[16px] font-bold">{city.name}</span>
-                    <span className="font-body text-sm text-ink-muted">Festival year {city.activeFestivalYear}</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate font-body text-[16px] font-bold">{city.name}</span>
+                    <span className="truncate font-body text-sm text-ink-muted">Festival year {city.activeFestivalYear}</span>
                   </span>
                   {city.isSelected && (
                     <span className="material-symbols-rounded text-2xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -181,9 +181,9 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
             <div className="flex flex-col gap-1">
               <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Coming soon</span>
               {comingSoon.map((city) => (
-                <div key={city.key} className="flex h-13 items-center justify-between px-1 font-body text-[15.5px] font-semibold text-ink-muted">
-                  {city.name}
-                  <span className="rounded-lg bg-card px-2.5 py-1 font-body text-xs font-semibold text-ink-muted">Soon</span>
+                <div key={city.key} className="flex h-13 items-center gap-2 px-1 font-body text-[15.5px] font-semibold text-ink-muted">
+                  <span className="min-w-0 flex-1 truncate">{city.name}</span>
+                  <span className="flex-none rounded-lg bg-card px-2.5 py-1 font-body text-xs font-semibold text-ink-muted">Soon</span>
                 </div>
               ))}
             </div>
@@ -204,9 +204,9 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
                   <span className="material-symbols-rounded flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip text-xl text-ink-muted">
                     {resolving ? "sync" : "location_on"}
                   </span>
-                  <span className="flex flex-1 flex-col">
-                    <span className="font-body text-[16px] font-bold">{city.name}</span>
-                    <span className="font-body text-sm text-ink-muted">{city.state} · no pandals added yet</span>
+                  <span className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate font-body text-[16px] font-bold">{city.name}</span>
+                    <span className="truncate font-body text-sm text-ink-muted">{city.state} · no pandals added yet</span>
                   </span>
                 </button>
               ))}
