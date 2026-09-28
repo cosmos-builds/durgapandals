@@ -33,15 +33,24 @@ function sameSet(a: Set<string>, b: Set<string>): boolean {
   return a.size === b.size && [...a].every((item) => b.has(item));
 }
 
-export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBrowserProps) {
+export function ExploreBrowser({
+  citySlug,
+  cityName,
+  year,
+  pandals,
+}: ExploreBrowserProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [area, setArea] = useState(searchParams.get("area") ?? "all");
-  const [sort, setSort] = useState<SortKey>((searchParams.get("sort") as SortKey) ?? "featured");
-  const [activeCategories, setActiveCategories] = useState<Set<string>>(() => parseCategoriesParam(searchParams.get("categories")));
+  const [sort, setSort] = useState<SortKey>(
+    (searchParams.get("sort") as SortKey) ?? "featured",
+  );
+  const [activeCategories, setActiveCategories] = useState<Set<string>>(() =>
+    parseCategoriesParam(searchParams.get("categories")),
+  );
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
 
   // Every filter on this page (not just `q`) now round-trips through the
@@ -58,7 +67,9 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
     setQuery((prev) => (prev === urlQuery ? prev : urlQuery));
     setArea((prev) => (prev === urlArea ? prev : urlArea));
     setSort((prev) => (prev === urlSort ? prev : urlSort));
-    setActiveCategories((prev) => (sameSet(prev, urlCategories) ? prev : urlCategories));
+    setActiveCategories((prev) =>
+      sameSet(prev, urlCategories) ? prev : urlCategories,
+    );
   }, [searchParams]);
 
   // ...and this writes local filter state back to the URL (replace, not
@@ -79,11 +90,14 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
       else params.delete("area");
       if (sort !== "featured") params.set("sort", sort);
       else params.delete("sort");
-      if (activeCategories.size > 0) params.set("categories", [...activeCategories].join(","));
+      if (activeCategories.size > 0)
+        params.set("categories", [...activeCategories].join(","));
       else params.delete("categories");
       const next = params.toString();
       if (next !== searchParams.toString()) {
-        router.replace(next ? `${pathname}?${next}` : pathname, { scroll: false });
+        router.replace(next ? `${pathname}?${next}` : pathname, {
+          scroll: false,
+        });
       }
     }, 300);
     return () => clearTimeout(timeout);
@@ -126,7 +140,8 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
         (p.year?.tags.some((t) => t.toLowerCase().includes(q)) ?? false);
       const matchesArea = area === "all" || p.locality === area;
       const matchesCategory =
-        activeCategories.size === 0 || (p.year?.categories.some((c) => activeCategories.has(c)) ?? false);
+        activeCategories.size === 0 ||
+        (p.year?.categories.some((c) => activeCategories.has(c)) ?? false);
       return matchesQuery && matchesArea && matchesCategory;
     });
 
@@ -137,10 +152,15 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
         case "name":
           return a.canonicalName.localeCompare(b.canonicalName);
         case "newest":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
         case "featured":
         default:
-          return Number(b.year?.featured ?? false) - Number(a.year?.featured ?? false) || b.likes - a.likes;
+          return (
+            Number(b.year?.featured ?? false) -
+              Number(a.year?.featured ?? false) || b.likes - a.likes
+          );
       }
     });
 
@@ -148,7 +168,8 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
   }, [pandals, query, area, sort, activeCategories]);
 
   const featured = pandals.filter((p) => p.year?.featured);
-  const isFiltering = query.trim() !== "" || area !== "all" || activeCategories.size > 0;
+  const isFiltering =
+    query.trim() !== "" || area !== "all" || activeCategories.size > 0;
 
   return (
     <div className="relative min-h-dvh overflow-hidden bg-ground pb-[100px] md:pb-16">
@@ -194,20 +215,22 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                     className="fixed inset-0 z-10 cursor-default"
                   />
                   <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
-                  {SORT_OPTIONS.map((o) => (
-                    <button
-                      key={o.key}
-                      onClick={() => {
-                        setSort(o.key);
-                        setSortMenuOpen(false);
-                      }}
-                      className={`rounded-xl px-3 py-2 text-left font-body text-sm font-semibold ${
-                        sort === o.key ? "bg-card text-brand" : "hover:bg-card"
-                      }`}
-                    >
-                      {o.label}
-                    </button>
-                  ))}
+                    {SORT_OPTIONS.map((o) => (
+                      <button
+                        key={o.key}
+                        onClick={() => {
+                          setSort(o.key);
+                          setSortMenuOpen(false);
+                        }}
+                        className={`rounded-xl px-3 py-2 text-left font-body text-sm font-semibold ${
+                          sort === o.key
+                            ? "bg-card text-brand"
+                            : "hover:bg-card"
+                        }`}
+                      >
+                        {o.label}
+                      </button>
+                    ))}
                   </div>
                 </>
               )}
@@ -223,9 +246,14 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
         {/* Desktop-only category rail (spec: 200px sidebar) */}
         {categories.length > 0 && (
           <aside className="hidden md:flex md:w-[200px] md:flex-none md:flex-col md:gap-2.5 md:border-r md:border-border md:pr-6">
-            <span className="mb-1 font-mono text-xs font-extrabold uppercase tracking-wide text-accent">Category</span>
+            <span className="mb-1 font-mono text-xs font-extrabold uppercase tracking-wide text-accent">
+              Category
+            </span>
             {categories.map((category) => (
-              <label key={category} className="flex items-center gap-2 font-body text-sm">
+              <label
+                key={category}
+                className="flex items-center gap-2 font-body text-sm"
+              >
                 <input
                   type="checkbox"
                   checked={activeCategories.has(category)}
@@ -236,7 +264,6 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
               </label>
             ))}
           </aside>
-          
         )}
 
         <div className="min-w-0 flex-1">
@@ -244,7 +271,11 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
             <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">
               Explore <span className="text-brand">{cityName}</span>
             </h1>
-            <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-[190px] text-sm font-semibold">
+            <Select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as SortKey)}
+              className="w-[190px] text-sm font-semibold"
+            >
               {SORT_OPTIONS.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
@@ -259,21 +290,29 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
           {/* Search + area filter */}
           <div className="mt-5 flex flex-col gap-2.5 px-4 md:flex-row md:px-0">
             <div className="flex h-11 md:h-12 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-3.5 md:px-4">
-              <span className="material-symbols-rounded text-[20px] text-ground/50">search</span>
+              <span className="material-symbols-rounded text-[20px] text-ground/50">
+                search
+              </span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, area, committee, theme…"
-                className="flex-1 bg-transparent font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50"
+                className="flex-1 py-3 bg-transparent font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50"
               />
               {query && (
                 <button onClick={() => setQuery("")} className="text-ground/50">
-                  <span className="material-symbols-rounded text-lg">close</span>
+                  <span className="material-symbols-rounded text-lg">
+                    close
+                  </span>
                 </button>
               )}
             </div>
 
-            <Select value={area} onChange={(e) => setArea(e.target.value)} className="text-sm font-semibold md:w-[180px]">
+            <Select
+              value={area}
+              onChange={(e) => setArea(e.target.value)}
+              className="text-sm font-semibold md:w-[180px]"
+            >
               <option value="all">All areas</option>
               {areas.map((a) => (
                 <option key={a} value={a}>
@@ -308,10 +347,16 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
           {/* Featured — festive treatment, only shown when not actively filtering */}
           {!isFiltering && featured.length > 0 && (
             <div className="mt-9">
-              <FestiveBunting className="h-6 w-full px-4 md:px-0" flagCount={13} />
+              <FestiveBunting
+                className="h-6 w-full px-4 md:px-0"
+                flagCount={13}
+              />
               <div className="mt-1 flex items-baseline justify-between px-4 md:px-0">
                 <h2 className="font-display text-[18px] font-extrabold">
-                  <span className="material-symbols-rounded mr-1.5 align-[-3px] text-accent text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <span
+                    className="material-symbols-rounded mr-1.5 align-[-3px] text-accent text-[20px]"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
                     local_fire_department
                   </span>
                   Featured this year
@@ -339,21 +384,31 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
 
                     {/* Ribbon badge instead of a flat pill */}
                     <div className="absolute left-4 top-4 flex items-center gap-1 rounded-r-md rounded-bl-md bg-accent px-2.5 py-1 font-body text-[11px] font-bold uppercase tracking-wide text-accent-ink shadow-lg before:absolute before:-left-[7px] before:top-0 before:border-y-[10px] before:border-r-[7px] before:border-y-transparent before:border-r-accent before:content-['']">
-                      <span className="material-symbols-rounded festive-shimmer text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      <span
+                        className="material-symbols-rounded festive-shimmer text-xs"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
                         star
                       </span>
                       Featured
                     </div>
 
                     <div className="absolute inset-x-4 bottom-4 flex flex-col gap-1">
-                      <span className="font-display text-[17px] font-bold leading-tight">{pandal.canonicalName}</span>
+                      <span className="font-display text-[17px] font-bold leading-tight">
+                        {pandal.canonicalName}
+                      </span>
                       {pandal.organizerName && (
-                        <span className="truncate font-body text-xs text-ink-dim">{pandal.organizerName}</span>
+                        <span className="truncate font-body text-xs text-ink-dim">
+                          {pandal.organizerName}
+                        </span>
                       )}
                       <span className="flex items-center justify-between font-body text-sm text-ink-dim">
                         <span>{pandal.locality}</span>
                         <span className="flex items-center gap-1 font-bold text-brand">
-                          <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          <span
+                            className="material-symbols-rounded text-base"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
                             favorite
                           </span>
                           {pandal.likes}
@@ -363,13 +418,18 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                   </Link>
                 ))}
               </div>
-              <FestiveBunting className="mt-2 h-6 w-full scale-y-[-1] px-4 md:px-0" flagCount={13} />
+              <FestiveBunting
+                className="mt-2 h-6 w-full scale-y-[-1] px-4 md:px-0"
+                flagCount={13}
+              />
             </div>
           )}
 
           <div className="mt-8 flex items-baseline justify-between px-4 md:px-0">
             <h2 className="font-display text-[18px] font-extrabold">
-              {isFiltering ? `${filtered.length} result${filtered.length === 1 ? "" : "s"}` : `All pandals · ${pandals.length}`}
+              {isFiltering
+                ? `${filtered.length} result${filtered.length === 1 ? "" : "s"}`
+                : `All pandals · ${pandals.length}`}
             </h2>
           </div>
           <div className="mt-3 flex flex-col px-4 md:grid md:grid-cols-2 md:gap-3 md:px-0 lg:grid-cols-3">
@@ -382,7 +442,11 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                 <div className="relative h-[68px] w-[68px] flex-none overflow-hidden rounded-2xl bg-card">
                   {pandal.year?.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={pandal.year.coverImage} alt="" className="h-full w-full object-cover" />
+                    <img
+                      src={pandal.year.coverImage}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
                   ) : (
                     <PandalPhotoPlaceholder className="h-full w-full" />
                   )}
@@ -394,9 +458,14 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <div className="flex items-center gap-1.5">
-                    <span className="truncate font-body text-[16.5px] font-bold">{pandal.canonicalName}</span>
+                    <span className="truncate font-body text-[16.5px] font-bold">
+                      {pandal.canonicalName}
+                    </span>
                     {pandal.verificationStatus === "VERIFIED" && (
-                      <span className="material-symbols-rounded flex-none text-sm text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      <span
+                        className="material-symbols-rounded flex-none text-sm text-accent"
+                        style={{ fontVariationSettings: "'FILL' 1" }}
+                      >
                         verified
                       </span>
                     )}
@@ -406,19 +475,27 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                     {pandal.organizerName ? ` · ${pandal.organizerName}` : ""}
                   </span>
                   {pandal.year?.theme && (
-                    <span className="truncate font-body text-xs text-ink-dim">{pandal.year.theme}</span>
+                    <span className="truncate font-body text-xs text-ink-dim">
+                      {pandal.year.theme}
+                    </span>
                   )}
                   {pandal.year && pandal.year.tags.length > 0 && (
                     <div className="mt-0.5 flex flex-wrap gap-1">
                       {pandal.year.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className="rounded-pill bg-chip px-2 py-0.5 font-body text-[11px] font-medium text-ink-dim">
+                        <span
+                          key={tag}
+                          className="rounded-pill bg-chip px-2 py-0.5 font-body text-[11px] font-medium text-ink-dim"
+                        >
                           {tag}
                         </span>
                       ))}
                     </div>
                   )}
                   <span className="mt-0.5 flex items-center gap-1 font-body text-sm font-semibold text-brand">
-                    <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
+                    <span
+                      className="material-symbols-rounded text-sm"
+                      style={{ fontVariationSettings: "'FILL' 1" }}
+                    >
                       favorite
                     </span>
                     {pandal.likes}
