@@ -196,7 +196,7 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
                 {VISIT_TYPE_LABELS[pandal.visitType]}
               </span>
             </div>
-            <h1 className="flex items-center gap-2 font-display text-[28px] font-extrabold leading-tight tracking-tight md:text-[26px]">
+            <h1 className="flex items-center gap-2 font-display text-[21px] font-extrabold leading-tight tracking-tight md:text-[26px]">
               {pandal.canonicalName}
               {pandal.verificationStatus === "VERIFIED" && (
                 <span

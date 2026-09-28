@@ -69,14 +69,14 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Bright pill on purpose — this floats over a dark map, and a
           dark-on-dark bar (the old bg-card style) was nearly invisible. */}
-      <div className="flex h-14 items-center gap-2.5 rounded-2xl bg-ink px-4 shadow-[0_8px_28px_rgba(0,0,0,.45)]">
-        <span className="material-symbols-rounded text-ground/60">search</span>
+      <div className="flex h-11 md:h-12 items-center gap-2.5 rounded-2xl bg-ink px-3.5 md:px-4 shadow-[0_8px_28px_rgba(0,0,0,.45)]">
+        <span className="material-symbols-rounded text-[20px] text-ground/60">search</span>
         <input
           value={query}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={() => setOpen(true)}
           placeholder={placeholder ?? "Search a location…"}
-          className="flex-1 bg-transparent font-body text-[16px] text-ground outline-none placeholder:text-ground/50"
+          className="flex-1 bg-transparent font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50"
         />
         {loading && <span className="material-symbols-rounded animate-spin text-lg text-ground/50">progress_activity</span>}
       </div>

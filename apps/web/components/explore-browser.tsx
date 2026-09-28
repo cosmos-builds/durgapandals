@@ -244,7 +244,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
             <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">
               Explore <span className="text-brand">{cityName}</span>
             </h1>
-            <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-12 w-[190px] text-sm font-semibold">
+            <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="w-[190px] text-sm font-semibold">
               {SORT_OPTIONS.map((o) => (
                 <option key={o.key} value={o.key}>
                   {o.label}
@@ -258,13 +258,13 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
 
           {/* Search + area filter */}
           <div className="mt-5 flex flex-col gap-2.5 px-4 md:flex-row md:px-0">
-            <div className="flex h-13 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-4">
-              <span className="material-symbols-rounded text-ground/50">search</span>
+            <div className="flex h-11 md:h-12 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-3.5 md:px-4">
+              <span className="material-symbols-rounded text-[20px] text-ground/50">search</span>
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by name, area, committee, theme…"
-                className="flex-1 py-3 bg-transparent font-body text-[15px] text-ground outline-none placeholder:text-ground/50"
+                className="flex-1 bg-transparent font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50"
               />
               {query && (
                 <button onClick={() => setQuery("")} className="text-ground/50">
@@ -273,7 +273,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
               )}
             </div>
 
-            <Select value={area} onChange={(e) => setArea(e.target.value)} className="h-12 text-sm font-semibold md:w-[180px]">
+            <Select value={area} onChange={(e) => setArea(e.target.value)} className="text-sm font-semibold md:w-[180px]">
               <option value="all">All areas</option>
               {areas.map((a) => (
                 <option key={a} value={a}>
@@ -310,8 +310,8 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
             <div className="mt-9">
               <FestiveBunting className="h-6 w-full px-4 md:px-0" flagCount={13} />
               <div className="mt-1 flex items-baseline justify-between px-4 md:px-0">
-                <h2 className="font-display text-2xl font-extrabold">
-                  <span className="material-symbols-rounded mr-1.5 align-[-3px] text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>
+                <h2 className="font-display text-[18px] font-extrabold">
+                  <span className="material-symbols-rounded mr-1.5 align-[-3px] text-accent text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>
                     local_fire_department
                   </span>
                   Featured this year
@@ -346,7 +346,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
                     </div>
 
                     <div className="absolute inset-x-4 bottom-4 flex flex-col gap-1">
-                      <span className="font-display text-xl font-bold leading-tight">{pandal.canonicalName}</span>
+                      <span className="font-display text-[17px] font-bold leading-tight">{pandal.canonicalName}</span>
                       {pandal.organizerName && (
                         <span className="truncate font-body text-xs text-ink-dim">{pandal.organizerName}</span>
                       )}
@@ -368,7 +368,7 @@ export function ExploreBrowser({ citySlug, cityName, year, pandals }: ExploreBro
           )}
 
           <div className="mt-8 flex items-baseline justify-between px-4 md:px-0">
-            <h2 className="font-display text-xl font-extrabold">
+            <h2 className="font-display text-[18px] font-extrabold">
               {isFiltering ? `${filtered.length} result${filtered.length === 1 ? "" : "s"}` : `All pandals · ${pandals.length}`}
             </h2>
           </div>

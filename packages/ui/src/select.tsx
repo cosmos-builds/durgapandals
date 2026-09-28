@@ -9,7 +9,7 @@ export function Select({ className = "", children, ...props }: SelectProps) {
   return (
     <div className="relative">
       <select
-        className={`h-12 w-full appearance-none rounded-2xl bg-ink px-4 pr-9 font-body text-[15.5px] text-ground outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 ${className}`}
+        className={`h-11 md:h-12 w-full appearance-none rounded-2xl bg-ink px-3.5 md:px-4 pr-9 font-body text-[14.5px] md:text-[15.5px] text-ground outline-none focus:ring-2 focus:ring-brand disabled:opacity-50 ${className}`}
         {...props}
       >
         {children}

@@ -17,7 +17,7 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 // muted text on a light field, matching how "muted" is supposed to read
 // here.
 const BASE_CLASSES =
-  "h-12 rounded-2xl bg-ink px-4 font-body text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50";
+  "h-11 md:h-12 rounded-2xl bg-ink px-3.5 md:px-4 font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50";
 
 export function Input({ className = "", ...props }: InputProps) {
   return <input className={`${BASE_CLASSES} ${className}`} {...props} />;
@@ -28,7 +28,7 @@ export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
 export function Textarea({ className = "", ...props }: TextareaProps) {
   return (
     <textarea
-      className={`min-h-24 rounded-2xl bg-ink px-4 py-3 font-body text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${className}`}
+      className={`min-h-24 rounded-2xl bg-ink px-3.5 md:px-4 py-2.5 md:py-3 font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${className}`}
       {...props}
     />
   );

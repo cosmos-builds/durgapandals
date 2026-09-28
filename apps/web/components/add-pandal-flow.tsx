@@ -800,7 +800,7 @@ export function AddPandalFlow({
               <span className="font-body text-sm text-ink-muted">{selectedExisting.locality}, {cityName}</span>
             </div>
           </div>
-          <h2 className="font-display text-2xl font-extrabold">What would you like to update?</h2>
+          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">What would you like to update?</h2>
           <div className="flex flex-col gap-2">
             {UPDATE_OPTIONS.map((option) => (
               <button
@@ -828,7 +828,7 @@ export function AddPandalFlow({
 
       {step === "details" && (
         <form onSubmit={submitDetails} className={formStepClass}>
-          <h2 className="font-display text-2xl font-extrabold">Tell us about your pandal</h2>
+          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">Tell us about your pandal</h2>
 
           <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
 
@@ -1050,7 +1050,7 @@ export function AddPandalFlow({
       {step === "verify" && (
         <div className={formStepClass.replace("gap-4", "gap-5")}>
           <div className="flex flex-col gap-2">
-            <h2 className="font-display text-[28px] font-extrabold leading-tight">
+            <h2 className="font-display text-[20px] md:text-[22px] font-extrabold leading-tight">
               {REQUIRE_VERIFICATION ? "Quick check it's you" : "How can we reach you?"}
             </h2>
             <p className="font-body text-sm text-ink-muted">
@@ -1059,8 +1059,8 @@ export function AddPandalFlow({
                 : "We only use this to reach you if we have questions about your submission. No account, no newsletters."}
             </p>
           </div>
-          <div className="flex items-center gap-2.5 rounded-2xl border border-border bg-panel p-3.5 md:bg-card">
-            <span className="material-symbols-rounded text-ink-muted">mail</span>
+          <div className="flex h-11 md:h-12 items-center gap-2.5 rounded-2xl border border-border bg-panel px-3.5 md:bg-card">
+            <span className="material-symbols-rounded text-[20px] text-ink-muted">mail</span>
             <input
               type="email"
               required
@@ -1068,7 +1068,7 @@ export function AddPandalFlow({
               value={email}
               disabled={REQUIRE_VERIFICATION && codeSent}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-transparent font-body outline-none"
+              className="flex-1 bg-transparent font-body text-[14.5px] md:text-[15.5px] outline-none"
             />
             {REQUIRE_VERIFICATION && codeSent && (
               <button className="font-body text-sm font-bold text-brand" onClick={() => setCodeSent(false)}>
@@ -1110,7 +1110,7 @@ export function AddPandalFlow({
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="h-16 rounded-2xl bg-ink text-center font-mono text-2xl text-ground tracking-[0.4em]"
+                  className="h-12 md:h-14 rounded-2xl bg-ink text-center font-mono text-lg md:text-xl text-ground tracking-[0.4em]"
                   placeholder="000000"
                 />
               </label>
@@ -1131,7 +1131,7 @@ export function AddPandalFlow({
               check
             </span>
           </span>
-          <h2 className="font-display text-[30px] font-extrabold">Shubho! It's in the queue.</h2>
+          <h2 className="font-display text-[22px] md:text-[26px] font-extrabold">Shubho! It's in the queue.</h2>
           <p className="font-body text-ink-dim">
             Every listing is checked before it appears on the {cityName} map. We'll email you only if something needs a fix.
           </p>
