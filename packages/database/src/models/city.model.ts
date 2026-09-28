@@ -25,6 +25,11 @@ const citySchema = new Schema(
   { timestamps: true }
 );
 
+// Backs the substring/prefix name search in GET /cities/search — a plain
+// index still speeds up the common case (short, indexed-prefix regexes)
+// even though it can't help every unanchored substring match.
+citySchema.index({ name: 1 });
+
 export type CityDocument = InferSchemaType<typeof citySchema>;
 
 // `models.City` is loosely typed as Model<any>; unioning it directly with

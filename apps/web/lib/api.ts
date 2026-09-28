@@ -41,6 +41,33 @@ export async function fetchCities(): Promise<CityApiModel[]> {
   return safeJson(response, []);
 }
 
+// Next's fetch cache (the `revalidate` option above) only applies during
+// server rendering — in the browser, IntroHero and the city selector sheet
+// were each doing their own uncached GET /cities on every mount. This
+// shares one recent request between them, and (unlike fetchCities' silent
+// []-on-failure) rejects on a real failure so callers can show an actual
+// error/retry state instead of a silently empty city list.
+let cachedCitiesPromise: Promise<CityApiModel[]> | null = null;
+let cachedCitiesAt = 0;
+const CLIENT_CITY_CACHE_MS = 60_000;
+
+export function fetchCitiesCached(force = false): Promise<CityApiModel[]> {
+  const isStale = Date.now() - cachedCitiesAt > CLIENT_CITY_CACHE_MS;
+  if (force || !cachedCitiesPromise || isStale) {
+    cachedCitiesAt = Date.now();
+    cachedCitiesPromise = fetch(`${API_BASE_URL}/cities`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`Failed to load cities (${response.status})`);
+        return response.json() as Promise<CityApiModel[]>;
+      })
+      .catch((error) => {
+        cachedCitiesPromise = null;
+        throw error;
+      });
+  }
+  return cachedCitiesPromise;
+}
+
 export async function fetchCityBySlug(slug: string): Promise<CityApiModel | null> {
   const response = await fetch(`${API_BASE_URL}/cities/${slug}`, { next: { revalidate: 300 } });
   return safeJson(response, null);

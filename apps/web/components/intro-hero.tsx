@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { fetchCities, type CityApiModel } from "@/lib/api";
+import type { CityApiModel } from "@/lib/api";
 import { useCitySearch } from "@/lib/use-city-search";
+import { useCityList } from "@/lib/use-city-list";
+import { useKeyboardListNav } from "@/lib/use-keyboard-list-nav";
 import { markIntroSeen } from "@/lib/visitor";
 
 export interface IntroHeroProps {
@@ -17,15 +19,14 @@ export interface IntroHeroProps {
 // CTA below (mobile) or beside it (desktop). City chips and search are wired
 // to the real city list (majors first) instead of the mockup's hardcoded
 // placeholder names — picking a different city navigates there, picking the
-// current one or hitting "Enter the map" just dismisses the overlay.
+// current one dismisses the overlay same as the "skip" CTA. The skip CTA is
+// deliberately secondary-styled: the underlying map may be showing an
+// arbitrary default city nobody picked, so search/chips should read as the
+// obvious next step, not the exit.
 export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
   const router = useRouter();
-  const [cities, setCities] = useState<CityApiModel[]>([]);
+  const { cities, loading: loadingCities, error: citiesError, retry: retryCities } = useCityList();
   const { query, setQuery, results, loading: searching, resolving, selectAndGo } = useCitySearch();
-
-  useEffect(() => {
-    fetchCities().then(setCities);
-  }, []);
 
   const activeCities = useMemo(() => cities.filter((c) => c.status === "ACTIVE"), [cities]);
 
@@ -53,6 +54,8 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
     markIntroSeen();
     await selectAndGo(result);
   }
+
+  const { highlightedIndex, onKeyDown } = useKeyboardListNav(results, selectSearchResult);
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-ground md:overflow-hidden">
@@ -96,12 +99,20 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={onKeyDown}
                   placeholder="Search your city — Kolkata, Delhi, Pune, anywhere…"
                   className="flex-1 bg-transparent font-body text-sm text-ground outline-none placeholder:text-ground/50 md:text-[15px]"
+                  role="combobox"
+                  aria-expanded={query.trim().length >= 2}
+                  aria-controls="intro-city-search-results"
                 />
               </div>
               {query.trim().length >= 2 && (
-                <div className="absolute inset-x-0 top-[calc(100%+8px)] z-10 flex max-h-52 flex-col gap-0.5 overflow-y-auto rounded-2xl border border-border bg-panel p-1.5 text-left shadow-2xl">
+                <div
+                  id="intro-city-search-results"
+                  role="listbox"
+                  className="absolute inset-x-0 top-[calc(100%+8px)] z-10 flex max-h-52 flex-col gap-0.5 overflow-y-auto rounded-2xl border border-border bg-panel p-1.5 text-left shadow-2xl"
+                >
                   {searching ? (
                     <p className="px-3 py-3 font-body text-sm text-ink-muted">Searching…</p>
                   ) : results.length === 0 ? (
@@ -112,9 +123,13 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
                     results.map((city, index) => (
                       <button
                         key={`${city.name}-${index}`}
+                        role="option"
+                        aria-selected={index === highlightedIndex}
                         onClick={() => selectSearchResult(city)}
                         disabled={resolving}
-                        className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left font-body text-sm font-semibold hover:bg-card disabled:opacity-60"
+                        className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 text-left font-body text-sm font-semibold disabled:opacity-60 ${
+                          index === highlightedIndex ? "bg-card" : "hover:bg-card"
+                        }`}
                       >
                         {city.name}
                         {city.source === "nominatim" && (
@@ -127,26 +142,42 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
               )}
             </div>
 
-            <div className="flex flex-wrap justify-center gap-2 md:justify-start">
-              {chips.map((city) => (
-                <button
-                  key={city._id}
-                  onClick={() => selectCity(city)}
-                  className={`rounded-pill border px-3 py-1.5 font-body text-xs font-semibold md:text-sm ${
-                    city.slug === citySlug ? "border-brand bg-brand/15 text-brand" : "border-border bg-chip text-ink-dim"
-                  }`}
-                >
-                  {city.name}
+            {citiesError ? (
+              <div className="flex items-center justify-between gap-2 rounded-2xl bg-card/60 px-3.5 py-2.5 text-left">
+                <span className="font-body text-xs text-ink-muted">Couldn&apos;t load cities.</span>
+                <button onClick={retryCities} className="font-body text-xs font-bold text-brand">
+                  Retry
                 </button>
-              ))}
-            </div>
+              </div>
+            ) : loadingCities ? (
+              <p className="px-1 font-body text-xs text-ink-muted">Loading cities…</p>
+            ) : (
+              <div className="flex flex-wrap justify-center gap-2 md:justify-start">
+                {chips.map((city) => (
+                  <button
+                    key={city._id}
+                    onClick={() => selectCity(city)}
+                    className={`rounded-pill border px-3 py-1.5 font-body text-xs font-semibold md:text-sm ${
+                      city.slug === citySlug ? "border-brand bg-brand/15 text-brand" : "border-border bg-chip text-ink-dim"
+                    }`}
+                  >
+                    {city.name}
+                  </button>
+                ))}
+              </div>
+            )}
 
+            {/* Secondary, not primary — the point of this screen is to get the
+                visitor to their actual city via search/chips above; "skip"
+                should read as an escape hatch, not the obvious next step,
+                since the underlying map may be showing an arbitrary default
+                city they never picked. */}
             <button
               onClick={onExplore}
-              className="mt-1.5 flex h-[50px] items-center justify-center gap-1.5 rounded-2xl bg-gradient-to-r from-brand to-[#FF7A3D] font-display text-[15px] font-extrabold text-brand-ink md:h-[54px] md:text-base"
+              className="mt-1 flex h-11 items-center justify-center gap-1.5 rounded-2xl border border-border font-body text-sm font-semibold text-ink-dim md:h-12"
             >
-              Enter the map
-              <span className="material-symbols-rounded">arrow_forward</span>
+              Skip for now — I&apos;ll pick a city later
+              <span className="material-symbols-rounded text-lg">arrow_forward</span>
             </button>
           </div>
         </div>

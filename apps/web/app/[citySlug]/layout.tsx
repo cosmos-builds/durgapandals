@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchCityBySlug } from "@/lib/api";
 import { TopHeader } from "@/components/top-header";
+import { LastCityTracker } from "@/components/last-city-tracker";
 
 // Wraps every screen under a city — (tabs) [Home/Explore/Saved], add, and
 // pandal/[slug] — so the desktop persistent top nav bar (spec §5) appears on
@@ -22,6 +23,7 @@ export default async function CityShellLayout({
 
   return (
     <div className="relative min-h-dvh bg-ground">
+      <LastCityTracker citySlug={city.slug} />
       <TopHeader citySlug={city.slug} cityName={city.name} activeFestivalYear={city.activeFestivalYear} availableYears={availableYears} />
       {children}
     </div>

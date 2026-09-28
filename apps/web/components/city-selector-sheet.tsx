@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { fetchCities, type CityApiModel } from "@/lib/api";
 import { useCitySearch } from "@/lib/use-city-search";
+import { useCityList } from "@/lib/use-city-list";
+import { useKeyboardListNav } from "@/lib/use-keyboard-list-nav";
 
 export interface CitySelectorSheetProps {
   currentCitySlug: string;
@@ -22,17 +22,10 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [cities, setCities] = useState<CityApiModel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { cities, loading, error: citiesError, retry: retryCities } = useCityList();
   const { query, setQuery, results, loading: searching, resolving, selectAndGo } = useCitySearch();
 
-  useEffect(() => {
-    fetchCities()
-      .then(setCities)
-      .finally(() => setLoading(false));
-  }, []);
-
-  function selectCity(city: CityApiModel) {
+  function selectCity(city: (typeof cities)[number]) {
     if (city.status !== "ACTIVE") return;
     onClose();
     if (city.slug !== currentCitySlug) router.push(`/${city.slug}`);
@@ -92,6 +85,13 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
 
   const newPlaces = isSearching ? results.filter((r) => r.source === "nominatim") : [];
 
+  // Keyboard nav spans both selectable groups in on-screen order (Live now,
+  // then Other places — Coming soon is display-only and never selectable),
+  // so arrow keys/Enter work the same as clicking either group.
+  const keyboardItems = [...active, ...newPlaces.map((city) => ({ onSelect: () => selectSearchResult(city) }))];
+  const { highlightedIndex, onKeyDown } = useKeyboardListNav(keyboardItems, (item) => item.onSelect());
+  const highlightedNewPlaceIndex = highlightedIndex - active.length;
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
@@ -127,12 +127,22 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={onKeyDown}
             placeholder="Search any city"
             className="flex-1 bg-transparent font-body text-[15.5px] text-ground outline-none placeholder:text-ground/50"
           />
         </div>
 
         <div className="flex flex-col gap-4 overflow-y-auto">
+          {citiesError && !isSearching && (
+            <div className="flex items-center justify-between gap-2 rounded-2xl bg-card/60 px-3.5 py-3">
+              <span className="font-body text-sm text-ink-muted">Couldn&apos;t load cities.</span>
+              <button onClick={retryCities} className="font-body text-sm font-bold text-brand">
+                Retry
+              </button>
+            </div>
+          )}
+
           {(loading || (isSearching && searching)) && (
             <p className="py-6 text-center font-body text-sm text-ink-muted">
               {isSearching ? "Searching…" : "Loading…"}
@@ -142,11 +152,13 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
           {!loading && !(isSearching && searching) && active.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Live now</span>
-              {active.map((city) => (
+              {active.map((city, index) => (
                 <button
                   key={city.key}
                   onClick={city.onSelect}
-                  className={`flex items-center gap-3 rounded-2xl p-2.5 text-left ${city.isSelected ? "bg-card ring-2 ring-brand" : "hover:bg-card/60"}`}
+                  className={`flex items-center gap-3 rounded-2xl p-2.5 text-left ${
+                    city.isSelected || index === highlightedIndex ? "bg-card ring-2 ring-brand" : "hover:bg-card/60"
+                  }`}
                 >
                   <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip font-display text-lg font-extrabold text-brand">
                     {city.name.charAt(0)}
@@ -185,7 +197,9 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
                   key={`${city.name}-${index}`}
                   onClick={() => selectSearchResult(city)}
                   disabled={resolving}
-                  className="flex items-center gap-3 rounded-2xl p-2.5 text-left hover:bg-card/60 disabled:opacity-60"
+                  className={`flex items-center gap-3 rounded-2xl p-2.5 text-left disabled:opacity-60 ${
+                    index === highlightedNewPlaceIndex ? "bg-card/60" : "hover:bg-card/60"
+                  }`}
                 >
                   <span className="material-symbols-rounded flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip text-xl text-ink-muted">
                     {resolving ? "sync" : "location_on"}
