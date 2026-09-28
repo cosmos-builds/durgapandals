@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch, adminMutate } from "@/lib/admin-api";
-import { Button, Input, Select, Table, TableHeadRow, Th, Tr, Td } from "@durgapandals/ui";
+import { adminFetch, adminMutate, deletePandal } from "@/lib/admin-api";
+import { Button, ConfirmDialog, Input, Select, Table, TableHeadRow, Th, Tr, Td, useToast } from "@durgapandals/ui";
 
 interface City {
   _id: string;
@@ -20,7 +20,11 @@ interface Pandal {
   publicationStatus: string;
   verificationStatus: string;
   updatedAt: string;
+  yearCount: number;
+  hasCurrentYearEntry: boolean;
 }
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 interface Page<T> {
   items: T[];
@@ -55,6 +59,7 @@ function timeAgo(iso: string): string {
 
 export default function PandalsListPage() {
   const ready = useAdminGuard();
+  const toast = useToast();
   const [cities, setCities] = useState<City[]>([]);
   const [cityId, setCityId] = useState("");
   const [status, setStatus] = useState("");
@@ -65,6 +70,7 @@ export default function PandalsListPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Pandal | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -119,6 +125,7 @@ export default function PandalsListPage() {
         // whether the bulk PATCH succeeded was the actual bug: a failed
         // request looked exactly like a successful one.
         setError(result.error ?? "Couldn't update status.");
+        toast.error(result.error ?? "Couldn't update status.");
         return;
       }
       setResult((prev) =>
@@ -127,9 +134,19 @@ export default function PandalsListPage() {
           : prev
       );
       setSelected(new Set());
+      toast.success(`${publicationStatus === "PUBLISHED" ? "Published" : "Archived"} ${selected.size} pandal(s).`);
     } finally {
       setBulkBusy(false);
     }
+  }
+
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    const result = await deletePandal(deleteTarget._id);
+    if (!result.ok) throw new Error(result.error ?? "Couldn't delete pandal.");
+    setResult((prev) => (prev ? { ...prev, items: prev.items.filter((p) => p._id !== deleteTarget._id) } : prev));
+    setDeleteTarget(null);
+    toast.success(`"${deleteTarget.canonicalName}" deleted.`);
   }
 
   if (!ready) return null;
@@ -140,8 +157,8 @@ export default function PandalsListPage() {
     <AdminShell>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-3xl font-extrabold">Pandals</h1>
-        <Link href="/pandals/new" className="rounded-xl bg-brand px-4 py-2 font-body text-sm font-bold text-brand-ink">
-          + Add Pandal
+        <Link href="/pandals/new">
+          <Button>+ Add Pandal</Button>
         </Link>
       </div>
 
@@ -194,7 +211,9 @@ export default function PandalsListPage() {
             <Th>Name</Th>
             <Th>City</Th>
             <Th>Status</Th>
+            <Th>History</Th>
             <Th>Updated</Th>
+            <Th className="w-10" />
           </TableHeadRow>
         </thead>
         <tbody>
@@ -220,18 +239,59 @@ export default function PandalsListPage() {
                   {pandal.publicationStatus}
                 </span>
               </Td>
+              <Td>
+                <div className="flex flex-col gap-1 font-body text-xs">
+                  <span className="text-ink-muted">
+                    {pandal.yearCount === 0
+                      ? "No years added"
+                      : `${pandal.yearCount} year${pandal.yearCount === 1 ? "" : "s"} on record`}
+                  </span>
+                  <span
+                    className={`inline-flex w-fit items-center gap-1 rounded-pill px-2 py-0.5 font-bold ${
+                      pandal.hasCurrentYearEntry
+                        ? "bg-[rgba(127,217,154,.18)] text-[#7FD99A]"
+                        : "bg-chip text-ink-muted"
+                    }`}
+                  >
+                    {pandal.hasCurrentYearEntry ? `${CURRENT_YEAR} ✓` : `No ${CURRENT_YEAR} entry`}
+                  </span>
+                </div>
+              </Td>
               <Td className="text-ink-muted">{timeAgo(pandal.updatedAt)}</Td>
+              <Td>
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(pandal)}
+                  aria-label={`Delete ${pandal.canonicalName}`}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
+                >
+                  <span className="material-symbols-rounded text-lg">delete</span>
+                </button>
+              </Td>
             </Tr>
           ))}
           {pandals.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-6 text-center text-ink-muted">
+              <td colSpan={7} className="px-4 py-6 text-center text-ink-muted">
                 No pandals match these filters.
               </td>
             </tr>
           )}
         </tbody>
       </Table>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        title="Delete this pandal?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.canonicalName}" and all of its festival years, photos, and likes will be permanently deleted. This can't be undone.`
+            : ""
+        }
+        confirmLabel="Delete pandal"
+      />
 
       {result && result.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-3">

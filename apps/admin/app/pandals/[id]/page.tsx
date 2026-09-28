@@ -4,8 +4,15 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch, adminMutate, uploadAdminPhoto, deleteAdminPhoto } from "@/lib/admin-api";
-import { Button, Card, Dialog, Field, Input, Select, Textarea } from "@durgapandals/ui";
+import {
+  adminFetch,
+  adminMutate,
+  uploadAdminPhoto,
+  deleteAdminPhoto,
+  deletePandal,
+  deletePandalYear,
+} from "@/lib/admin-api";
+import { Button, Card, ConfirmDialog, Dialog, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import type { ReverseGeocodeResult } from "@/lib/admin-api";
 
@@ -97,6 +104,7 @@ const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
 export default function PandalDetailPage() {
   const ready = useAdminGuard();
   const router = useRouter();
+  const toast = useToast();
   const params = useParams<{ id: string }>();
   const [pandal, setPandal] = useState<Pandal | null>(null);
   // Snapshot of what's actually saved in the DB, separate from `pandal`
@@ -118,6 +126,9 @@ export default function PandalDetailPage() {
   const [merging, setMerging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mergeError, setMergeError] = useState<string | null>(null);
+  const [deletePandalOpen, setDeletePandalOpen] = useState(false);
+  const [yearToDelete, setYearToDelete] = useState<PandalYear | null>(null);
+  const [photoToDelete, setPhotoToDelete] = useState<{ year: PandalYear; url: string } | null>(null);
 
   async function load() {
     const res = await adminFetch(`/admin/pandals/${params.id}`);
@@ -191,10 +202,12 @@ export default function PandalDetailPage() {
     });
     if (!result.ok) {
       setError(result.error ?? "Couldn't save changes.");
+      toast.error(result.error ?? "Couldn't save changes.");
       return;
     }
     setSavedPandal(pandal);
     setDraggedAddress(null);
+    toast.success("Changes saved.");
   }
 
   function updateLocation(coords: { latitude: number; longitude: number }) {
@@ -221,7 +234,10 @@ export default function PandalDetailPage() {
       method: "PATCH",
       body: JSON.stringify({ [field]: value }),
     });
-    if (!result.ok) setError(result.error ?? "Couldn't update status.");
+    if (!result.ok) {
+      setError(result.error ?? "Couldn't update status.");
+      toast.error(result.error ?? "Couldn't update status.");
+    }
     await load();
   }
 
@@ -231,7 +247,10 @@ export default function PandalDetailPage() {
       method: "PATCH",
       body: JSON.stringify({ featured: !featured }),
     });
-    if (!result.ok) setError(result.error ?? "Couldn't update featured status.");
+    if (!result.ok) {
+      setError(result.error ?? "Couldn't update featured status.");
+      toast.error(result.error ?? "Couldn't update featured status.");
+    }
     await load();
   }
 
@@ -276,7 +295,9 @@ export default function PandalDetailPage() {
   // Uploaded to Cloudinary immediately on selection, same as the public Add
   // Pandal flow — removing it here would otherwise leave it orphaned in
   // storage with nothing pointing to it, so it's deleted best-effort.
-  async function removeYearPhoto(year: PandalYear, url: string) {
+  async function confirmRemoveYearPhoto() {
+    if (!photoToDelete) return;
+    const { year, url } = photoToDelete;
     setError(null);
     const nextPhotos = year.photos.filter((p) => p.url !== url);
     const clearingCover = year.coverImage === url;
@@ -285,7 +306,9 @@ export default function PandalDetailPage() {
       method: "PATCH",
       body: JSON.stringify({ photos: nextPhotos, ...(clearingCover ? { coverImage: null } : {}) }),
     });
-    if (!result.ok) setError(result.error ?? "Couldn't remove photo.");
+    if (!result.ok) throw new Error(result.error ?? "Couldn't remove photo.");
+    setPhotoToDelete(null);
+    toast.success("Photo removed.");
     await load();
   }
 
@@ -342,13 +365,32 @@ export default function PandalDetailPage() {
       });
       if (!result.ok) {
         setError(result.error ?? "Couldn't add year.");
+        toast.error(result.error ?? "Couldn't add year.");
         return;
       }
       setYearForm(EMPTY_YEAR_FORM);
+      toast.success(`${yearForm.year} added.`);
       await load();
     } finally {
       setSavingYear(false);
     }
+  }
+
+  async function confirmDeleteYear() {
+    if (!yearToDelete) return;
+    const result = await deletePandalYear(yearToDelete._id);
+    if (!result.ok) throw new Error(result.error ?? "Couldn't delete this year.");
+    setYearToDelete(null);
+    toast.success(`${yearToDelete.year} deleted.`);
+    await load();
+  }
+
+  async function confirmDeletePandal() {
+    if (!pandal) return;
+    const result = await deletePandal(pandal._id);
+    if (!result.ok) throw new Error(result.error ?? "Couldn't delete this pandal.");
+    toast.success(`"${pandal.canonicalName}" deleted.`);
+    router.push("/pandals");
   }
 
   // This pandal (the "loser") gets archived and its years reassigned to
@@ -379,9 +421,14 @@ export default function PandalDetailPage() {
     <AdminShell>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-3xl font-extrabold">{pandal.canonicalName}</h1>
-        <Button variant="secondary" onClick={() => setMergeOpen(true)}>
-          Merge into another pandal…
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={() => setMergeOpen(true)}>
+            Merge into another pandal…
+          </Button>
+          <Button variant="secondary" onClick={() => setDeletePandalOpen(true)}>
+            Delete pandal
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -532,9 +579,13 @@ export default function PandalDetailPage() {
       </Card>
 
       <Card className="max-w-3xl">
-        <h2 className="mb-4 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
+        <h2 className="mb-1 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Festival years
         </h2>
+        <p className="mb-4 font-body text-sm text-ink-muted">
+          This pandal is one physical location — the address and amenities above don&apos;t change. Each year it puts
+          up a new theme, photos, and schedule, so it gets its own row below. Add one per year you have content for.
+        </p>
         <div className="mb-4 flex flex-col gap-2">
           {years.map((year) => (
             <div key={year._id} className="flex flex-col gap-3 rounded-xl bg-card px-4 py-3">
@@ -554,14 +605,24 @@ export default function PandalDetailPage() {
                     {year.schedule.length > 0 && <span>{year.schedule.length} schedule rows</span>}
                   </div>
                 </div>
-                <button
-                  onClick={() => toggleFeatured(year._id, year.featured)}
-                  className={`rounded-lg px-3 py-1.5 font-body text-xs font-bold ${
-                    year.featured ? "bg-accent text-accent-ink" : "border border-border text-ink-muted"
-                  }`}
-                >
-                  {year.featured ? "Featured" : "Feature"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => toggleFeatured(year._id, year.featured)}
+                    className={`rounded-lg px-3 py-1.5 font-body text-xs font-bold ${
+                      year.featured ? "bg-accent text-accent-ink" : "border border-border text-ink-muted"
+                    }`}
+                  >
+                    {year.featured ? "Featured" : "Feature"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setYearToDelete(year)}
+                    aria-label={`Delete ${year.year}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
+                  >
+                    <span className="material-symbols-rounded text-lg">delete</span>
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-2">
@@ -576,7 +637,7 @@ export default function PandalDetailPage() {
                     )}
                     <button
                       type="button"
-                      onClick={() => removeYearPhoto(year, photo.url)}
+                      onClick={() => setPhotoToDelete({ year, url: photo.url })}
                       className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ground/80"
                     >
                       <span className="material-symbols-rounded text-xs">close</span>
@@ -678,7 +739,7 @@ export default function PandalDetailPage() {
             <button
               type="button"
               onClick={addScheduleRow}
-              className="rounded-xl border border-dashed border-border py-2 font-body text-xs font-bold text-brand"
+              className="flex h-10 items-center justify-center rounded-xl border border-dashed border-border font-body text-xs font-bold text-brand"
             >
               + Add a schedule row
             </button>
@@ -700,7 +761,7 @@ export default function PandalDetailPage() {
               );
             })}
           </div>
-          <Button type="submit" variant="secondary" disabled={savingYear}>
+          <Button type="submit" disabled={savingYear}>
             {savingYear ? "Adding…" : "Add year"}
           </Button>
         </form>
@@ -745,6 +806,37 @@ export default function PandalDetailPage() {
           </Button>
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={deletePandalOpen}
+        onClose={() => setDeletePandalOpen(false)}
+        onConfirm={confirmDeletePandal}
+        title="Delete this pandal?"
+        description={`"${pandal.canonicalName}" and all of its festival years, photos, and likes will be permanently deleted. This can't be undone.`}
+        confirmLabel="Delete pandal"
+      />
+
+      <ConfirmDialog
+        open={!!yearToDelete}
+        onClose={() => setYearToDelete(null)}
+        onConfirm={confirmDeleteYear}
+        title="Delete this festival year?"
+        description={
+          yearToDelete
+            ? `The ${yearToDelete.year} entry (theme, photos, schedule, likes) will be permanently deleted. The pandal itself and its other years are untouched. This can't be undone.`
+            : ""
+        }
+        confirmLabel="Delete year"
+      />
+
+      <ConfirmDialog
+        open={!!photoToDelete}
+        onClose={() => setPhotoToDelete(null)}
+        onConfirm={confirmRemoveYearPhoto}
+        title="Remove this photo?"
+        description="This photo will be permanently removed from this festival year."
+        confirmLabel="Remove photo"
+      />
     </AdminShell>
   );
 }

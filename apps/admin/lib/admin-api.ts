@@ -88,6 +88,16 @@ export async function adminMutate(path: string, init: RequestInit = {}): Promise
   return { ok: false, error: body.error ?? "Something went wrong — please try again." };
 }
 
+// Hard delete — cascades server-side to the pandal's years/photos/likes.
+export async function deletePandal(id: string): Promise<MutationResult> {
+  return adminMutate(`/admin/pandals/${id}`, { method: "DELETE" });
+}
+
+// Hard delete for a single festival year (the pandal itself is untouched).
+export async function deletePandalYear(id: string): Promise<MutationResult> {
+  return adminMutate(`/admin/pandal-years/${id}`, { method: "DELETE" });
+}
+
 // Mirrors apps/web's searchCities — merges already-listed cities with live
 // OpenStreetMap results so an admin adding a pandal isn't limited to
 // whatever's already been created via the Cities admin page.

@@ -47,7 +47,6 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
   interface DisplayCity {
     key: string;
     name: string;
-    activeFestivalYear: number;
     isSelected: boolean;
     onSelect: () => void;
   }
@@ -63,7 +62,6 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
         .map((c) => ({
           key: (c as Extract<typeof c, { source: "db" }>)._id,
           name: c.name,
-          activeFestivalYear: (c as Extract<typeof c, { source: "db" }>).activeFestivalYear,
           isSelected: (c as Extract<typeof c, { source: "db" }>).slug === currentCitySlug,
           onSelect: () => selectSearchResult(c),
         }))
@@ -72,7 +70,6 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
         .map((c) => ({
           key: c._id,
           name: c.name,
-          activeFestivalYear: c.activeFestivalYear,
           isSelected: c.slug === currentCitySlug,
           onSelect: () => selectCity(c),
         }));
@@ -160,12 +157,11 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
                     city.isSelected || index === highlightedIndex ? "bg-card ring-2 ring-brand" : "hover:bg-card/60"
                   }`}
                 >
-                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip font-display text-lg font-extrabold text-brand">
-                    {city.name.charAt(0)}
+                  <span className="material-symbols-rounded flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip text-xl text-brand">
+                    location_on
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-body text-[16px] font-bold">{city.name}</span>
-                    <span className="truncate font-body text-sm text-ink-muted">Festival year {city.activeFestivalYear}</span>
                   </span>
                   {city.isSelected && (
                     <span className="material-symbols-rounded text-2xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>

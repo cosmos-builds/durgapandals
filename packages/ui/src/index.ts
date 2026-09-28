@@ -6,3 +6,5 @@ export { Input, type InputProps, Textarea, type TextareaProps } from "./input";
 export { Select, type SelectProps } from "./select";
 export { Table, TableHeadRow, Th, Tr, Td } from "./table";
 export { Dialog, type DialogProps } from "./dialog";
+export { ConfirmDialog, type ConfirmDialogProps } from "./confirm-dialog";
+export { ToastProvider, useToast } from "./toast";

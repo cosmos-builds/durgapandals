@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
-import { Button, Card, Field, Input, Select } from "@durgapandals/ui";
+import { Button, Card, Field, Input, Select, useToast } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import { CityCombobox, type SelectedCity } from "@/components/city-combobox";
 
@@ -50,6 +50,7 @@ const AMENITY_FIELDS: { key: "parkingAvailable" | "twoWheelerAccessible" | "four
 export default function NewPandalPage() {
   const ready = useAdminGuard();
   const router = useRouter();
+  const toast = useToast();
   const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[] | null>(null);
@@ -132,9 +133,12 @@ export default function NewPandalPage() {
         throw new Error(body.error ?? "Failed to create pandal");
       }
       const pandal = await res.json();
+      toast.success(`"${pandal.canonicalName}" created.`);
       router.push(`/pandals/${pandal._id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      const message = err instanceof Error ? err.message : "Something went wrong";
+      setError(message);
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -258,7 +262,11 @@ export default function NewPandalPage() {
 
         {error && <p className="mt-3 font-body text-sm text-brand">{error}</p>}
 
-        <Button type="submit" disabled={saving} className="mt-6 w-full">
+        <p className="mt-6 font-body text-xs text-ink-muted">
+          This creates the pandal&apos;s profile — its location and details that stay the same every year. You&apos;ll
+          add this festival year&apos;s theme, photos, and schedule next, on the pandal&apos;s page.
+        </p>
+        <Button type="submit" disabled={saving} className="mt-3 w-full">
           {saving ? "Creating…" : "Create & publish pandal"}
         </Button>
         </Card>

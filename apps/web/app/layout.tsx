@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 // literal text ("location_off") instead of glyphs.
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { ToastProvider } from "@durgapandals/ui";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 const SITE_DESCRIPTION = "Discover Durga Puja pandals across India — map-first, no login needed.";
@@ -37,7 +38,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" data-theme="dark">
-      <body>{children}</body>
+      <body>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

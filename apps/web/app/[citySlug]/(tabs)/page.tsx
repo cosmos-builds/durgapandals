@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { fetchCityBySlug, fetchPandalsForCityOrThrow } from "@/lib/api";
 import { MapHome } from "@/components/map-home";
 import { SEEN_INTRO_COOKIE } from "@/lib/visitor";
+import { getAvailableFestivalYears } from "@/lib/festival-years";
 
 const MAP_TILES_URL =
   process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "https://tiles.openfreemap.org/styles/liberty";
@@ -29,7 +30,7 @@ export default async function CityMapPage({
   const hasSeenIntro = (await cookies()).get(SEEN_INTRO_COOKIE)?.value === "1";
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
   const pandals = hasSeenIntro ? await fetchPandalsForCityOrThrow(city.slug, undefined, year) : [];
-  const availableYears = [city.activeFestivalYear, city.activeFestivalYear - 1, city.activeFestivalYear - 2];
+  const availableYears = getAvailableFestivalYears();
 
   return (
     <MapHome

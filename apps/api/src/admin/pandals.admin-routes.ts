@@ -5,6 +5,7 @@ import { PandalModel, PandalYearModel, ReactionModel, fromGeoPoint } from "@durg
 import { uniqueSlug } from "@durgapandals/utils";
 import { normalizePageRequest, buildPageResult } from "@durgapandals/utils";
 import { findNearbyDuplicates } from "../pandals/pandals.service";
+import { CloudinaryProvider } from "../media/cloudinary-provider";
 
 const listQuerySchema = z.object({
   cityId: z.string().optional(),
@@ -26,6 +27,25 @@ const bulkStatusSchema = z.object({
 // scoring so a manually-entered pandal doesn't silently shadow an existing
 // one (spec §17.4).
 export function registerPandalsAdminRoutes(app: FastifyInstance) {
+  // Same provider construction as apps/api/src/media/media.routes.ts — reused
+  // here (rather than an HTTP call to that route) so a hard delete's photo
+  // cleanup is a direct function call, not a self-fetch loop.
+  const mediaProvider = new CloudinaryProvider({
+    cloudName: app.env.CLOUDINARY_CLOUD_NAME ?? "",
+    apiKey: app.env.CLOUDINARY_API_KEY ?? "",
+    apiSecret: app.env.CLOUDINARY_API_SECRET ?? "",
+  });
+
+  // Best-effort: a Cloudinary cleanup failure shouldn't fail the whole
+  // delete, since the DB records are already gone by the time this runs.
+  async function bestEffortDeletePhotos(urls: string[]) {
+    await Promise.all(
+      urls.map((url) =>
+        mediaProvider.delete(url).catch((error) => app.log.error(error))
+      )
+    );
+  }
+
   app.get("/pandals", async (request) => {
     const query = listQuerySchema.parse(request.query);
     const { page, pageSize } = normalizePageRequest(query);
@@ -44,7 +64,31 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
       PandalModel.countDocuments(filter),
     ]);
 
-    return buildPageResult(items, total, { page, pageSize });
+    // The list previously showed just a name — an admin had no way to tell
+    // whether a pandal has any history at all, or whether it already has an
+    // entry for the current festival year, without opening its detail page.
+    // One grouped query for the current page's ids is cheap (25 rows) and
+    // avoids an N+1 per-row lookup.
+    const ids = items.map((item) => item._id);
+    const yearRows = await PandalYearModel.find({ pandalId: { $in: ids } }, { pandalId: 1, year: 1 });
+    const yearsByPandal = new Map<string, number[]>();
+    for (const row of yearRows) {
+      const key = String(row.pandalId);
+      const list = yearsByPandal.get(key) ?? [];
+      list.push(row.year);
+      yearsByPandal.set(key, list);
+    }
+    const currentYear = new Date().getFullYear();
+    const itemsWithYears = items.map((item) => {
+      const years = yearsByPandal.get(String(item._id)) ?? [];
+      return {
+        ...item.toObject(),
+        yearCount: years.length,
+        hasCurrentYearEntry: years.includes(currentYear),
+      };
+    });
+
+    return buildPageResult(itemsWithYears, total, { page, pageSize });
   });
 
   // Flattened lat/lng for every published pandal, across all cities — backs
@@ -144,6 +188,27 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
     return pandal;
   });
 
+  // Hard delete — for a pandal that should never have existed (test entry,
+  // duplicate created by mistake, wrong city/year), not for hiding a real
+  // one from the public (that's what ARCHIVED is for). Cascades to every
+  // PandalYear under it and their reactions/likes, since nothing else
+  // references this pandal once it's gone.
+  app.delete<{ Params: { id: string } }>("/pandals/:id", async (request, reply) => {
+    const pandal = await PandalModel.findById(request.params.id);
+    if (!pandal) return reply.code(404).send({ error: "Pandal not found" });
+
+    const years = await PandalYearModel.find({ pandalId: pandal._id }, { photos: 1 });
+    const yearIds = years.map((year) => year._id);
+    const photoUrls = years.flatMap((year) => year.photos.map((photo) => photo.url));
+
+    await ReactionModel.deleteMany({ pandalYearId: { $in: yearIds } });
+    await PandalYearModel.deleteMany({ pandalId: pandal._id });
+    await PandalModel.deleteOne({ _id: pandal._id });
+    await bestEffortDeletePhotos(photoUrls);
+
+    return reply.code(204).send();
+  });
+
   // --- Pandal years ---
 
   app.post("/pandal-years", async (request, reply) => {
@@ -164,5 +229,19 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
     const pandalYear = await PandalYearModel.findByIdAndUpdate(request.params.id, body, { new: true });
     if (!pandalYear) return reply.code(404).send({ error: "Pandal year not found" });
     return pandalYear;
+  });
+
+  // Hard delete for a single mistaken year (e.g. a festival year created for
+  // the wrong pandal, or one that doesn't actually exist yet) — the pandal
+  // itself and its other years are untouched.
+  app.delete<{ Params: { id: string } }>("/pandal-years/:id", async (request, reply) => {
+    const pandalYear = await PandalYearModel.findById(request.params.id);
+    if (!pandalYear) return reply.code(404).send({ error: "Pandal year not found" });
+
+    await ReactionModel.deleteMany({ pandalYearId: pandalYear._id });
+    await PandalYearModel.deleteOne({ _id: pandalYear._id });
+    await bestEffortDeletePhotos(pandalYear.photos.map((photo) => photo.url));
+
+    return reply.code(204).send();
   });
 }

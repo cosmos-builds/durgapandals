@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { fetchCityBySlug } from "@/lib/api";
 import { TopHeader } from "@/components/top-header";
 import { LastCityTracker } from "@/components/last-city-tracker";
+import { getAvailableFestivalYears } from "@/lib/festival-years";
 
 // Wraps every screen under a city — (tabs) [Home/Explore/Saved], add, and
 // pandal/[slug] — so the desktop persistent top nav bar (spec §5) appears on
@@ -19,7 +20,7 @@ export default async function CityShellLayout({
   const city = await fetchCityBySlug(citySlug);
   if (!city) notFound();
 
-  const availableYears = [city.activeFestivalYear, city.activeFestivalYear - 1, city.activeFestivalYear - 2];
+  const availableYears = getAvailableFestivalYears();
 
   return (
     <div className="relative min-h-dvh bg-ground">

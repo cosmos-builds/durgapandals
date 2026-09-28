@@ -6,6 +6,7 @@ import type { Metadata } from "next";
 // layout.tsx, which hit this exact issue with the Material Symbols font).
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { ToastProvider } from "@durgapandals/ui";
 
 // Never indexed publicly (spec §34).
 export const metadata: Metadata = {
@@ -16,7 +17,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ToastProvider>{children}</ToastProvider>
+      </body>
     </html>
   );
 }

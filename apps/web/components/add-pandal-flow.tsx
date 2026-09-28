@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { distanceMeters } from "@durgapandals/deduplication";
-import { Button, Field, Input, Select, Textarea } from "@durgapandals/ui";
+import { Button, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
   reverseGeocode,
@@ -21,6 +21,7 @@ import {
 } from "@/lib/api";
 import { LocationSearchBox } from "./location-search-box";
 import { MobileHeader } from "./mobile-header";
+import { getAvailableFestivalYears } from "@/lib/festival-years";
 
 // OTP verification is off by default (contributors submit directly) but the
 // code path stays in place — flip this back on with
@@ -155,6 +156,7 @@ export function AddPandalFlow({
   mapTilesUrl,
 }: AddPandalFlowProps) {
   const router = useRouter();
+  const toast = useToast();
   // Computed once per mount, not on every render — this is the only place
   // any of the fields below read it.
   const [initialDraft] = useState(() => loadDraft(citySlug));
@@ -476,7 +478,9 @@ export function AddPandalFlow({
       if (result.ok && result.photo) {
         setPhotos((prev) => [...prev, result.photo!]);
       } else {
-        setPhotoError(result.error ?? "Could not upload photo.");
+        const message = result.error ?? "Could not upload photo.";
+        setPhotoError(message);
+        toast.error(message);
       }
     }
   }
@@ -524,10 +528,16 @@ export function AddPandalFlow({
     });
 
     setSubmitting(false);
-    if (!result.ok) return setError(result.error ?? "Could not submit");
+    if (!result.ok) {
+      const message = result.error ?? "Could not submit";
+      setError(message);
+      toast.error(message);
+      return;
+    }
     setSubmissionId(result.id ?? null);
     setStep("done");
     clearDraft(citySlug);
+    toast.success("Shubho! Your pandal is in the queue.");
   }
 
   // Direct-submit path (REQUIRE_VERIFICATION off): no OTP round-trip.
@@ -672,7 +682,7 @@ export function AddPandalFlow({
 
             <Field label="Festival year">
               <Select value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
-                {[activeFestivalYear, activeFestivalYear - 1, activeFestivalYear - 2].map((year) => (
+                {getAvailableFestivalYears().map((year) => (
                   <option key={year} value={year}>
                     {year}
                     {year === activeFestivalYear ? " (current)" : ""}
@@ -683,32 +693,44 @@ export function AddPandalFlow({
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Locality / area">
-                <Input
-                  placeholder="e.g. Kumartuli"
-                  value={details.locality}
-                  onChange={(e) => setDetails({ ...details, locality: e.target.value })}
-                />
+                {geocoding && !details.locality ? (
+                  <div className="h-12 animate-pulse rounded-xl bg-card" />
+                ) : (
+                  <Input
+                    placeholder="e.g. Kumartuli"
+                    value={details.locality}
+                    onChange={(e) => setDetails({ ...details, locality: e.target.value })}
+                  />
+                )}
               </Field>
               <Field label="Landmark">
-                <Input
-                  placeholder="Optional"
-                  value={details.landmark}
-                  onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
-                />
+                {geocoding && !details.landmark ? (
+                  <div className="h-12 animate-pulse rounded-xl bg-card" />
+                ) : (
+                  <Input
+                    placeholder="Optional"
+                    value={details.landmark}
+                    onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                  />
+                )}
               </Field>
             </div>
             <Field label="Address">
-              <Input
-                placeholder="Full street address"
-                value={details.address}
-                onChange={(e) => setDetails({ ...details, address: e.target.value })}
-              />
+              {geocoding && !details.address ? (
+                <div className="h-12 animate-pulse rounded-xl bg-card" />
+              ) : (
+                <Input
+                  placeholder="Full street address"
+                  value={details.address}
+                  onChange={(e) => setDetails({ ...details, address: e.target.value })}
+                />
+              )}
             </Field>
 
             {geocoding && (
               <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
                 <span className="material-symbols-rounded animate-spin text-sm">progress_activity</span>
-                Locating…
+                Locating your address…
               </span>
             )}
             {!geocoding && geocodeFailed && !details.locality && !details.address && (
