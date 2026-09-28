@@ -24,11 +24,15 @@ type VisitType = "WALKING_DARSHAN" | "PARK_AND_VISIT" | "DARSHAN_AND_GO";
 interface Pandal {
   _id: string;
   canonicalName: string;
+  alternateNames: string[];
   organizerName?: string;
   address: string;
   locality: string;
   landmark?: string;
   publicContact?: string;
+  instagramUrl?: string;
+  facebookUrl?: string;
+  websiteUrl?: string;
   publicationStatus: string;
   verificationStatus: string;
   latitude: number;
@@ -112,6 +116,10 @@ export default function PandalDetailPage() {
   // what "reset to saved location" reverts to, and what's shown so a
   // mis-drag doesn't quietly get lost.
   const [savedPandal, setSavedPandal] = useState<Pandal | null>(null);
+  // Edited as free text (comma-separated) rather than parsing to an array on
+  // every keystroke — splitting live would eat a trailing "," while the
+  // admin is still typing the next name.
+  const [alternateNamesInput, setAlternateNamesInput] = useState("");
   const [draggedAddress, setDraggedAddress] = useState<ReverseGeocodeResult | null>(null);
   const [mapKey, setMapKey] = useState(0);
   const [years, setYears] = useState<PandalYear[]>([]);
@@ -141,6 +149,7 @@ export default function PandalDetailPage() {
     const flattened = { ...data.pandal, latitude, longitude };
     setPandal(flattened);
     setSavedPandal(flattened);
+    setAlternateNamesInput((flattened.alternateNames ?? []).join(", "));
     setDraggedAddress(null);
     setYears(data.years);
   }
@@ -184,11 +193,18 @@ export default function PandalDetailPage() {
       method: "PATCH",
       body: JSON.stringify({
         canonicalName: pandal.canonicalName,
+        alternateNames: alternateNamesInput
+          .split(",")
+          .map((name) => name.trim())
+          .filter(Boolean),
         organizerName: pandal.organizerName,
         address: pandal.address,
         locality: pandal.locality,
         landmark: pandal.landmark,
         publicContact: pandal.publicContact,
+        instagramUrl: pandal.instagramUrl || undefined,
+        facebookUrl: pandal.facebookUrl || undefined,
+        websiteUrl: pandal.websiteUrl || undefined,
         latitude: pandal.latitude,
         longitude: pandal.longitude,
         addedBy: pandal.addedBy,
@@ -480,6 +496,13 @@ export default function PandalDetailPage() {
             <Field label="Pandal name" className="col-span-2">
               <Input value={pandal.canonicalName} onChange={(e) => updateField("canonicalName", e.target.value)} />
             </Field>
+            <Field label="Also known as" className="col-span-2">
+              <Input
+                placeholder="Comma-separated — other names people search for this pandal by"
+                value={alternateNamesInput}
+                onChange={(e) => setAlternateNamesInput(e.target.value)}
+              />
+            </Field>
             <Field label="Organiser / committee" className="col-span-2">
               <Input
                 placeholder="Optional"
@@ -505,6 +528,27 @@ export default function PandalDetailPage() {
                 placeholder="Phone number visitors can call"
                 value={pandal.publicContact ?? ""}
                 onChange={(e) => updateField("publicContact", e.target.value)}
+              />
+            </Field>
+            <Field label="Instagram">
+              <Input
+                placeholder="https://instagram.com/…"
+                value={pandal.instagramUrl ?? ""}
+                onChange={(e) => updateField("instagramUrl", e.target.value)}
+              />
+            </Field>
+            <Field label="Facebook">
+              <Input
+                placeholder="https://facebook.com/…"
+                value={pandal.facebookUrl ?? ""}
+                onChange={(e) => updateField("facebookUrl", e.target.value)}
+              />
+            </Field>
+            <Field label="Website" className="col-span-2">
+              <Input
+                placeholder="https://…"
+                value={pandal.websiteUrl ?? ""}
+                onChange={(e) => updateField("websiteUrl", e.target.value)}
               />
             </Field>
             <Field label="Visit type" className="col-span-2">

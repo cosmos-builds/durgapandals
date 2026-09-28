@@ -21,6 +21,7 @@ interface DuplicateCandidate {
 const EMPTY_FORM = {
   cityId: "",
   canonicalName: "",
+  alternateNames: "",
   organizerName: "",
   latitude: "",
   longitude: "",
@@ -28,6 +29,9 @@ const EMPTY_FORM = {
   locality: "",
   landmark: "",
   publicContact: "",
+  instagramUrl: "",
+  facebookUrl: "",
+  websiteUrl: "",
   parkingAvailable: false,
   twoWheelerAccessible: false,
   fourWheelerAccessible: false,
@@ -86,6 +90,10 @@ export default function NewPandalPage() {
     return {
       cityId: form.cityId,
       canonicalName: form.canonicalName,
+      alternateNames: form.alternateNames
+        .split(",")
+        .map((name) => name.trim())
+        .filter(Boolean),
       organizerName: form.organizerName || undefined,
       latitude: Number(form.latitude),
       longitude: Number(form.longitude),
@@ -93,6 +101,9 @@ export default function NewPandalPage() {
       locality: form.locality,
       landmark: form.landmark || undefined,
       publicContact: form.publicContact || undefined,
+      instagramUrl: form.instagramUrl || undefined,
+      facebookUrl: form.facebookUrl || undefined,
+      websiteUrl: form.websiteUrl || undefined,
       parkingAvailable: form.parkingAvailable,
       twoWheelerAccessible: form.twoWheelerAccessible,
       fourWheelerAccessible: form.fourWheelerAccessible,
@@ -164,6 +175,13 @@ export default function NewPandalPage() {
               onChange={(e) => setForm({ ...form, canonicalName: e.target.value })}
             />
           </Field>
+          <Field label="Also known as" className="col-span-2">
+            <Input
+              placeholder="Comma-separated — other names people search for this pandal by"
+              value={form.alternateNames}
+              onChange={(e) => setForm({ ...form, alternateNames: e.target.value })}
+            />
+          </Field>
           <Field label="Organiser / committee" className="col-span-2">
             <Input
               placeholder="e.g. Kumartuli Sarbojanin Committee"
@@ -199,6 +217,27 @@ export default function NewPandalPage() {
               placeholder="Phone number visitors can call"
               value={form.publicContact}
               onChange={(e) => setForm({ ...form, publicContact: e.target.value })}
+            />
+          </Field>
+          <Field label="Instagram">
+            <Input
+              placeholder="https://instagram.com/…"
+              value={form.instagramUrl}
+              onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
+            />
+          </Field>
+          <Field label="Facebook">
+            <Input
+              placeholder="https://facebook.com/…"
+              value={form.facebookUrl}
+              onChange={(e) => setForm({ ...form, facebookUrl: e.target.value })}
+            />
+          </Field>
+          <Field label="Website" className="col-span-2">
+            <Input
+              placeholder="https://…"
+              value={form.websiteUrl}
+              onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
             />
           </Field>
         </div>

@@ -62,7 +62,10 @@ export async function adminFetch(path: string, init: RequestInit = {}) {
     headers: {
       ...init.headers,
       Authorization: token ? `Bearer ${token}` : "",
-      "Content-Type": "application/json",
+      // Only set when there's a body — Fastify's default JSON parser rejects
+      // an empty body when this header is present (e.g. a bodyless DELETE),
+      // which surfaced as a 400 on every delete call.
+      ...(init.body ? { "Content-Type": "application/json" } : {}),
     },
   });
   if (response.status === 401 && typeof window !== "undefined") {
