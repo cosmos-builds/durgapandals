@@ -146,7 +146,48 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
             </p>
           )}
 
-          {!loading && !(isSearching && searching) && active.length > 0 && (
+          {!loading && !isSearching && active.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Live now</span>
+              <div className="flex flex-wrap gap-2">
+                {active.map((city) => (
+                  <button
+                    key={city.key}
+                    onClick={city.onSelect}
+                    className={`flex items-center gap-1.5 rounded-pill border px-3.5 py-2 font-body text-sm font-bold ${
+                      city.isSelected ? "border-brand bg-brand/15 text-brand" : "border-border bg-chip text-ink-dim"
+                    }`}
+                  >
+                    {city.name}
+                    {city.isSelected && (
+                      <span className="material-symbols-rounded text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                        check_circle
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {!loading && !isSearching && comingSoon.length > 0 && (
+            <div className="flex flex-col gap-2">
+              <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Coming soon</span>
+              <div className="flex flex-wrap gap-2">
+                {comingSoon.map((city) => (
+                  <span
+                    key={city.key}
+                    className="flex items-center gap-1.5 rounded-pill border border-border bg-chip px-3.5 py-2 font-body text-sm font-semibold text-ink-muted"
+                  >
+                    {city.name}
+                    <span className="flex-none rounded-lg bg-card px-2 py-0.5 font-body text-[11px] font-semibold">Soon</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isSearching && !searching && active.length > 0 && (
             <div className="flex flex-col gap-2">
               <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Live now</span>
               {active.map((city, index) => (
@@ -173,7 +214,7 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
             </div>
           )}
 
-          {!loading && !(isSearching && searching) && comingSoon.length > 0 && (
+          {isSearching && !searching && comingSoon.length > 0 && (
             <div className="flex flex-col gap-1">
               <span className="font-mono text-xs uppercase tracking-wide text-ink-muted">Coming soon</span>
               {comingSoon.map((city) => (
