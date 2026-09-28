@@ -49,8 +49,8 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
   useEffect(() => {
     setLikes(pandal.likes);
     setLiked(false);
-    setSaved(getSavedPandalSlugs().includes(pandal.slug));
-  }, [pandal.slug, pandal.likes]);
+    setSaved(getSavedPandalSlugs(citySlug).includes(pandal.slug));
+  }, [pandal.slug, pandal.likes, citySlug]);
 
   async function toggleLike() {
     if (!pandal.year) return;
@@ -70,7 +70,7 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
   }
 
   function toggleSave() {
-    setSaved(toggleSavedPandal(pandal.slug));
+    setSaved(toggleSavedPandal(citySlug, pandal.slug));
   }
 
   async function handleShare() {

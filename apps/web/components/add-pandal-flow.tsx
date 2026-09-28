@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
@@ -13,6 +14,7 @@ import {
   verifyCode,
   submitPandal,
   uploadPhoto,
+  deletePhoto,
   type NearbyPandal,
   type LocationSearchResult,
   type UploadedPhoto,
@@ -89,6 +91,55 @@ const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+// Everything worth resuming after an accidental refresh/back-nav/tab-close —
+// deliberately excludes transient/re-derivable state (nearby results,
+// geocoding flags, the OTP code) and anything already-submitted (`step:
+// "done"` is never saved, see the write-back effect below). sessionStorage,
+// not localStorage: a half-finished submission (with an email address in
+// it) shouldn't silently persist across browser restarts indefinitely — it
+// only needs to survive the same tab/session.
+interface AddPandalDraft {
+  step: Step;
+  coords: { latitude: number; longitude: number };
+  categories: string[];
+  photos: UploadedPhoto[];
+  selectedExisting: NearbyPandal | null;
+  updateChoice: (typeof UPDATE_OPTIONS)[number]["key"] | null;
+  details: typeof emptyDetails;
+  festivalYear: number;
+  amenities: typeof emptyAmenities;
+  visitType: string;
+  schedule: ScheduleRow[];
+  email: string;
+}
+
+function draftKey(citySlug: string): string {
+  return `durgapandals_add_pandal_draft:${citySlug}`;
+}
+
+function loadDraft(citySlug: string): AddPandalDraft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(draftKey(citySlug));
+    return raw ? (JSON.parse(raw) as AddPandalDraft) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(citySlug: string, draft: AddPandalDraft) {
+  try {
+    window.sessionStorage.setItem(draftKey(citySlug), JSON.stringify(draft));
+  } catch {
+    // sessionStorage full/unavailable (private browsing) — losing autosave
+    // isn't worth surfacing an error over.
+  }
+}
+
+function clearDraft(citySlug: string) {
+  window.sessionStorage.removeItem(draftKey(citySlug));
+}
+
 // The full contribution flow from spec §14.2: drop pin (with a live nearby
 // check) -> either "it's mine" (update/correction) or continue as new ->
 // progressive details -> OTP verify -> pending-review confirmation. Nothing
@@ -104,26 +155,33 @@ export function AddPandalFlow({
   mapTilesUrl,
 }: AddPandalFlowProps) {
   const router = useRouter();
-  const [step, setStep] = useState<Step>("location");
-  const [coords, setCoords] = useState(center);
+  // Computed once per mount, not on every render — this is the only place
+  // any of the fields below read it.
+  const [initialDraft] = useState(() => loadDraft(citySlug));
+  const [draftRestored, setDraftRestored] = useState(() => initialDraft !== null);
+  const [step, setStep] = useState<Step>(initialDraft?.step ?? "location");
+  const [coords, setCoords] = useState(initialDraft?.coords ?? center);
   const [nearby, setNearby] = useState<NearbyPandal[]>([]);
+  const [nearbyCheckFailed, setNearbyCheckFailed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeFailed, setGeocodeFailed] = useState(false);
-  const [categories, setCategories] = useState<string[]>([]);
-  const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
+  const [categories, setCategories] = useState<string[]>(initialDraft?.categories ?? []);
+  const [photos, setPhotos] = useState<UploadedPhoto[]>(initialDraft?.photos ?? []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
-  const [selectedExisting, setSelectedExisting] = useState<NearbyPandal | null>(null);
-  const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(null);
-  const [details, setDetails] = useState(emptyDetails);
-  const [festivalYear, setFestivalYear] = useState(activeFestivalYear);
+  const [selectedExisting, setSelectedExisting] = useState<NearbyPandal | null>(initialDraft?.selectedExisting ?? null);
+  const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(
+    initialDraft?.updateChoice ?? null
+  );
+  const [details, setDetails] = useState(initialDraft?.details ?? emptyDetails);
+  const [festivalYear, setFestivalYear] = useState(initialDraft?.festivalYear ?? activeFestivalYear);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [searchingArea, setSearchingArea] = useState(false);
-  const [amenities, setAmenities] = useState(emptyAmenities);
-  const [visitType, setVisitType] = useState("WALKING_DARSHAN");
-  const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
-  const [email, setEmail] = useState("");
+  const [amenities, setAmenities] = useState(initialDraft?.amenities ?? emptyAmenities);
+  const [visitType, setVisitType] = useState(initialDraft?.visitType ?? "WALKING_DARSHAN");
+  const [schedule, setSchedule] = useState<ScheduleRow[]>(initialDraft?.schedule ?? []);
+  const [email, setEmail] = useState(initialDraft?.email ?? "");
   const [website, setWebsite] = useState(""); // honeypot — real visitors never see or fill this
   const [code, setCode] = useState("");
   const [codeSent, setCodeSent] = useState(false);
@@ -134,16 +192,75 @@ export function AddPandalFlow({
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const nearbyMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const coordsRef = useRef(coords);
+  coordsRef.current = coords;
 
   const isNewPandal = !selectedExisting;
   const distanceFromCityKm = distanceMeters(coords, center) / 1000;
   const isOutsideServiceArea = distanceFromCityKm > MAX_DISTANCE_FROM_CITY_KM;
 
+  // Autosaves the in-progress submission so a refresh, accidental back-nav,
+  // or closed tab doesn't lose it — debounced so typing doesn't write on
+  // every keystroke. Cleared once the flow reaches "done" (see doSubmit)
+  // rather than saved, since a completed submission has nothing left to
+  // resume.
+  useEffect(() => {
+    if (step === "done") return;
+    const timeout = setTimeout(() => {
+      saveDraft(citySlug, {
+        step,
+        coords,
+        categories,
+        photos,
+        selectedExisting,
+        updateChoice,
+        details,
+        festivalYear,
+        amenities,
+        visitType,
+        schedule,
+        email,
+      });
+    }, 400);
+    return () => clearTimeout(timeout);
+  }, [citySlug, step, coords, categories, photos, selectedExisting, updateChoice, details, festivalYear, amenities, visitType, schedule, email]);
+
+  // The draft is being resumed, not started fresh — deletes any photos it
+  // was holding (they'd otherwise be orphaned the moment the form resets
+  // under them) and wipes the saved draft, same cleanup a completed
+  // submission gets, just triggered by the visitor instead of a successful
+  // POST.
+  function discardDraft() {
+    photos.forEach((photo) => void deletePhoto(photo.url));
+    clearDraft(citySlug);
+    setDraftRestored(false);
+    setStep("location");
+    setCoords(center);
+    setSelectedExisting(null);
+    setUpdateChoice(null);
+    setDetails(emptyDetails);
+    setCategories([]);
+    setPhotos([]);
+    setFestivalYear(activeFestivalYear);
+    setAmenities(emptyAmenities);
+    setVisitType("WALKING_DARSHAN");
+    setSchedule([]);
+    setEmail("");
+  }
+
   function scheduleNearbyFetch(next: { latitude: number; longitude: number }) {
     if (fetchTimer.current) clearTimeout(fetchTimer.current);
     fetchTimer.current = setTimeout(async () => {
-      const results = await fetchNearbyPandals(cityId, next.latitude, next.longitude);
-      setNearby(results);
+      try {
+        const results = await fetchNearbyPandals(cityId, next.latitude, next.longitude);
+        setNearby(results);
+        setNearbyCheckFailed(false);
+      } catch {
+        // A failed check must not look identical to "checked, found
+        // nothing" — that's exactly the gap that lets someone submit a
+        // real duplicate believing the app already looked and found none.
+        setNearbyCheckFailed(true);
+      }
     }, 400);
   }
 
@@ -157,8 +274,13 @@ export function AddPandalFlow({
         scheduleNearbyFetch(next);
         scheduleReverseGeocode(next);
       });
-      scheduleNearbyFetch(center);
-      scheduleReverseGeocode(center);
+      // `coordsRef`, not the fixed `center` prop — this callback is memoized
+      // once (deps: []) but fires again on every remount of the map (see the
+      // `coords`-as-center comment above), so a stale closure over `center`
+      // would run the initial nearby/geocode check for the *original* city
+      // center instead of wherever the map is actually now starting.
+      scheduleNearbyFetch(coordsRef.current);
+      scheduleReverseGeocode(coordsRef.current);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     []
@@ -356,8 +478,15 @@ export function AddPandalFlow({
     }
   }
 
+  // Each photo is uploaded to Cloudinary immediately on selection (so the
+  // thumbnail/progress state has something real to show), well before the
+  // submission that would actually reference it — removing one here left it
+  // orphaned in storage forever with nothing pointing to it. Deleting it now
+  // is best-effort/fire-and-forget: the UI has already dropped it from
+  // `photos`, so there's nothing to roll back to if the delete call fails.
   function removePhoto(url: string) {
     setPhotos((prev) => prev.filter((p) => p.url !== url));
+    void deletePhoto(url);
   }
 
   async function doSubmit() {
@@ -395,6 +524,7 @@ export function AddPandalFlow({
     if (!result.ok) return setError(result.error ?? "Could not submit");
     setSubmissionId(result.id ?? null);
     setStep("done");
+    clearDraft(citySlug);
   }
 
   // Direct-submit path (REQUIRE_VERIFICATION off): no OTP round-trip.
@@ -469,6 +599,20 @@ export function AddPandalFlow({
     <div className="relative min-h-dvh bg-ground pb-24">
       {headerBlock}
 
+      {draftRestored && step !== "done" && (
+        <div className="mx-4 mb-1 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-3.5 py-2.5 md:mx-auto md:max-w-xl">
+          <span className="font-body text-xs text-ink-dim">Resumed your in-progress submission.</span>
+          <div className="flex flex-none items-center gap-3">
+            <button onClick={discardDraft} className="font-body text-xs font-bold text-brand">
+              Start over
+            </button>
+            <button onClick={() => setDraftRestored(false)} aria-label="Dismiss" className="flex text-ink-muted">
+              <span className="material-symbols-rounded text-base">close</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {step === "location" && (
         <div className="flex flex-col md:h-[600px] md:flex-row-reverse">
           {/* DOM order is [map, panel] so mobile (flex-col, no reverse) stacks
@@ -476,7 +620,14 @@ export function AddPandalFlow({
               flips it to panel-left/map-right on desktop, matching the
               Google Maps "add a place" split — both from the same markup. */}
           <div className="relative h-[360px] w-full flex-none overflow-hidden md:h-full md:flex-1">
-            <MapCanvas styleUrl={mapTilesUrl} center={center} zoom={zoom} onMapReady={handleMapReady} className="absolute inset-0" />
+            {/* `coords`, not the fixed `center` prop — MapCanvas only reads
+                its `center` at mount time (see packages/maps/src/react), and
+                this step's subtree unmounts/remounts on every trip through
+                "details" and back (see `goBack`). Passing the city's fixed
+                center here meant the map visually snapped back to it on
+                return, even though `coords` (and the nearby/geocode results
+                tied to it) had already moved with the visitor's drag. */}
+            <MapCanvas styleUrl={mapTilesUrl} center={coords} zoom={zoom} onMapReady={handleMapReady} className="absolute inset-0" />
             <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
               <span className="mb-1.5 rounded-xl bg-accent px-2.5 py-1 font-body text-xs font-bold text-accent-ink shadow">
                 Your pandal · drag map to adjust
@@ -568,9 +719,11 @@ export function AddPandalFlow({
               <div className="flex flex-col gap-1">
                 <span className="font-display text-lg font-extrabold">Is your pandal already here?</span>
                 <span className="font-body text-sm text-ink-muted">
-                  {nearby.length > 0
-                    ? `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} near your pin.`
-                    : "No existing pandals found near this pin."}
+                  {nearbyCheckFailed
+                    ? "Couldn't check — please look on the map or Explore before continuing, to avoid adding a duplicate."
+                    : nearby.length > 0
+                      ? `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} near your pin.`
+                      : "No existing pandals found near this pin."}
                 </span>
               </div>
               {nearby.map((candidate) => (
@@ -588,11 +741,16 @@ export function AddPandalFlow({
                 </div>
               ))}
               {isOutsideServiceArea && (
-                <span className="flex items-center gap-1.5 rounded-2xl bg-card p-2.5 font-body text-xs text-accent md:bg-panel">
-                  <span className="material-symbols-rounded text-base">location_off</span>
-                  That pin is {Math.round(distanceFromCityKm)}km from {cityName} — we only cover pandals in and
-                  around {cityName} right now.
-                </span>
+                <div className="flex flex-col gap-1.5 rounded-2xl bg-card p-2.5 md:bg-panel">
+                  <span className="flex items-center gap-1.5 font-body text-xs text-accent">
+                    <span className="material-symbols-rounded text-base">location_off</span>
+                    That pin is {Math.round(distanceFromCityKm)}km from {cityName} — we only cover pandals in and
+                    around {cityName} right now.
+                  </span>
+                  <Link href={`/${citySlug}`} className="font-body text-xs font-bold text-brand underline-offset-2 hover:underline">
+                    In the wrong city? Switch cities from the map
+                  </Link>
+                </div>
               )}
               <Button
                 onClick={continueAsNew}
@@ -958,7 +1116,9 @@ export function AddPandalFlow({
             <Button
               variant="secondary"
               onClick={() => {
+                setDraftRestored(false);
                 setStep("location");
+                setCoords(center);
                 setSelectedExisting(null);
                 setUpdateChoice(null);
                 setDetails(emptyDetails);

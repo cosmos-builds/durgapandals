@@ -244,7 +244,10 @@ export interface NearbyPandal {
 
 // Live duplicate check as a pin is dropped (spec §17.1) — location-only, no
 // name needed yet, so this is a plain GET with no debouncing concerns beyond
-// what the caller adds.
+// what the caller adds. Throws on a real failure instead of silently
+// returning [] — the caller needs to tell "checked, found nothing nearby"
+// apart from "couldn't check," since the latter risks a real duplicate
+// submission if it's presented as the former.
 export async function fetchNearbyPandals(
   cityId: string,
   latitude: number,
@@ -252,7 +255,8 @@ export async function fetchNearbyPandals(
 ): Promise<NearbyPandal[]> {
   const url = `${API_BASE_URL}/pandals/nearby?cityId=${cityId}&latitude=${latitude}&longitude=${longitude}`;
   const response = await fetch(url, { cache: "no-store" });
-  return safeJson(response, []);
+  if (!response.ok) throw new Error(`Failed to check nearby pandals (${response.status})`);
+  return response.json();
 }
 
 export interface NearbyRadiusPandal {
@@ -388,4 +392,21 @@ export async function uploadPhoto(file: File): Promise<{ ok: boolean; photo?: Up
   const photo = await safeJson<UploadedPhoto | null>(response, null);
   if (!photo) return { ok: false, error: "Could not upload photo" };
   return { ok: true, photo };
+}
+
+// Best-effort cleanup for a photo that was uploaded but never ended up in a
+// submission (removed before continuing, or the flow was abandoned) —
+// fire-and-forget from the caller's perspective, so failures here are
+// swallowed rather than surfaced (there's no user-facing action to retry).
+export async function deletePhoto(url: string): Promise<void> {
+  try {
+    await fetch(`${API_BASE_URL}/media/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+      keepalive: true,
+    });
+  } catch {
+    // best-effort — nothing the caller can do about a failed cleanup call
+  }
 }

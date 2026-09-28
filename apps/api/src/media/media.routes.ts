@@ -1,5 +1,8 @@
 import type { FastifyPluginAsync } from "fastify";
+import { z } from "zod";
 import { CloudinaryProvider } from "./cloudinary-provider";
+
+const deleteBodySchema = z.object({ url: z.string().url() });
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024; // 8MB — generous for a phone photo, not for a dumped RAW/video
 const ALLOWED_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -53,5 +56,22 @@ export const mediaRoutes: FastifyPluginAsync = async (app) => {
       request.log.error(error);
       return reply.code(502).send({ error: "Could not process that image — try a different photo." });
     }
+  });
+
+  // Lets the Add Pandal flow clean up a photo it uploaded but never ended up
+  // submitting (removed before continuing, or the whole flow abandoned) —
+  // without this, every such photo stayed in Cloudinary forever with
+  // nothing ever referencing it. Best-effort: `provider.delete` already
+  // no-ops on an unrecognized URL, so this can't be used to delete
+  // arbitrary Cloudinary assets outside our own upload folder/public_id
+  // shape.
+  app.post("/delete", async (request, reply) => {
+    const body = deleteBodySchema.parse(request.body);
+    try {
+      await provider.delete(body.url);
+    } catch (error) {
+      request.log.error(error);
+    }
+    return reply.code(204).send();
   });
 };

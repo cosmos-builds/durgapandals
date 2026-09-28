@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { PandalSummary } from "@/lib/api";
-import { getSavedPandalSlugs, toggleSavedPandal } from "@/lib/visitor";
+import { getSavedPandalSlugs, pruneSavedSlugs, toggleSavedPandal, SAVED_KEY_BY_CITY } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { MobileHeader } from "./mobile-header";
 
@@ -20,14 +20,33 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
   const [savedSlugs, setSavedSlugs] = useState<string[]>([]);
 
   useEffect(() => {
-    setSavedSlugs(getSavedPandalSlugs());
-  }, []);
+    setSavedSlugs(getSavedPandalSlugs(citySlug));
+
+    // Picks up a save/unsave made in another tab on the same origin — the
+    // `storage` event only fires in *other* tabs, not the one that made the
+    // write, which is exactly what's wanted here (this tab already updates
+    // its own state directly in `unsave`).
+    function onStorage(event: StorageEvent) {
+      if (event.key === SAVED_KEY_BY_CITY) setSavedSlugs(getSavedPandalSlugs(citySlug));
+    }
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [citySlug]);
 
   const saved = allPandals.filter((p) => savedSlugs.includes(p.slug));
 
+  // The list load above already throws instead of silently returning []
+  // on a failed fetch (see fetchPandalsForCityOrThrow), so reaching this
+  // point with a saved slug missing from `allPandals` means it's genuinely
+  // gone (deleted/unpublished/merged) rather than a fetch hiccup — safe to
+  // drop it from storage instead of leaving a dead bookmark around forever.
+  useEffect(() => {
+    pruneSavedSlugs(citySlug, allPandals.map((p) => p.slug));
+  }, [citySlug, allPandals]);
+
   function unsave(slug: string) {
-    toggleSavedPandal(slug);
-    setSavedSlugs(getSavedPandalSlugs());
+    toggleSavedPandal(citySlug, slug);
+    setSavedSlugs(getSavedPandalSlugs(citySlug));
   }
 
   return (

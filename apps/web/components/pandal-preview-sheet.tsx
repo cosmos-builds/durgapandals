@@ -29,9 +29,9 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
   useEffect(() => {
     setLikes(pandal.likes);
     setLiked(false);
-    setSaved(getSavedPandalSlugs().includes(pandal.slug));
+    setSaved(getSavedPandalSlugs(citySlug).includes(pandal.slug));
     setDragY(0);
-  }, [pandal]);
+  }, [pandal, citySlug]);
 
   async function toggleLike() {
     if (!pandal.year) return;
@@ -50,7 +50,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
   }
 
   function toggleSave() {
-    setSaved(toggleSavedPandal(pandal.slug));
+    setSaved(toggleSavedPandal(citySlug, pandal.slug));
   }
 
   function handlePointerDown(event: React.PointerEvent) {

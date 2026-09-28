@@ -30,17 +30,59 @@ export function getVisitorId(): string {
   return id;
 }
 
-export function getSavedPandalSlugs(): string[] {
-  if (typeof window === "undefined") return [];
+// Pandal slugs are only unique *within* a city (Pandal's own unique index is
+// `{cityId, slug}`), so the original flat "durgapandals_saved_pandals" array
+// could show a save in City A as also saved in City B whenever two different
+// pandals happened to slugify to the same string. Saves are now namespaced
+// by city under this key instead; exported so SavedList can listen for the
+// `storage` event and pick up a save/unsave made in another tab.
+export const SAVED_KEY_BY_CITY = "durgapandals_saved_pandals_by_city";
+
+function readSavedMap(): Record<string, string[]> {
+  if (typeof window === "undefined") return {};
   try {
-    return JSON.parse(window.localStorage.getItem(SAVED_KEY) ?? "[]");
+    return JSON.parse(window.localStorage.getItem(SAVED_KEY_BY_CITY) ?? "{}");
   } catch {
-    return [];
+    return {};
   }
 }
 
-export function toggleSavedPandal(slug: string): boolean {
-  const saved = new Set(getSavedPandalSlugs());
+function writeSavedMap(map: Record<string, string[]>) {
+  window.localStorage.setItem(SAVED_KEY_BY_CITY, JSON.stringify(map));
+}
+
+// One-time migration of pre-namespacing saves into whichever city the
+// visitor happens to be looking at the first time this runs after the
+// change — most visitors only ever used one city, so this recovers their
+// existing bookmarks instead of silently dropping them; the old key is then
+// removed so this only ever runs once.
+function migrateLegacySavedSlugs(citySlug: string) {
+  if (typeof window === "undefined") return;
+  const legacyRaw = window.localStorage.getItem(SAVED_KEY);
+  if (!legacyRaw) return;
+  try {
+    const legacySlugs: unknown = JSON.parse(legacyRaw);
+    if (Array.isArray(legacySlugs) && legacySlugs.length > 0) {
+      const map = readSavedMap();
+      const merged = new Set([...(map[citySlug] ?? []), ...(legacySlugs as string[])]);
+      map[citySlug] = [...merged];
+      writeSavedMap(map);
+    }
+  } catch {
+    // malformed legacy data — nothing worth recovering
+  }
+  window.localStorage.removeItem(SAVED_KEY);
+}
+
+export function getSavedPandalSlugs(citySlug: string): string[] {
+  migrateLegacySavedSlugs(citySlug);
+  return readSavedMap()[citySlug] ?? [];
+}
+
+export function toggleSavedPandal(citySlug: string, slug: string): boolean {
+  migrateLegacySavedSlugs(citySlug);
+  const map = readSavedMap();
+  const saved = new Set(map[citySlug] ?? []);
   let isSaved: boolean;
   if (saved.has(slug)) {
     saved.delete(slug);
@@ -49,8 +91,26 @@ export function toggleSavedPandal(slug: string): boolean {
     saved.add(slug);
     isSaved = true;
   }
-  window.localStorage.setItem(SAVED_KEY, JSON.stringify([...saved]));
+  map[citySlug] = [...saved];
+  writeSavedMap(map);
   return isSaved;
+}
+
+// Drops any saved slug that no longer matches a real pandal — called by
+// SavedList after a *successful* fetch of the city's pandal list, so an
+// empty/short result here means "genuinely not found," not "the request
+// failed" (a failed fetch throws instead of returning [], see
+// fetchPandalsForCityOrThrow).
+export function pruneSavedSlugs(citySlug: string, validSlugs: string[]) {
+  const map = readSavedMap();
+  const current = map[citySlug];
+  if (!current) return;
+  const validSet = new Set(validSlugs);
+  const pruned = current.filter((slug) => validSet.has(slug));
+  if (pruned.length !== current.length) {
+    map[citySlug] = pruned;
+    writeSavedMap(map);
+  }
 }
 
 // The festive intro hero (see intro-hero.tsx) shows once ever, site-wide —
