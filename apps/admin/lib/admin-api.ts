@@ -47,9 +47,17 @@ export async function adminLogin(email: string, password: string) {
 // The frontend gate is UX convenience only — every request still needs a
 // valid token because the backend enforces authorization independently
 // (spec §20, §21), so a hidden/removed route here is never the real defense.
+//
+// The 8-hour session token realistically expires mid-session for an admin
+// doing a long review pass — before this, a 401 here was treated exactly
+// like any other response: `res.ok` was false, so most callers' loaders
+// just showed an empty/zero state and most mutations silently did nothing,
+// with zero indication the admin needed to log in again. Clearing the token
+// and hard-redirecting to /login on any 401 turns that into an actual
+// re-auth prompt instead of a mysteriously "broken" app.
 export async function adminFetch(path: string, init: RequestInit = {}) {
   const token = getAdminToken();
-  return fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers: {
       ...init.headers,
@@ -57,6 +65,27 @@ export async function adminFetch(path: string, init: RequestInit = {}) {
       "Content-Type": "application/json",
     },
   });
+  if (response.status === 401 && typeof window !== "undefined") {
+    clearAdminToken();
+    window.location.href = "/login";
+  }
+  return response;
+}
+
+export interface MutationResult {
+  ok: boolean;
+  error?: string;
+}
+
+// Shared by every PATCH/POST call site that mutates something and needs to
+// know whether it actually worked — previously each one either checked
+// `res.ok` inconsistently or, in most cases, not at all, so a failed
+// approve/save/toggle looked identical to a successful one.
+export async function adminMutate(path: string, init: RequestInit = {}): Promise<MutationResult> {
+  const response = await adminFetch(path, init);
+  if (response.ok) return { ok: true };
+  const body = await response.json().catch(() => ({}));
+  return { ok: false, error: body.error ?? "Something went wrong — please try again." };
 }
 
 // Mirrors apps/web's searchCities — merges already-listed cities with live

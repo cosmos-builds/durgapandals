@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, adminMutate } from "@/lib/admin-api";
 import { Button, Input, Select, Table, TableHeadRow, Th, Tr, Td } from "@durgapandals/ui";
 
 interface City {
@@ -64,6 +64,7 @@ export default function PandalsListPage() {
   const [result, setResult] = useState<Page<Pandal> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!ready) return;
@@ -106,11 +107,20 @@ export default function PandalsListPage() {
   async function bulkSetStatus(publicationStatus: string) {
     if (selected.size === 0) return;
     setBulkBusy(true);
+    setError(null);
     try {
-      await adminFetch("/admin/pandals/bulk-status", {
+      const result = await adminMutate("/admin/pandals/bulk-status", {
         method: "POST",
         body: JSON.stringify({ ids: Array.from(selected), publicationStatus }),
       });
+      if (!result.ok) {
+        // Doesn't touch `result`'s rows (the visible table) on failure —
+        // rewriting every selected row's status locally regardless of
+        // whether the bulk PATCH succeeded was the actual bug: a failed
+        // request looked exactly like a successful one.
+        setError(result.error ?? "Couldn't update status.");
+        return;
+      }
       setResult((prev) =>
         prev
           ? { ...prev, items: prev.items.map((p) => (selected.has(p._id) ? { ...p, publicationStatus } : p)) }
@@ -134,6 +144,12 @@ export default function PandalsListPage() {
           + Add Pandal
         </Link>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 font-body text-sm text-brand">
+          {error}
+        </div>
+      )}
 
       <div className="mb-4 flex flex-col gap-3 md:flex-row">
         <Input

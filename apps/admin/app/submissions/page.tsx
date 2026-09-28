@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, adminMutate } from "@/lib/admin-api";
 import { Button, Card, Textarea } from "@durgapandals/ui";
 import { CandidatesMap, type Candidate } from "@/components/candidates-map";
 
@@ -36,6 +36,7 @@ export default function SubmissionsPage() {
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [bulkBusy, setBulkBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const visibleSubmissions = submissions.filter((s) => tab === "ALL" || s.type === tab);
 
@@ -49,38 +50,45 @@ export default function SubmissionsPage() {
     if (ready) load();
   }, [ready]);
 
+  // A failed approve/reject must not look identical to a successful one —
+  // this used to fire-and-forget the POST and reload regardless, so a
+  // rejected request (expired session, server error) silently left the
+  // submission exactly where it was with no indication anything went wrong.
   async function review(id: string, action: "APPROVE" | "REJECT") {
     setBusyId(id);
-    try {
-      await adminFetch(`/admin/submissions/${id}/review`, {
-        method: "POST",
-        body: JSON.stringify({ action, reviewNotes: notes[id] || undefined }),
-      });
-      await load();
-    } finally {
-      setBusyId(null);
-    }
+    setError(null);
+    const result = await adminMutate(`/admin/submissions/${id}/review`, {
+      method: "POST",
+      body: JSON.stringify({ action, reviewNotes: notes[id] || undefined }),
+    });
+    if (!result.ok) setError(result.error ?? "Couldn't submit review.");
+    await load();
+    setBusyId(null);
   }
 
   async function bulkReview(action: "APPROVE" | "REJECT") {
     if (selected.size === 0) return;
     setBulkBusy(true);
-    try {
-      await adminFetch("/admin/submissions/bulk-review", {
-        method: "POST",
-        body: JSON.stringify({ ids: Array.from(selected), action }),
-      });
-      await load();
-    } finally {
-      setBulkBusy(false);
-    }
+    setError(null);
+    const result = await adminMutate("/admin/submissions/bulk-review", {
+      method: "POST",
+      body: JSON.stringify({ ids: Array.from(selected), action }),
+    });
+    if (!result.ok) setError(result.error ?? "Couldn't submit bulk review.");
+    await load();
+    setBulkBusy(false);
   }
 
   async function toggleBlock(contributorId: string, blocked: boolean) {
-    await adminFetch(`/admin/contributors/${contributorId}`, {
+    setError(null);
+    const result = await adminMutate(`/admin/contributors/${contributorId}`, {
       method: "PATCH",
       body: JSON.stringify({ blocked }),
     });
+    if (!result.ok) {
+      setError(result.error ?? "Couldn't update contributor.");
+      return;
+    }
     setSubmissions((prev) =>
       prev.map((s) => (s.contributor?.id === contributorId ? { ...s, contributor: { ...s.contributor!, blocked } } : s))
     );
@@ -113,6 +121,12 @@ export default function SubmissionsPage() {
           </div>
         )}
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 font-body text-sm text-brand">
+          {error}
+        </div>
+      )}
 
       <div className="mb-5 flex gap-2">
         {TABS.map((t) => {

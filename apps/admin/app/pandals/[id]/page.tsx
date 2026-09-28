@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
-import { adminFetch } from "@/lib/admin-api";
+import { adminFetch, adminMutate } from "@/lib/admin-api";
 import { Button, Card, Dialog, Field, Input, Select, Textarea } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import type { ReverseGeocodeResult } from "@/lib/admin-api";
@@ -100,6 +100,8 @@ export default function PandalDetailPage() {
   const [mergeResults, setMergeResults] = useState<MergeCandidate[]>([]);
   const [mergeTarget, setMergeTarget] = useState<MergeCandidate | null>(null);
   const [merging, setMerging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [mergeError, setMergeError] = useState<string | null>(null);
 
   async function load() {
     const res = await adminFetch(`/admin/pandals/${params.id}`);
@@ -144,9 +146,14 @@ export default function PandalDetailPage() {
     setPandal({ ...pandal, [field]: !pandal[field] });
   }
 
+  // `setSavedPandal` is what marks the edit as persisted (it's what
+  // `hasMovedFromSaved` and the "Reset to saved" affordance compare
+  // against) — it must only happen once the PATCH actually succeeded, or a
+  // failed save silently looks identical to a successful one.
   async function saveCanonical() {
     if (!pandal) return;
-    await adminFetch(`/admin/pandals/${pandal._id}`, {
+    setError(null);
+    const result = await adminMutate(`/admin/pandals/${pandal._id}`, {
       method: "PATCH",
       body: JSON.stringify({
         canonicalName: pandal.canonicalName,
@@ -166,6 +173,10 @@ export default function PandalDetailPage() {
         visitType: pandal.visitType,
       }),
     });
+    if (!result.ok) {
+      setError(result.error ?? "Couldn't save changes.");
+      return;
+    }
     setSavedPandal(pandal);
     setDraggedAddress(null);
   }
@@ -189,18 +200,22 @@ export default function PandalDetailPage() {
 
   async function setStatus(field: "publicationStatus" | "verificationStatus", value: string) {
     if (!pandal) return;
-    await adminFetch(`/admin/pandals/${pandal._id}/status`, {
+    setError(null);
+    const result = await adminMutate(`/admin/pandals/${pandal._id}/status`, {
       method: "PATCH",
       body: JSON.stringify({ [field]: value }),
     });
+    if (!result.ok) setError(result.error ?? "Couldn't update status.");
     await load();
   }
 
   async function toggleFeatured(yearId: string, featured: boolean) {
-    await adminFetch(`/admin/pandal-years/${yearId}`, {
+    setError(null);
+    const result = await adminMutate(`/admin/pandal-years/${yearId}`, {
       method: "PATCH",
       body: JSON.stringify({ featured: !featured }),
     });
+    if (!result.ok) setError(result.error ?? "Couldn't update featured status.");
     await load();
   }
 
@@ -232,8 +247,9 @@ export default function PandalDetailPage() {
     event.preventDefault();
     if (!pandal) return;
     setSavingYear(true);
+    setError(null);
     try {
-      await adminFetch("/admin/pandal-years", {
+      const result = await adminMutate("/admin/pandal-years", {
         method: "POST",
         body: JSON.stringify({
           pandalId: pandal._id,
@@ -244,6 +260,10 @@ export default function PandalDetailPage() {
           schedule: yearForm.schedule.filter((row) => row.time && row.label),
         }),
       });
+      if (!result.ok) {
+        setError(result.error ?? "Couldn't add year.");
+        return;
+      }
       setYearForm(EMPTY_YEAR_FORM);
       await load();
     } finally {
@@ -257,17 +277,20 @@ export default function PandalDetailPage() {
   async function confirmMerge() {
     if (!pandal || !mergeTarget) return;
     setMerging(true);
-    try {
-      const res = await adminFetch(`/admin/pandals/${pandal._id}/merge-into/${mergeTarget._id}`, {
-        method: "POST",
-      });
-      if (res.ok) {
-        router.push(`/pandals/${mergeTarget._id}`);
-      }
-    } finally {
-      setMerging(false);
-      setMergeOpen(false);
+    setMergeError(null);
+    const result = await adminMutate(`/admin/pandals/${pandal._id}/merge-into/${mergeTarget._id}`, {
+      method: "POST",
+    });
+    setMerging(false);
+    if (!result.ok) {
+      // Stays open on failure — closing it unconditionally (the previous
+      // behavior) made a failed merge indistinguishable from one the admin
+      // just decided to cancel.
+      setMergeError(result.error ?? "Couldn't merge — please try again.");
+      return;
     }
+    setMergeOpen(false);
+    router.push(`/pandals/${mergeTarget._id}`);
   }
 
   if (!ready || !pandal) return null;
@@ -280,6 +303,12 @@ export default function PandalDetailPage() {
           Merge into another pandal…
         </Button>
       </div>
+
+      {error && (
+        <div className="mb-4 rounded-xl border border-brand/30 bg-brand/10 px-4 py-2.5 font-body text-sm text-brand">
+          {error}
+        </div>
+      )}
 
       <div className="mb-6 flex gap-3">
         <Select
@@ -574,6 +603,7 @@ export default function PandalDetailPage() {
             </button>
           ))}
         </div>
+        {mergeError && <p className="font-body text-sm text-brand">{mergeError}</p>}
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={() => setMergeOpen(false)}>
             Cancel
