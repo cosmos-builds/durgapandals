@@ -116,7 +116,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
               </span>
             )}
             <span className="flex items-center gap-1.5">
-              <span className="truncate font-display text-xl font-bold leading-tight">{pandal.canonicalName}</span>
+              <span className="truncate font-display text-[17px] font-bold leading-tight">{pandal.canonicalName}</span>
               {pandal.verificationStatus === "VERIFIED" && (
                 <span
                   className="material-symbols-rounded flex-none text-lg text-accent"
@@ -145,9 +145,9 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
           <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleLike}
-            className={`flex items-center gap-1.5 rounded-2xl px-3.5 font-body font-bold ${liked ? "bg-brand text-brand-ink" : "bg-card"}`}
+            className={`flex h-12 items-center gap-1.5 rounded-2xl px-3.5 font-body text-sm font-bold ${liked ? "bg-brand text-brand-ink" : "bg-card"}`}
           >
-            <span className="material-symbols-rounded" style={liked ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+            <span className="material-symbols-rounded text-base" style={liked ? { fontVariationSettings: "'FILL' 1" } : undefined}>
               favorite
             </span>
             {likes}

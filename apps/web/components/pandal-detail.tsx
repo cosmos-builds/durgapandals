@@ -141,17 +141,19 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
             dotsAlign="start"
           />
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-ground via-ground/10 to-transparent" />
-          <div className="absolute inset-x-4 top-4 flex justify-between">
-            {/* Back arrow: mobile only — desktop relies on the persistent
-                top nav bar (logo -> Home) instead, matching the design. */}
-            <Link
-              href={`/${citySlug}`}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70 md:hidden"
-            >
-              <span className="material-symbols-rounded">arrow_back</span>
-            </Link>
-            <MobileHeader citySlug={citySlug} variant="overlay" className="md:hidden" />
-            <div className="relative ml-auto flex items-center gap-2">
+          <div className="absolute inset-x-4 top-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {/* Back arrow: mobile only — desktop relies on the persistent
+                  top nav bar (logo -> Home) instead, matching the design. */}
+              <Link
+                href={`/${citySlug}`}
+                className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70 md:hidden"
+              >
+                <span className="material-symbols-rounded">arrow_back</span>
+              </Link>
+              <MobileHeader citySlug={citySlug} variant="overlay" className="md:hidden" />
+            </div>
+            <div className="relative flex items-center gap-2">
               <button onClick={handleShare} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
                 <span className="material-symbols-rounded">share</span>
               </button>
@@ -160,6 +162,10 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
                   {shareFeedback === "copied" ? "Link copied" : "Couldn't copy link"}
                 </span>
               )}
+              {/* Save/bookmark lives only in the sticky bottom bar (mobile)
+                  and action column (desktop) below — having it here too, as
+                  an unlabeled icon, was a duplicate control for the same
+                  toggleSave action and added clutter to the photo overlay. */}
               <button
                 onClick={toggleLike}
                 className="flex h-11 items-center gap-1.5 rounded-pill bg-ground/70 px-3.5 font-body text-sm font-bold"
@@ -171,14 +177,6 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
                   favorite
                 </span>
                 {likes}
-              </button>
-              <button onClick={toggleSave} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70 md:hidden">
-                <span
-                  className={`material-symbols-rounded ${saved ? "text-brand" : ""}`}
-                  style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
-                >
-                  bookmark
-                </span>
               </button>
             </div>
           </div>
@@ -334,11 +332,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
           <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleSave}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 font-body font-bold ${
+            className={`flex h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl font-body text-sm font-bold ${
               saved ? "bg-card text-brand" : "border border-border text-ink"
             }`}
           >
-            <span className="material-symbols-rounded" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+            <span className="material-symbols-rounded text-base" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
               bookmark
             </span>
             {saved ? "Added to route" : "Add to route"}
@@ -352,11 +350,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
         <DirectionsButton pandal={pandal} variant="block" />
         <button
           onClick={toggleSave}
-          className={`flex flex-1 items-center justify-center gap-2 rounded-2xl py-3.5 font-body font-bold ${
+          className={`flex h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl font-body text-sm font-bold ${
             saved ? "bg-card text-brand" : "border border-border text-ink"
           }`}
         >
-          <span className="material-symbols-rounded" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+          <span className="material-symbols-rounded text-base" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
             bookmark
           </span>
           {saved ? "Added to route" : "Add to route"}

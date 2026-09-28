@@ -17,7 +17,7 @@ export function DirectionsButton({ pandal, variant = "full", className = "" }: D
     variant === "compact"
       ? "h-11 flex-none gap-1.5 rounded-2xl px-3.5 text-sm"
       : variant === "block"
-        ? "flex-1 gap-2 rounded-2xl py-3.5 font-body"
+        ? "h-12 flex-1 gap-1.5 rounded-2xl font-body text-sm"
         : "h-11 gap-1.5 rounded-full px-4 text-sm";
 
   return (
@@ -27,7 +27,7 @@ export function DirectionsButton({ pandal, variant = "full", className = "" }: D
       rel="noopener noreferrer"
       className={`flex items-center justify-center bg-brand font-body font-bold text-brand-ink ${sizeClasses} ${className}`}
     >
-      <span className="material-symbols-rounded text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
         directions
       </span>
       {variant === "compact" ? "Go" : "Directions"}

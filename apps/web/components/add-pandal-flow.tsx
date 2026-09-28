@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
-import { distanceMeters } from "@durgapandals/deduplication";
 import { Button, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
@@ -29,12 +28,6 @@ import { getAvailableFestivalYears } from "@/lib/festival-years";
 // server-side REQUIRE_CONTRIBUTOR_VERIFICATION on the API) to require it
 // again without restoring any deleted code.
 const REQUIRE_VERIFICATION = process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
-
-// We only serve specific cities (spec §5.1) — a pin dropped hours away isn't
-// a "correction to the city center," it's a different city we don't cover
-// yet. 40km comfortably covers a metro area plus its outer suburbs without
-// letting someone submit from a different city entirely.
-const MAX_DISTANCE_FROM_CITY_KM = 40;
 
 export interface AddPandalFlowProps {
   cityId: string;
@@ -198,8 +191,6 @@ export function AddPandalFlow({
   coordsRef.current = coords;
 
   const isNewPandal = !selectedExisting;
-  const distanceFromCityKm = distanceMeters(coords, center) / 1000;
-  const isOutsideServiceArea = distanceFromCityKm > MAX_DISTANCE_FROM_CITY_KM;
 
   // Autosaves the in-progress submission so a refresh, accidental back-nav,
   // or closed tab doesn't lose it — debounced so typing doesn't write on
@@ -765,21 +756,9 @@ export function AddPandalFlow({
                   </button>
                 </div>
               ))}
-              {isOutsideServiceArea && (
-                <div className="flex flex-col gap-1.5 rounded-2xl bg-card p-2.5 md:bg-panel">
-                  <span className="flex items-center gap-1.5 font-body text-xs text-accent">
-                    <span className="material-symbols-rounded text-base">location_off</span>
-                    That pin is {Math.round(distanceFromCityKm)}km from {cityName} — we only cover pandals in and
-                    around {cityName} right now.
-                  </span>
-                  <Link href={`/${citySlug}`} className="font-body text-xs font-bold text-brand underline-offset-2 hover:underline">
-                    In the wrong city? Switch cities from the map
-                  </Link>
-                </div>
-              )}
               <Button
                 onClick={continueAsNew}
-                disabled={!details.locality || !details.address || isOutsideServiceArea}
+                disabled={!details.locality || !details.address}
                 className="mt-1 flex items-center justify-center gap-1.5"
               >
                 None of these — continue
