@@ -12,9 +12,48 @@ const listQuerySchema = z.object({
   status: z.string().optional(),
   verificationStatus: z.string().optional(),
   search: z.string().optional(),
+  // "2026"/"2025"/etc filters to pandals with a PandalYear for that year;
+  // "none" filters to pandals with no festival year on record at all.
+  year: z.string().optional(),
+  sortBy: z.enum(["name", "locality", "status", "updated"]).optional(),
+  sortDir: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().optional(),
   pageSize: z.coerce.number().optional(),
 });
+
+const SORT_FIELD: Record<string, string> = {
+  name: "canonicalName",
+  locality: "locality",
+  status: "publicationStatus",
+  updated: "updatedAt",
+};
+
+// Shared by the paginated list and the map view so both respect exactly the
+// same filters — a map that silently ignored the table's filters would show
+// pandals the admin just excluded.
+async function buildPandalFilter(query: {
+  cityId?: string;
+  status?: string;
+  verificationStatus?: string;
+  search?: string;
+  year?: string;
+}): Promise<Record<string, unknown>> {
+  const filter: Record<string, unknown> = {};
+  if (query.cityId) filter.cityId = query.cityId;
+  if (query.status) filter.publicationStatus = query.status;
+  if (query.verificationStatus) filter.verificationStatus = query.verificationStatus;
+  if (query.search) filter.$text = { $search: query.search };
+
+  if (query.year === "none") {
+    const idsWithYears = await PandalYearModel.distinct("pandalId");
+    filter._id = { $nin: idsWithYears };
+  } else if (query.year) {
+    const idsForYear = await PandalYearModel.distinct("pandalId", { year: Number(query.year) });
+    filter._id = { $in: idsForYear };
+  }
+
+  return filter;
+}
 
 const bulkStatusSchema = z.object({
   ids: z.array(z.string().min(1)).min(1),
@@ -49,16 +88,14 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
   app.get("/pandals", async (request) => {
     const query = listQuerySchema.parse(request.query);
     const { page, pageSize } = normalizePageRequest(query);
-
-    const filter: Record<string, unknown> = {};
-    if (query.cityId) filter.cityId = query.cityId;
-    if (query.status) filter.publicationStatus = query.status;
-    if (query.verificationStatus) filter.verificationStatus = query.verificationStatus;
-    if (query.search) filter.$text = { $search: query.search };
+    const filter = await buildPandalFilter(query);
+    const sortField = (query.sortBy ? SORT_FIELD[query.sortBy] : undefined) ?? "createdAt";
+    const sortDir = query.sortDir === "asc" ? 1 : -1;
+    const sort: Record<string, 1 | -1> = { [sortField]: sortDir };
 
     const [items, total] = await Promise.all([
       PandalModel.find(filter)
-        .sort({ createdAt: -1 })
+        .sort(sort)
         .skip((page - 1) * pageSize)
         .limit(pageSize),
       PandalModel.countDocuments(filter),
@@ -91,12 +128,22 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
     return buildPageResult(itemsWithYears, total, { page, pageSize });
   });
 
-  // Flattened lat/lng for every published pandal, across all cities — backs
-  // the dashboard's clustered map (spec: Google-Maps-style overview) without
-  // the client having to unpack GeoJSON itself.
-  app.get("/pandals-map", async () => {
-    const pandals = await PandalModel.find({ publicationStatus: { $ne: "ARCHIVED" } }, {
+  const mapQuerySchema = listQuerySchema.omit({ page: true, pageSize: true, sortBy: true, sortDir: true });
+
+  // Flattened lat/lng for pandals matching the same filters the list/table
+  // uses (city, status, verification, search, year) — so the map view on
+  // the Pandals page shows exactly what the table's current filters would,
+  // not a separate, always-unfiltered set. Defaults to excluding ARCHIVED
+  // when no status filter is given, matching this endpoint's original
+  // behavior for the dashboard's always-unfiltered call.
+  app.get("/pandals-map", async (request) => {
+    const query = mapQuerySchema.parse(request.query);
+    const filter = await buildPandalFilter(query);
+    if (!query.status) filter.publicationStatus = { $ne: "ARCHIVED" };
+
+    const pandals = await PandalModel.find(filter, {
       canonicalName: 1,
+      locality: 1,
       location: 1,
       publicationStatus: 1,
       cityId: 1,
@@ -104,6 +151,7 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
     return pandals.map((pandal) => ({
       id: String(pandal._id),
       canonicalName: pandal.canonicalName,
+      locality: pandal.locality,
       publicationStatus: pandal.publicationStatus,
       cityId: String(pandal.cityId),
       ...fromGeoPoint(pandal.location),

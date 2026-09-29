@@ -14,7 +14,6 @@ import {
 } from "@/lib/admin-api";
 import { Button, Card, ConfirmDialog, Dialog, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
-import type { ReverseGeocodeResult } from "@/lib/admin-api";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
 
@@ -120,7 +119,7 @@ export default function PandalDetailPage() {
   // every keystroke — splitting live would eat a trailing "," while the
   // admin is still typing the next name.
   const [alternateNamesInput, setAlternateNamesInput] = useState("");
-  const [draggedAddress, setDraggedAddress] = useState<ReverseGeocodeResult | null>(null);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
   const [mapKey, setMapKey] = useState(0);
   const [years, setYears] = useState<PandalYear[]>([]);
   const [yearForm, setYearForm] = useState(EMPTY_YEAR_FORM);
@@ -150,7 +149,6 @@ export default function PandalDetailPage() {
     setPandal(flattened);
     setSavedPandal(flattened);
     setAlternateNamesInput((flattened.alternateNames ?? []).join(", "));
-    setDraggedAddress(null);
     setYears(data.years);
   }
 
@@ -182,10 +180,55 @@ export default function PandalDetailPage() {
     setPandal({ ...pandal, [field]: !pandal[field] });
   }
 
+  // Fields an admin can actually see/edit on this screen, paired with a
+  // human label — used to build the confirmation summary below. Anything
+  // not listed here (e.g. internal-only fields) is silently excluded from
+  // the diff, which is fine since it can't have changed via this form.
+  const TRACKED_FIELDS: { key: keyof Pandal; label: string }[] = [
+    { key: "canonicalName", label: "Name" },
+    { key: "organizerName", label: "Organiser" },
+    { key: "address", label: "Address" },
+    { key: "locality", label: "Locality" },
+    { key: "landmark", label: "Landmark" },
+    { key: "publicContact", label: "Contact" },
+    { key: "visitType", label: "Visit type" },
+    { key: "addedBy", label: "Added by" },
+    { key: "publicationStatus", label: "Publication status" },
+    { key: "verificationStatus", label: "Verification status" },
+  ];
+
+  function pendingChangesSummary(): string[] {
+    if (!pandal || !savedPandal) return [];
+    const changes: string[] = [];
+    for (const { key, label } of TRACKED_FIELDS) {
+      const before = savedPandal[key];
+      const after = pandal[key];
+      if (before !== after) changes.push(`${label}: "${before || "—"}" → "${after || "—"}"`);
+    }
+    if (hasMovedFromSaved) changes.push("Map location moved to a new pin");
+    const amenityChanged = AMENITY_FIELDS.some((f) => savedPandal[f.key] !== pandal[f.key]);
+    if (amenityChanged) changes.push("Amenities updated");
+    const newAlternateNames = alternateNamesInput
+      .split(",")
+      .map((name) => name.trim())
+      .filter(Boolean);
+    if (JSON.stringify(newAlternateNames) !== JSON.stringify(savedPandal.alternateNames)) {
+      changes.push("Alternate names updated");
+    }
+    return changes;
+  }
+
   // `setSavedPandal` is what marks the edit as persisted (it's what
   // `hasMovedFromSaved` and the "Reset to saved" affordance compare
   // against) — it must only happen once the PATCH actually succeeded, or a
   // failed save silently looks identical to a successful one.
+  //
+  // publicationStatus/verificationStatus used to fire their own instant
+  // PATCH the moment their dropdown changed — publishing or drafting a
+  // pandal with no confirmation step at all. They're now just local edits
+  // like every other field here, folded into this one save, which is now
+  // gated behind a confirmation dialog (see saveConfirmOpen below) instead
+  // of firing directly from a click.
   async function saveCanonical() {
     if (!pandal) return;
     setError(null);
@@ -217,12 +260,31 @@ export default function PandalDetailPage() {
       }),
     });
     if (!result.ok) {
-      setError(result.error ?? "Couldn't save changes.");
-      toast.error(result.error ?? "Couldn't save changes.");
-      return;
+      const message = result.error ?? "Couldn't save changes.";
+      setError(message);
+      throw new Error(message);
     }
+
+    // The main PATCH above doesn't persist publish/verification status (a
+    // separate, narrower endpoint owns that transition) — only call it when
+    // one of those two actually changed, so a plain details edit doesn't
+    // fire an extra request.
+    if (pandal.publicationStatus !== savedPandal?.publicationStatus || pandal.verificationStatus !== savedPandal?.verificationStatus) {
+      const statusResult = await adminMutate(`/admin/pandals/${pandal._id}/status`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          publicationStatus: pandal.publicationStatus,
+          verificationStatus: pandal.verificationStatus,
+        }),
+      });
+      if (!statusResult.ok) {
+        const message = statusResult.error ?? "Couldn't update status.";
+        setError(message);
+        throw new Error(message);
+      }
+    }
+
     setSavedPandal(pandal);
-    setDraggedAddress(null);
     toast.success("Changes saved.");
   }
 
@@ -230,32 +292,17 @@ export default function PandalDetailPage() {
     setPandal((prev) => (prev ? { ...prev, ...coords } : prev));
   }
 
-  // Dragging moves the pin immediately, with no confirm step — this is the
-  // undo for "oops, wrong spot" without having to remember/retype the
-  // original coordinates.
+  // "Use this location" inside the picker is the only thing that reaches
+  // here — this is the undo for "oops, wrong spot" without having to
+  // remember/retype the original coordinates.
   function resetLocation() {
     if (!savedPandal) return;
     setPandal((prev) => (prev ? { ...prev, latitude: savedPandal.latitude, longitude: savedPandal.longitude } : prev));
-    setDraggedAddress(null);
     setMapKey((k) => k + 1); // forces LocationPicker to remount centered on the reset point
   }
 
   const hasMovedFromSaved =
     !!savedPandal && (pandal?.latitude !== savedPandal.latitude || pandal?.longitude !== savedPandal.longitude);
-
-  async function setStatus(field: "publicationStatus" | "verificationStatus", value: string) {
-    if (!pandal) return;
-    setError(null);
-    const result = await adminMutate(`/admin/pandals/${pandal._id}/status`, {
-      method: "PATCH",
-      body: JSON.stringify({ [field]: value }),
-    });
-    if (!result.ok) {
-      setError(result.error ?? "Couldn't update status.");
-      toast.error(result.error ?? "Couldn't update status.");
-    }
-    await load();
-  }
 
   async function toggleFeatured(yearId: string, featured: boolean) {
     setError(null);
@@ -456,7 +503,7 @@ export default function PandalDetailPage() {
       <div className="mb-6 flex gap-3">
         <Select
           value={pandal.publicationStatus}
-          onChange={(e) => setStatus("publicationStatus", e.target.value)}
+          onChange={(e) => updateField("publicationStatus", e.target.value)}
           className="h-12 w-44 text-sm"
         >
           {["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"].map((s) => (
@@ -467,7 +514,7 @@ export default function PandalDetailPage() {
         </Select>
         <Select
           value={pandal.verificationStatus}
-          onChange={(e) => setStatus("verificationStatus", e.target.value)}
+          onChange={(e) => updateField("verificationStatus", e.target.value)}
           className="h-12 w-44 text-sm"
         >
           {["UNVERIFIED", "VERIFIED", "DUPLICATE"].map((s) => (
@@ -596,11 +643,18 @@ export default function PandalDetailPage() {
               center={{ latitude: pandal.latitude, longitude: pandal.longitude }}
               mapTilesUrl={MAP_TILES_URL}
               onChange={updateLocation}
-              onAddressResolved={setDraggedAddress}
+              onAddressResolved={(result) => {
+                // Only ever fires when the admin explicitly clicks "Use
+                // this location" inside the picker — never on a bare drag —
+                // so applying it straight to the fields can't surprise
+                // anyone mid-pan.
+                updateField("address", result.road ?? result.label);
+                if (result.locality) updateField("locality", result.locality);
+              }}
             />
-            {/* Always visible, not just after a drag — so an admin who
+            {/* Always visible, not just after a move — so an admin who
                 hasn't touched the map yet still sees what's currently
-                saved, and one who has can compare against it. */}
+                saved, and one who has can compare against what's pending. */}
             <div className="flex flex-col gap-1 rounded-xl bg-card px-3 py-2 font-body text-xs">
               <div className="flex items-start gap-1.5 text-ink-muted">
                 <span className="material-symbols-rounded flex-none text-sm">bookmark</span>
@@ -609,15 +663,19 @@ export default function PandalDetailPage() {
                 </span>
               </div>
               {hasMovedFromSaved && (
-                <div className="flex items-start gap-1.5 text-accent">
-                  <span className="material-symbols-rounded flex-none text-sm">pin_drop</span>
-                  <span>{draggedAddress ? `New: ${draggedAddress.label}` : "Locating new address…"}</span>
+                <div className="flex items-center justify-between gap-1.5 text-accent">
+                  <span className="flex items-start gap-1.5">
+                    <span className="material-symbols-rounded flex-none text-sm">pin_drop</span>
+                    <span>
+                      Pending: {pandal.address}, {pandal.locality}
+                    </span>
+                  </span>
                 </div>
               )}
             </div>
           </div>
         </div>
-        <Button className="mt-4" onClick={saveCanonical}>
+        <Button className="mt-4" onClick={() => setSaveConfirmOpen(true)}>
           Save changes
         </Button>
       </Card>
@@ -850,6 +908,23 @@ export default function PandalDetailPage() {
           </Button>
         </div>
       </Dialog>
+
+      <ConfirmDialog
+        open={saveConfirmOpen}
+        onClose={() => setSaveConfirmOpen(false)}
+        onConfirm={async () => {
+          await saveCanonical();
+          setSaveConfirmOpen(false);
+        }}
+        title="Save these changes?"
+        description={
+          pendingChangesSummary().length > 0
+            ? pendingChangesSummary().join("  •  ")
+            : "No changes to save."
+        }
+        confirmLabel="Save"
+        danger={false}
+      />
 
       <ConfirmDialog
         open={deletePandalOpen}

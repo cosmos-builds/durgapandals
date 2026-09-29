@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
-import { Button, Card, Field, Input, Select, useToast } from "@durgapandals/ui";
+import { Button, Card, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
 import { LocationPicker } from "@/components/location-picker";
 import { CityCombobox, type SelectedCity } from "@/components/city-combobox";
 
@@ -48,6 +48,16 @@ const AMENITY_FIELDS: { key: "parkingAvailable" | "twoWheelerAccessible" | "four
   { key: "streetShopsNearby", label: "Street shops nearby" },
 ];
 
+// Same curated set as the pandal edit page's "Add a festival year" form.
+const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
+
+const EMPTY_YEAR_FORM = {
+  year: String(new Date().getFullYear()),
+  theme: "",
+  description: "",
+  categories: [] as string[],
+};
+
 // Admin creating a pandal directly still runs the same duplicate scoring a
 // public submission does (spec §17.4, §23) — it just isn't blocking here,
 // since the admin is the one making the final call.
@@ -57,15 +67,25 @@ export default function NewPandalPage() {
   const toast = useToast();
   const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [yearForm, setYearForm] = useState(EMPTY_YEAR_FORM);
   const [duplicates, setDuplicates] = useState<DuplicateCandidate[] | null>(null);
   const [checking, setChecking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Seed lat/lng from the city's centre right away instead of waiting on the
-  // map to finish loading and fire its first moveend — otherwise
-  // Check-duplicates/Create would stay disabled/empty until the admin drags
-  // the pin at least once.
+  function toggleYearCategory(category: string) {
+    setYearForm((prev) => ({
+      ...prev,
+      categories: prev.categories.includes(category)
+        ? prev.categories.filter((c) => c !== category)
+        : [...prev.categories, category],
+    }));
+  }
+
+  // Seed lat/lng from the city's centre right away — the picker no longer
+  // auto-commits anything on its own (only its explicit "Use this location"
+  // button does), so without this, Check-duplicates/Create would stay
+  // empty until the admin deliberately confirmed a pin at least once.
   function handleCitySelect(city: SelectedCity) {
     setSelectedCity(city);
     setForm((prev) => ({ ...prev, cityId: city._id, latitude: String(city.latitude), longitude: String(city.longitude) }));
@@ -75,14 +95,14 @@ export default function NewPandalPage() {
     setForm((prev) => ({ ...prev, latitude: String(coords.latitude), longitude: String(coords.longitude) }));
   }
 
-  // Only fills locality/address when they're still blank — an admin who's
-  // already typed something here shouldn't have it silently overwritten by
-  // a drag on the map.
-  function handleAddressResolved(result: { locality?: string; road?: string }) {
+  // Only ever fires when the admin explicitly clicks "Use this location"
+  // inside the picker (never on a bare drag), so always applying it here is
+  // safe — it's a deliberate one-time action, not a silent live sync.
+  function handleAddressResolved(result: { label: string; locality?: string; road?: string }) {
     setForm((prev) => ({
       ...prev,
-      locality: prev.locality || result.locality || prev.locality,
-      address: prev.address || result.road || prev.address,
+      locality: result.locality ?? prev.locality,
+      address: result.road ?? result.label,
     }));
   }
 
@@ -144,6 +164,30 @@ export default function NewPandalPage() {
         throw new Error(body.error ?? "Failed to create pandal");
       }
       const pandal = await res.json();
+
+      // Optional — an admin who just wants the profile created can leave
+      // this blank and add the year later on the pandal's own page, same as
+      // before. Only bother creating a year record when there's actually
+      // something in it, so a blank pandal doesn't get a blank year row.
+      const hasYearContent = yearForm.theme.trim() || yearForm.description.trim() || yearForm.categories.length > 0;
+      if (hasYearContent) {
+        const yearRes = await adminFetch("/admin/pandal-years", {
+          method: "POST",
+          body: JSON.stringify({
+            pandalId: pandal._id,
+            year: Number(yearForm.year),
+            theme: yearForm.theme || undefined,
+            description: yearForm.description || undefined,
+            categories: yearForm.categories,
+          }),
+        });
+        if (!yearRes.ok) {
+          toast.error(`"${pandal.canonicalName}" was created, but adding ${yearForm.year} failed — add it from the pandal's page.`);
+          router.push(`/pandals/${pandal._id}`);
+          return;
+        }
+      }
+
       toast.success(`"${pandal.canonicalName}" created.`);
       router.push(`/pandals/${pandal._id}`);
     } catch (err) {
@@ -301,11 +345,58 @@ export default function NewPandalPage() {
 
         {error && <p className="mt-3 font-body text-sm text-brand">{error}</p>}
 
-        <p className="mt-6 font-body text-xs text-ink-muted">
-          This creates the pandal&apos;s profile — its location and details that stay the same every year. You&apos;ll
-          add this festival year&apos;s theme, photos, and schedule next, on the pandal&apos;s page.
-        </p>
-        <Button type="submit" disabled={saving} className="mt-3 w-full">
+        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
+          <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            This festival year (optional)
+          </span>
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Year">
+              <Input
+                type="number"
+                value={yearForm.year}
+                onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
+              />
+            </Field>
+            <Field label="Theme">
+              <Input
+                placeholder="Optional"
+                value={yearForm.theme}
+                onChange={(e) => setYearForm({ ...yearForm, theme: e.target.value })}
+              />
+            </Field>
+          </div>
+          <Field label="Theme details">
+            <Textarea
+              placeholder="What makes this year's theme worth visiting?"
+              value={yearForm.description}
+              onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
+              className="min-h-20"
+            />
+          </Field>
+          <div className="flex flex-wrap gap-1.5">
+            {CATEGORY_OPTIONS.map((category) => {
+              const isActive = yearForm.categories.includes(category);
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => toggleYearCategory(category)}
+                  className={`rounded-pill border px-2.5 py-1 font-body text-xs font-semibold ${
+                    isActive ? "border-brand bg-brand text-brand-ink" : "border-border text-ink-muted"
+                  }`}
+                >
+                  {category}
+                </button>
+              );
+            })}
+          </div>
+          <p className="font-body text-xs text-ink-muted">
+            Leave this blank to add it later. Photos and a detailed schedule can only be added after the pandal is
+            created, from its own page.
+          </p>
+        </div>
+
+        <Button type="submit" disabled={saving} className="mt-4 w-full">
           {saving ? "Creating…" : "Create & publish pandal"}
         </Button>
         </Card>

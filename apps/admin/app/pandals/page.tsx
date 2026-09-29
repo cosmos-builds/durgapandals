@@ -6,6 +6,10 @@ import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch, adminMutate, deletePandal } from "@/lib/admin-api";
 import { Button, ConfirmDialog, Input, Select, Table, TableHeadRow, Th, Tr, Td, useToast } from "@durgapandals/ui";
+import { PandalsClusterMap, type DashboardPandal } from "@/components/pandals-cluster-map";
+
+const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
+const INDIA_CENTER = { latitude: 22.9734, longitude: 78.6569 };
 
 interface City {
   _id: string;
@@ -35,6 +39,15 @@ interface Page<T> {
 }
 
 const STATUS_OPTIONS = ["", "DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"];
+const YEAR_OPTIONS = ["", String(CURRENT_YEAR + 1), String(CURRENT_YEAR), String(CURRENT_YEAR - 1), "none"];
+
+const SORT_COLUMNS = [
+  { key: "name", label: "Name" },
+  { key: "locality", label: "Locality" },
+  { key: "status", label: "Status" },
+  { key: "updated", label: "Updated" },
+] as const;
+type SortKey = (typeof SORT_COLUMNS)[number]["key"];
 
 const STATUS_TONE: Record<string, string> = {
   PUBLISHED: "bg-[rgba(127,217,154,.18)] text-[#7FD99A]",
@@ -63,14 +76,28 @@ export default function PandalsListPage() {
   const [cities, setCities] = useState<City[]>([]);
   const [cityId, setCityId] = useState("");
   const [status, setStatus] = useState("");
+  const [year, setYear] = useState("");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<SortKey | "">("");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [view, setView] = useState<"table" | "map">("table");
+  const [mapPandals, setMapPandals] = useState<DashboardPandal[]>([]);
   const [result, setResult] = useState<Page<Pandal> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Pandal | null>(null);
+
+  function toggleSort(key: SortKey) {
+    if (sortBy !== key) {
+      setSortBy(key);
+      setSortDir("asc");
+    } else {
+      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
+    }
+  }
 
   useEffect(() => {
     if (!ready) return;
@@ -86,20 +113,47 @@ export default function PandalsListPage() {
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => setPage(1), [cityId, status, debouncedSearch]);
+  useEffect(() => setPage(1), [cityId, status, year, debouncedSearch]);
 
-  useEffect(() => {
-    if (!ready) return;
-    const params = new URLSearchParams({ page: String(page), pageSize: "25" });
+  // Shared by both fetch effects below, so the map view can never drift out
+  // of sync with whatever the table's filters currently say.
+  function buildFilterParams() {
+    const params = new URLSearchParams();
     if (cityId) params.set("cityId", cityId);
     if (status) params.set("status", status);
+    if (year) params.set("year", year);
     if (debouncedSearch) params.set("search", debouncedSearch);
+    return params;
+  }
+
+  useEffect(() => {
+    if (!ready || view !== "table") return;
+    const params = buildFilterParams();
+    params.set("page", String(page));
+    params.set("pageSize", "25");
+    if (sortBy) {
+      params.set("sortBy", sortBy);
+      params.set("sortDir", sortDir);
+    }
 
     adminFetch(`/admin/pandals?${params}`)
       .then((res) => (res.ok ? res.json() : null))
       .then(setResult);
     setSelected(new Set());
-  }, [ready, cityId, status, debouncedSearch, page]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, view, cityId, status, year, debouncedSearch, page, sortBy, sortDir]);
+
+  // The map has no pagination — it plots every pandal matching the current
+  // filters, not just the table's current page, since "every pandal in the
+  // list" is the whole point of the map view.
+  useEffect(() => {
+    if (!ready || view !== "map") return;
+    const params = buildFilterParams();
+    adminFetch(`/admin/pandals-map?${params}`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then(setMapPandals);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, view, cityId, status, year, debouncedSearch]);
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -157,9 +211,33 @@ export default function PandalsListPage() {
     <AdminShell>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-3xl font-extrabold">Pandals</h1>
-        <Link href="/pandals/new">
-          <Button>+ Add Pandal</Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="flex rounded-xl border border-border p-1">
+            <button
+              type="button"
+              onClick={() => setView("table")}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body text-sm font-bold ${
+                view === "table" ? "bg-brand text-brand-ink" : "text-ink-muted"
+              }`}
+            >
+              <span className="material-symbols-rounded text-lg">table_rows</span>
+              Table
+            </button>
+            <button
+              type="button"
+              onClick={() => setView("map")}
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-body text-sm font-bold ${
+                view === "map" ? "bg-brand text-brand-ink" : "text-ink-muted"
+              }`}
+            >
+              <span className="material-symbols-rounded text-lg">map</span>
+              Map
+            </button>
+          </div>
+          <Link href="/pandals/new">
+            <Button>+ Add Pandal</Button>
+          </Link>
+        </div>
       </div>
 
       {error && (
@@ -190,8 +268,37 @@ export default function PandalsListPage() {
             </option>
           ))}
         </Select>
+        <Select value={year} onChange={(e) => setYear(e.target.value)} className="h-12 md:w-48">
+          {YEAR_OPTIONS.map((y) => (
+            <option key={y} value={y}>
+              {y === "" ? "All years" : y === "none" ? "No festival year added" : `Has ${y} entry`}
+            </option>
+          ))}
+        </Select>
       </div>
 
+      {view === "map" ? (
+        <>
+          <p className="mb-3 font-body text-sm text-ink-muted">
+            {mapPandals.length} pandal{mapPandals.length === 1 ? "" : "s"} plotted, matching the filters above — red
+            pins are published, gray pins are everything else.
+          </p>
+          <PandalsClusterMap
+            mapTilesUrl={MAP_TILES_URL}
+            center={
+              mapPandals.length > 0
+                ? {
+                    latitude: mapPandals.reduce((sum, p) => sum + p.latitude, 0) / mapPandals.length,
+                    longitude: mapPandals.reduce((sum, p) => sum + p.longitude, 0) / mapPandals.length,
+                  }
+                : INDIA_CENTER
+            }
+            zoom={mapPandals.length > 0 ? 5 : 4}
+            pandals={mapPandals}
+          />
+        </>
+      ) : (
+        <>
       {selected.size > 0 && (
         <div className="mb-4 flex items-center gap-2">
           <span className="font-body text-sm text-ink-muted">{selected.size} selected</span>
@@ -208,11 +315,28 @@ export default function PandalsListPage() {
         <thead>
           <TableHeadRow>
             <Th className="w-10" />
-            <Th>Name</Th>
+            <Th>
+              <button type="button" onClick={() => toggleSort("name")} className="flex items-center gap-1">
+                Name {sortBy === "name" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
+              </button>
+            </Th>
             <Th>City</Th>
-            <Th>Status</Th>
+            <Th>
+              <button type="button" onClick={() => toggleSort("locality")} className="flex items-center gap-1">
+                Locality {sortBy === "locality" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
+              </button>
+            </Th>
+            <Th>
+              <button type="button" onClick={() => toggleSort("status")} className="flex items-center gap-1">
+                Status {sortBy === "status" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
+              </button>
+            </Th>
             <Th>History</Th>
-            <Th>Updated</Th>
+            <Th>
+              <button type="button" onClick={() => toggleSort("updated")} className="flex items-center gap-1">
+                Updated {sortBy === "updated" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
+              </button>
+            </Th>
             <Th className="w-10" />
           </TableHeadRow>
         </thead>
@@ -231,9 +355,9 @@ export default function PandalsListPage() {
                 <Link href={`/pandals/${pandal._id}`} className="font-semibold text-ink hover:text-brand">
                   {pandal.canonicalName}
                 </Link>
-                <div className="font-body text-xs text-ink-muted">{pandal.locality}</div>
               </Td>
               <Td className="text-ink-muted">{cityNameById.get(pandal.cityId) ?? "—"}</Td>
+              <Td className="text-ink-muted">{pandal.locality}</Td>
               <Td>
                 <span className={`rounded-pill px-2.5 py-1 font-body text-xs font-bold ${STATUS_TONE[pandal.publicationStatus] ?? "bg-chip text-ink-muted"}`}>
                   {pandal.publicationStatus}
@@ -272,7 +396,7 @@ export default function PandalsListPage() {
           ))}
           {pandals.length === 0 && (
             <tr>
-              <td colSpan={7} className="px-4 py-6 text-center text-ink-muted">
+              <td colSpan={8} className="px-4 py-6 text-center text-ink-muted">
                 No pandals match these filters.
               </td>
             </tr>
@@ -305,6 +429,8 @@ export default function PandalsListPage() {
             Next
           </Button>
         </div>
+      )}
+        </>
       )}
     </AdminShell>
   );

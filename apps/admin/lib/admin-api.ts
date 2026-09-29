@@ -150,6 +150,26 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
   return res.json();
 }
 
+export interface LocationSearchResult extends ReverseGeocodeResult {}
+
+// Same /geocode/search route apps/web's location-search-box uses — no
+// citySlug needed here, the admin picker has no "current city" context and
+// the search is already unrestricted across India.
+export async function searchLocations(
+  q: string,
+  bias?: { latitude: number; longitude: number }
+): Promise<LocationSearchResult[]> {
+  if (q.trim().length < 2) return [];
+  const params = new URLSearchParams({ q });
+  if (bias) {
+    params.set("lat", String(bias.latitude));
+    params.set("lon", String(bias.longitude));
+  }
+  const res = await adminFetch(`/geocode/search?${params}`);
+  if (!res.ok) return [];
+  return res.json();
+}
+
 export interface UploadedPhoto {
   url: string;
   width: number;

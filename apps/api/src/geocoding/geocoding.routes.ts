@@ -4,7 +4,12 @@ import { CityModel } from "@durgapandals/database";
 
 const searchQuerySchema = z.object({
   q: z.string().min(2).max(200),
-  citySlug: z.string(),
+  // Optional — only ever used to resolve a countryCode (always "in" for this
+  // app in practice). Not required: admin's pandal editor has no "current
+  // city" context to send, and the search itself is already unrestricted
+  // India-wide (see the /search handler), so there's nothing else a city
+  // would gate here.
+  citySlug: z.string().optional(),
   // Optional: bias to wherever the user is actually looking (e.g. the
   // current pin in the Add Pandal flow) rather than always the city's fixed
   // centre — "near me" should mean near the pin, not near city hall.
@@ -45,15 +50,14 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/search", async (request, reply) => {
     const query = searchQuerySchema.parse(request.query);
-    const city = await CityModel.findOne({ slug: query.citySlug });
-    if (!city) return reply.code(404).send({ error: "City not found" });
+    const city = query.citySlug ? await CityModel.findOne({ slug: query.citySlug }) : null;
 
     const url = new URL("https://nominatim.openstreetmap.org/search");
     url.searchParams.set("q", query.q);
     url.searchParams.set("format", "jsonv2");
     url.searchParams.set("addressdetails", "1");
     url.searchParams.set("limit", "8");
-    url.searchParams.set("countrycodes", city.countryCode.toLowerCase());
+    url.searchParams.set("countrycodes", (city?.countryCode ?? "in").toLowerCase());
 
     // Only nudge ranking toward the live pin when we actually have one (mid-
     // flow, dragging the map) — a same-named locality near the pin should

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
@@ -29,10 +29,14 @@ export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: Pandal
   const router = useRouter();
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
-  const [clusterIndex] = useState(() =>
-    buildClusterIndex(pandals.map((p) => ({ id: p.id, latitude: p.latitude, longitude: p.longitude })))
+  // Rebuilt whenever `pandals` changes (not just on first mount) — this map
+  // is reused on the Pandals list page where the underlying set changes
+  // every time a filter is touched, unlike the dashboard's one-shot load.
+  const clusterIndex = useMemo(
+    () => buildClusterIndex(pandals.map((p) => ({ id: p.id, latitude: p.latitude, longitude: p.longitude }))),
+    [pandals]
   );
-  const byId = useRef(new Map(pandals.map((p) => [p.id, p])));
+  const byId = useMemo(() => new Map(pandals.map((p) => [p.id, p])), [pandals]);
 
   const render = useCallback(() => {
     const map = mapRef.current;
@@ -74,7 +78,7 @@ export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: Pandal
           map.flyTo({ center: [cluster.longitude, cluster.latitude], zoom: expansionZoom });
         };
       } else {
-        const pandal = cluster.markerId ? byId.current.get(cluster.markerId) : undefined;
+        const pandal = cluster.markerId ? byId.get(cluster.markerId) : undefined;
         el.style.width = "20px";
         el.style.height = "20px";
         el.style.borderRadius = "50%";
@@ -89,15 +93,21 @@ export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: Pandal
     }
   }, [clusterIndex, router]);
 
-  const handleMapReady = useCallback(
-    (map: MapLibreMap) => {
-      mapRef.current = map;
-      map.on("moveend", render);
-      render();
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
-  );
+  // `render` gets a new identity whenever `clusterIndex` changes (filters
+  // touched on the Pandals list page) — routed through a ref so the
+  // `moveend` listener (attached once, on map-ready) always calls the
+  // current version instead of the stale closure it was registered with.
+  const renderRef = useRef(render);
+  useEffect(() => {
+    renderRef.current = render;
+    render();
+  }, [render]);
+
+  const handleMapReady = useCallback((map: MapLibreMap) => {
+    mapRef.current = map;
+    map.on("moveend", () => renderRef.current());
+    renderRef.current();
+  }, []);
 
   useEffect(() => {
     return () => {
