@@ -9,6 +9,7 @@ import { MapCanvas } from "@durgapandals/maps/react";
 import { buildClusterIndex, getClusters } from "@durgapandals/maps";
 import { fetchPandalsForCity, pandalDetailHref, type LocationSearchResult, type PandalSummary } from "@/lib/api";
 import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
+import { getTrail, TRAIL_CHANGED_EVENT } from "@/lib/trail";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
 import { CityYearPill } from "./city-year-pill";
@@ -16,6 +17,7 @@ import { MobileHeader } from "./mobile-header";
 import { IntroHero } from "./intro-hero";
 import { FestiveBunting } from "./festive-bunting";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
+import { TrailButton } from "./trail-button";
 export interface MapHomeProps {
   citySlug: string;
   cityName: string;
@@ -103,6 +105,105 @@ export function MapHome({
     () => buildClusterIndex(pandals.map((p) => ({ id: p.id, latitude: p.latitude, longitude: p.longitude }))),
     [pandals]
   );
+
+  // The trail-planner's in-app preview (see TrailSheet/TrailButton) — a
+  // straight-line "here's the shape of your day" connecting whatever
+  // pandals are in the visitor's trail, drawn right on this map rather than
+  // only ever being visible after leaving the app for Google Maps.
+  const [trailSlugs, setTrailSlugs] = useState<string[]>([]);
+  useEffect(() => {
+    function sync() {
+      setTrailSlugs(getTrail(citySlug));
+    }
+    sync();
+    window.addEventListener(TRAIL_CHANGED_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(TRAIL_CHANGED_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, [citySlug]);
+
+  const trailStops = useMemo(() => {
+    const bySlug = new Map(pandals.map((p) => [p.slug, p]));
+    return trailSlugs.map((slug) => bySlug.get(slug)).filter((p): p is PandalSummary => Boolean(p));
+  }, [pandals, trailSlugs]);
+
+  const TRAIL_LINE_SOURCE = "trail-route-line";
+  const TRAIL_POINTS_SOURCE = "trail-route-points";
+
+  // A GeoJSON LineString needs >=2 positions to be valid, and there's no
+  // "update to empty" for a layer — shrinking below the threshold has to
+  // remove the layer/source outright, not just setData an invalid shape.
+  function removeLayerAndSource(map: maplibregl.Map, sourceId: string, layerIds: string[]) {
+    for (const layerId of layerIds) {
+      if (map.getLayer(layerId)) map.removeLayer(layerId);
+    }
+    if (map.getSource(sourceId)) map.removeSource(sourceId);
+  }
+
+  const renderTrailRoute = useCallback(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+
+    if (trailStops.length >= 2) {
+      const lineData: GeoJSON.Feature<GeoJSON.LineString> = {
+        type: "Feature",
+        properties: {},
+        geometry: { type: "LineString", coordinates: trailStops.map((s) => [s.longitude, s.latitude]) },
+      };
+      const lineSource = map.getSource(TRAIL_LINE_SOURCE) as maplibregl.GeoJSONSource | undefined;
+      if (lineSource) {
+        lineSource.setData(lineData);
+      } else {
+        map.addSource(TRAIL_LINE_SOURCE, { type: "geojson", data: lineData });
+        map.addLayer({
+          id: TRAIL_LINE_SOURCE,
+          type: "line",
+          source: TRAIL_LINE_SOURCE,
+          paint: { "line-color": "#FFB547", "line-width": 3, "line-dasharray": [0.2, 1.6] },
+        });
+      }
+    } else {
+      removeLayerAndSource(map, TRAIL_LINE_SOURCE, [TRAIL_LINE_SOURCE]);
+    }
+
+    if (trailStops.length > 0) {
+      const pointsData: GeoJSON.FeatureCollection<GeoJSON.Point, { order: number }> = {
+        type: "FeatureCollection",
+        features: trailStops.map((s, index) => ({
+          type: "Feature",
+          properties: { order: index + 1 },
+          geometry: { type: "Point", coordinates: [s.longitude, s.latitude] },
+        })),
+      };
+      const pointsSource = map.getSource(TRAIL_POINTS_SOURCE) as maplibregl.GeoJSONSource | undefined;
+      if (pointsSource) {
+        pointsSource.setData(pointsData);
+      } else {
+        map.addSource(TRAIL_POINTS_SOURCE, { type: "geojson", data: pointsData });
+        map.addLayer({
+          id: `${TRAIL_POINTS_SOURCE}-circle`,
+          type: "circle",
+          source: TRAIL_POINTS_SOURCE,
+          paint: { "circle-radius": 11, "circle-color": "#FF4433", "circle-stroke-width": 2, "circle-stroke-color": "#0F0C15" },
+        });
+        map.addLayer({
+          id: `${TRAIL_POINTS_SOURCE}-label`,
+          type: "symbol",
+          source: TRAIL_POINTS_SOURCE,
+          layout: { "text-field": ["to-string", ["get", "order"]], "text-size": 12, "text-allow-overlap": true },
+          paint: { "text-color": "#FFFFFF" },
+        });
+      }
+    } else {
+      removeLayerAndSource(map, TRAIL_POINTS_SOURCE, [`${TRAIL_POINTS_SOURCE}-circle`, `${TRAIL_POINTS_SOURCE}-label`]);
+    }
+  }, [trailStops]);
+
+  useEffect(() => {
+    renderTrailRoute();
+  }, [renderTrailRoute]);
 
   // Mobile's floating "Search pandals…" bar (spec: matches the mockup's Home
   // header) — a lightweight client-side filter over the already-loaded list,
@@ -208,12 +309,19 @@ export function MapHome({
   // (e.g. after "Search this area" swaps the pandal list mid-session).
   const renderMarkersRef = useRef(renderMarkers);
   renderMarkersRef.current = renderMarkers;
+  const renderTrailRouteRef = useRef(renderTrailRoute);
+  renderTrailRouteRef.current = renderTrailRoute;
 
   function handleMapReady(map: maplibregl.Map) {
     mapRef.current = map;
     map.on("moveend", () => renderMarkersRef.current());
     map.on("dragend", () => setShowSearchArea(true));
+    // Sources/layers (the trail route) can only be added once the style has
+    // actually finished loading — renderTrailRoute() below no-ops until
+    // then, so this catches whichever trail state exists the moment it does.
+    map.on("load", () => renderTrailRouteRef.current());
     renderMarkers();
+    renderTrailRoute();
 
     // Deep link from the pandal detail page's "View on map" action — unlike
     // a marker/list click, the map hasn't necessarily visited this pandal
@@ -448,6 +556,7 @@ export function MapHome({
                     </Link>
                   )}
                 </div>
+                <TrailButton citySlug={citySlug} slug={pandal.slug} className="self-center" />
               </div>
             );
           })}

@@ -4,3 +4,36 @@ export function externalDirectionsUrl(destination: { latitude: number; longitude
   const { latitude, longitude } = destination;
   return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
 }
+
+// Google's directions URL API caps at 9 intermediate waypoints (10 stops
+// total including origin/destination) — anything beyond that is silently
+// dropped by Google rather than erroring, so callers building a trail-picker
+// UI should cap selection at this instead of finding out after the fact.
+export const MAX_TRAIL_STOPS = 10;
+
+// Builds a multi-stop route for the trail feature (packages/maps §"trail
+// planner") — `optimize:true` in the waypoints param asks Google Maps itself
+// to reorder the *intermediate* stops for the shortest total route once the
+// link opens, so the order the visitor picked in-app doesn't have to be
+// optimal; the first and last stop are always kept as origin/destination
+// since Maps treats those as fixed endpoints.
+export function externalTrailDirectionsUrl(stops: { latitude: number; longitude: number }[]): string {
+  const origin = stops[0];
+  if (!origin) return "";
+  if (stops.length === 1) return externalDirectionsUrl(origin);
+
+  const rest = stops.slice(1);
+  const destination = rest[rest.length - 1] as { latitude: number; longitude: number };
+  const waypoints = rest.slice(0, -1);
+
+  const params = new URLSearchParams({
+    api: "1",
+    origin: `${origin.latitude},${origin.longitude}`,
+    destination: `${destination.latitude},${destination.longitude}`,
+  });
+  if (waypoints.length > 0) {
+    const encoded = waypoints.map((w) => `${w.latitude},${w.longitude}`).join("|");
+    params.set("waypoints", `optimize:true|${encoded}`);
+  }
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
+}

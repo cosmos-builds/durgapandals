@@ -9,6 +9,7 @@ import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
 import { MobileHeader } from "./mobile-header";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
+import { TrailButton } from "./trail-button";
 
 export interface ExploreBrowserProps {
   citySlug: string;
@@ -442,16 +443,16 @@ export function ExploreBrowser({
           <div className="mt-3 flex flex-col px-4 md:grid md:grid-cols-2 md:gap-3 md:px-0 lg:grid-cols-3">
             <AnimatePresence initial={false}>
             {filtered.map((pandal) => (
-              <MotionLink
+              <motion.div
                 key={pandal.id}
                 layout
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2 }}
-                href={pandalDetailHref(citySlug, pandal)}
                 className="flex items-center gap-3 border-b border-border py-3 md:rounded-2xl md:border md:border-border md:bg-panel md:p-3 md:hover:border-accent/40"
               >
+                <Link href={pandalDetailHref(citySlug, pandal)} className="flex min-w-0 flex-1 items-center gap-3">
                 <div className="relative h-[68px] w-[68px] flex-none overflow-hidden rounded-2xl bg-card">
                   {pandal.year?.coverImage ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -514,7 +515,9 @@ export function ExploreBrowser({
                     {pandal.likes}
                   </span>
                 </div>
-              </MotionLink>
+                </Link>
+                <TrailButton citySlug={citySlug} slug={pandal.slug} className="self-center" />
+              </motion.div>
             ))}
             </AnimatePresence>
             {filtered.length === 0 && (

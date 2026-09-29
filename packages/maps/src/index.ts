@@ -5,4 +5,4 @@ export {
   type MapMarker,
   type ClusterResult,
 } from "./clustering";
-export { externalDirectionsUrl } from "./directions";
+export { externalDirectionsUrl, externalTrailDirectionsUrl, MAX_TRAIL_STOPS } from "./directions";

@@ -7,6 +7,7 @@ import { fetchLikedStatus, pandalDetailHref, toggleReaction, type PandalSummary 
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
+import { TrailButton } from "./trail-button";
 
 const DISMISS_THRESHOLD_PX = 110;
 const DISMISS_VELOCITY = 500;
@@ -158,6 +159,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
               bookmark
             </span>
           </button>
+          <TrailButton citySlug={citySlug} slug={pandal.slug} />
         </div>
 
         <Link

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { fetchCityBySlug } from "@/lib/api";
 import { BottomNav } from "@/components/bottom-nav";
+import { TrailFab } from "@/components/trail-fab";
 
 // Scoped to the (tabs) route group — Map/Explore/Saved get the mobile bottom
 // tab bar (a mobile-only pattern, spec §4); Add Pandal and the pandal detail
@@ -22,6 +23,7 @@ export default async function TabsLayout({
     <>
       {children}
       <BottomNav citySlug={city.slug} />
+      <TrailFab citySlug={city.slug} />
     </>
   );
 }

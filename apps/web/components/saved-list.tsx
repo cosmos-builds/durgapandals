@@ -8,6 +8,7 @@ import { getSavedPandalSlugs, pruneSavedSlugs, toggleSavedPandal, SAVED_KEY_BY_C
 import { DirectionsButton } from "./directions-button";
 import { MobileHeader } from "./mobile-header";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
+import { TrailButton } from "./trail-button";
 
 export interface SavedListProps {
   citySlug: string;
@@ -112,6 +113,7 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
                   </Link>
                   <span className="truncate font-body text-sm text-ink-muted">{pandal.locality}</span>
                 </div>
+                <TrailButton citySlug={citySlug} slug={pandal.slug} />
                 <DirectionsButton pandal={pandal} variant="compact" />
               </div>
             </motion.div>
