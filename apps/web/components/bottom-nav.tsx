@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 
 export interface BottomNavProps {
   citySlug: string;
@@ -36,20 +37,23 @@ export function BottomNav({ citySlug }: BottomNavProps) {
           >
             {/* Marigold glow dot instead of a flat color swap — reads as a
                 lit marker under the active tab rather than a generic
-                selected-state highlight. */}
+                selected-state highlight. Shared layoutId so it glides
+                between tabs instead of popping in/out on every switch. */}
             {isActive && (
-              <span
+              <motion.span
+                layoutId="bottom-nav-active-dot"
                 className="absolute top-1.5 h-1.5 w-1.5 rounded-full bg-accent"
                 style={{ boxShadow: "0 0 8px 2px rgba(255,181,71,.7)" }}
+                transition={{ type: "spring", stiffness: 500, damping: 34 }}
               />
             )}
             <span
-              className={`material-symbols-rounded text-[22px] ${isActive ? "text-brand" : "text-ink-muted"}`}
+              className={`material-symbols-rounded text-[22px] transition-colors ${isActive ? "text-brand" : "text-ink-muted"}`}
               style={isActive ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               {item.icon}
             </span>
-            <span className={`text-[11px] font-semibold ${isActive ? "text-ink" : "text-ink-muted"}`}>
+            <span className={`text-[11px] font-semibold transition-colors ${isActive ? "text-ink" : "text-ink-muted"}`}>
               {item.label}
             </span>
           </Link>

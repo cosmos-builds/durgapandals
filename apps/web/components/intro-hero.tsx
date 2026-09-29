@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "motion/react";
 import type { CityApiModel } from "@/lib/api";
 import { useCitySearch } from "@/lib/use-city-search";
 import { useCityList } from "@/lib/use-city-list";
@@ -57,10 +58,30 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
 
   const { highlightedIndex, onKeyDown } = useKeyboardListNav(results, selectSearchResult);
 
+  const stagger = {
+    hidden: {},
+    show: { transition: { staggerChildren: 0.08, delayChildren: 0.15 } },
+  };
+  const riseIn = {
+    hidden: { opacity: 0, y: 18 },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 300, damping: 28 } },
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-ground md:overflow-hidden">
+    <motion.div
+      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-ground md:overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.25 }}
+    >
       <div className="flex flex-1 flex-col md:flex-row">
-        <div className="relative h-[260px] flex-none md:h-auto md:flex-1">
+        <motion.div
+          className="relative h-[260px] flex-none md:h-auto md:flex-1"
+          initial={{ opacity: 0, scale: 1.06 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/hero-durga.png"
@@ -75,24 +96,33 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
             className="pointer-events-none absolute inset-0 hidden md:block"
             style={{ background: "linear-gradient(90deg, transparent, rgba(23,8,16,.4))" }}
           />
-        </div>
+        </motion.div>
 
-        <div className="-mt-8 flex flex-col items-center gap-1 px-6 pb-8 text-center md:mt-0 md:flex-1 md:items-start md:justify-center md:px-16 md:text-left">
+        <motion.div
+          className="-mt-8 flex flex-col items-center gap-1 px-6 pb-8 text-center md:mt-0 md:flex-1 md:items-start md:justify-center md:px-16 md:text-left"
+          variants={stagger}
+          initial="hidden"
+          animate="show"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <motion.img
+            variants={riseIn}
             src="/images/logo.png"
             alt="durgaPandals"
             className="mb-2.5 h-[76px] w-[76px] object-contain md:h-20 md:w-20"
             style={{ filter: "drop-shadow(0 8px 20px rgba(255,68,51,.4))" }}
           />
-          <h1 className="font-display text-[30px] font-extrabold leading-[1.1] md:text-[44px] md:leading-[1.05]">
+          <motion.h1
+            variants={riseIn}
+            className="font-display text-[30px] font-extrabold leading-[1.1] md:text-[44px] md:leading-[1.05]"
+          >
             durgaPandals
-          </h1>
-          <p className="mb-5 font-body text-[13.5px] text-ink-muted md:max-w-[400px] md:text-base">
+          </motion.h1>
+          <motion.p variants={riseIn} className="mb-5 font-body text-[13.5px] text-ink-muted md:max-w-[400px] md:text-base">
             Shubho Sharadiya! Find every pandal, theme &amp; aarti timing — in your city, wherever that is.
-          </p>
+          </motion.p>
 
-          <div className="flex w-full flex-col gap-2.5 md:max-w-[420px] md:gap-3">
+          <motion.div variants={riseIn} className="flex w-full flex-col gap-2.5 md:max-w-[420px] md:gap-3">
             <div className="relative">
               <div className="flex h-12 items-center gap-2.5 rounded-2xl bg-ink px-3.5 md:h-[52px] md:px-4">
                 <span className="material-symbols-rounded text-ground/60">search</span>
@@ -179,9 +209,9 @@ export function IntroHero({ citySlug, onExplore }: IntroHeroProps) {
               Skip for now — I&apos;ll pick a city later
               <span className="material-symbols-rounded text-lg">arrow_forward</span>
             </button>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }

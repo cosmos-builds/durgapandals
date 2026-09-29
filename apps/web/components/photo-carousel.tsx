@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 export interface Photo {
@@ -26,6 +27,7 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dots
   const images = photos.length > 0 ? photos : fallbackImage ? [{ url: fallbackImage }] : [];
   const [active, setActive] = useState(0);
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const dotLayoutId = `photo-carousel-active-dot-${useId()}`;
 
   function handleScroll() {
     const el = scrollerRef.current;
@@ -92,10 +94,17 @@ export function PhotoCarousel({ photos, fallbackImage, alt, className = "", dots
               key={index}
               onClick={() => scrollTo(index)}
               aria-label={`Photo ${index + 1}`}
-              className={`pointer-events-auto h-1.5 rounded-pill transition-all ${
-                index === active ? "w-4 bg-accent" : "w-1.5 bg-white/40"
-              }`}
-            />
+              className="pointer-events-auto relative h-1.5 w-4"
+            >
+              <span className="absolute inset-0 rounded-pill bg-white/40" />
+              {index === active && (
+                <motion.span
+                  layoutId={dotLayoutId}
+                  className="absolute inset-0 rounded-pill bg-accent"
+                  transition={{ type: "spring", stiffness: 500, damping: 34 }}
+                />
+              )}
+            </button>
           ))}
         </div>
       )}

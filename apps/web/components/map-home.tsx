@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
+import { AnimatePresence } from "motion/react";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { buildClusterIndex, getClusters } from "@durgapandals/maps";
 import { fetchPandalsForCity, pandalDetailHref, type LocationSearchResult, type PandalSummary } from "@/lib/api";
@@ -524,11 +525,13 @@ export function MapHome({
         </button>
       </div>
 
-      {!isDesktop && selectedPandal && (
-        <PandalPreviewSheet citySlug={citySlug} pandal={selectedPandal} onClose={() => setSelectedId(null)} />
-      )}
+      <AnimatePresence>
+        {!isDesktop && selectedPandal && (
+          <PandalPreviewSheet citySlug={citySlug} pandal={selectedPandal} onClose={() => setSelectedId(null)} />
+        )}
+      </AnimatePresence>
 
-      {showIntro && <IntroHero citySlug={citySlug} onExplore={dismissIntro} />}
+      <AnimatePresence>{showIntro && <IntroHero citySlug={citySlug} onExplore={dismissIntro} />}</AnimatePresence>
     </div>
   );
 }

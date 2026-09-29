@@ -13,5 +13,8 @@
   },
   "devDependencies": {
     "@types/react": "^18.3.0"
+  },
+  "dependencies": {
+    "motion": "^13.4.5"
   }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { AnimatePresence, motion } from "motion/react";
 import { Select } from "@durgapandals/ui";
 import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { FestiveBunting } from "./festive-bunting";
@@ -32,6 +33,8 @@ function parseCategoriesParam(value: string | null): Set<string> {
 function sameSet(a: Set<string>, b: Set<string>): boolean {
   return a.size === b.size && [...a].every((item) => b.has(item));
 }
+
+const MotionLink = motion.create(Link);
 
 export function ExploreBrowser({
   citySlug,
@@ -363,11 +366,15 @@ export function ExploreBrowser({
                 </h2>
               </div>
               <div className="mt-4 flex gap-4 overflow-x-auto px-4 pb-2 md:px-0">
-                {featured.map((pandal) => (
-                  <Link
+                {featured.map((pandal, index) => (
+                  <MotionLink
                     key={pandal.id}
                     href={pandalDetailHref(citySlug, pandal)}
                     className="group relative h-[320px] w-[264px] flex-none overflow-hidden rounded-[28px] border border-accent/25 shadow-[0_20px_50px_-15px_rgba(255,181,71,.25)]"
+                    initial={{ opacity: 0, y: 24 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, amount: 0.3 }}
+                    transition={{ delay: Math.min(index, 6) * 0.06, type: "spring", stiffness: 300, damping: 30 }}
                   >
                     {pandal.year?.coverImage ? (
                       // eslint-disable-next-line @next/next/no-img-element
@@ -415,7 +422,7 @@ export function ExploreBrowser({
                         </span>
                       </span>
                     </div>
-                  </Link>
+                  </MotionLink>
                 ))}
               </div>
               <FestiveBunting
@@ -433,9 +440,15 @@ export function ExploreBrowser({
             </h2>
           </div>
           <div className="mt-3 flex flex-col px-4 md:grid md:grid-cols-2 md:gap-3 md:px-0 lg:grid-cols-3">
+            <AnimatePresence initial={false}>
             {filtered.map((pandal) => (
-              <Link
+              <MotionLink
                 key={pandal.id}
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
                 href={pandalDetailHref(citySlug, pandal)}
                 className="flex items-center gap-3 border-b border-border py-3 md:rounded-2xl md:border md:border-border md:bg-panel md:p-3 md:hover:border-accent/40"
               >
@@ -501,8 +514,9 @@ export function ExploreBrowser({
                     {pandal.likes}
                   </span>
                 </div>
-              </Link>
+              </MotionLink>
             ))}
+            </AnimatePresence>
             {filtered.length === 0 && (
               <div className="flex flex-col items-center gap-2 py-8 text-center md:col-span-full">
                 <p className="font-body text-ink-muted">

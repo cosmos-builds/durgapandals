@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion, type PanInfo } from "motion/react";
 import { fetchLikedStatus, pandalDetailHref, toggleReaction, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, getVisitorId, toggleSavedPandal } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
 import { PandalPhotoPlaceholder } from "./pandal-photo-placeholder";
 
 const DISMISS_THRESHOLD_PX = 110;
+const DISMISS_VELOCITY = 500;
 
 export interface PandalPreviewSheetProps {
   citySlug: string;
@@ -23,13 +25,10 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
   const [likes, setLikes] = useState(pandal.likes);
   const [liked, setLiked] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [dragY, setDragY] = useState(0);
-  const dragState = useRef<{ startY: number; dragging: boolean } | null>(null);
 
   useEffect(() => {
     setLikes(pandal.likes);
     setSaved(getSavedPandalSlugs(citySlug).includes(pandal.slug));
-    setDragY(0);
 
     // See pandal-detail.tsx for why this can't just stay hardcoded to
     // false — a returning visitor who already liked this pandal would
@@ -38,6 +37,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
     if (pandal.year) {
       fetchLikedStatus(pandal.year.id, getVisitorId()).then(setLiked);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pandal, citySlug]);
 
   async function toggleLike() {
@@ -61,41 +61,39 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
     setSaved(toggleSavedPandal(citySlug, pandal.slug));
   }
 
-  function handlePointerDown(event: React.PointerEvent) {
-    dragState.current = { startY: event.clientY, dragging: true };
-    (event.target as HTMLElement).setPointerCapture(event.pointerId);
-  }
-
-  function handlePointerMove(event: React.PointerEvent) {
-    if (!dragState.current?.dragging) return;
-    const delta = event.clientY - dragState.current.startY;
-    setDragY(Math.max(0, delta));
-  }
-
-  function handlePointerUp() {
-    if (!dragState.current) return;
-    dragState.current.dragging = false;
-    if (dragY > DISMISS_THRESHOLD_PX) {
+  // Velocity-aware dismiss: a fast flick down closes the sheet even if it
+  // hasn't crossed DISMISS_THRESHOLD_PX yet, matching how native bottom
+  // sheets (Google Maps, Apple Maps) respond to a flick vs. a slow drag. If
+  // neither threshold is met, dragConstraints/dragElastic below spring the
+  // sheet back to y:0 on their own — no manual snap-back needed.
+  function handleDragEnd(_event: PointerEvent | MouseEvent | TouchEvent, info: PanInfo) {
+    if (info.offset.y > DISMISS_THRESHOLD_PX || info.velocity.y > DISMISS_VELOCITY) {
       onClose();
-    } else {
-      setDragY(0);
     }
   }
 
   return (
     <>
-      <div className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={onClose} />
+      <motion.div
+        className="fixed inset-0 z-30 bg-black/40 md:hidden"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
 
-      <div
-        className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-3.5 rounded-t-[28px] border-t border-border bg-panel p-4 pb-6 shadow-2xl transition-transform md:hidden"
-        style={{ transform: `translateY(${dragY}px)`, transition: dragState.current?.dragging ? "none" : "transform 0.2s ease" }}
+      <motion.div
+        className="fixed inset-x-0 bottom-0 z-40 flex flex-col gap-3.5 rounded-t-[28px] border-t border-border bg-panel p-4 pb-6 shadow-2xl md:hidden"
+        drag="y"
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.6 }}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 420, damping: 38 }}
       >
-        <div
-          className="mx-auto h-1.5 w-10 flex-none cursor-grab touch-none rounded-full bg-white/20 active:cursor-grabbing"
-          onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-        />
+        <div className="mx-auto h-1.5 w-10 flex-none cursor-grab touch-none rounded-full bg-white/20 active:cursor-grabbing" />
 
         <div className="flex gap-3.5">
           <div className="h-[92px] w-[92px] flex-none overflow-hidden rounded-2xl bg-card">
@@ -169,7 +167,7 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
           View full details
           <span className="material-symbols-rounded text-lg">arrow_forward</span>
         </Link>
-      </div>
+      </motion.div>
     </>
   );
 }

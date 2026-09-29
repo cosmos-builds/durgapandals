@@ -14,13 +14,14 @@
     "@durgapandals/types": "workspace:*",
     "@durgapandals/ui": "workspace:*",
     "maplibre-gl": "^4.7.0",
+    "motion": "^13.4.5",
     "next": "^15.0.0",
     "react": "^18.3.0",
     "react-dom": "^18.3.0"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
     "@types/node": "^22.7.0",
+    "@types/react": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",

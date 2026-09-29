@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { AnimatePresence } from "motion/react";
 import { CitySelectorSheet } from "./city-selector-sheet";
 
 export interface CityYearPillProps {
@@ -33,14 +34,16 @@ export function CityYearPill({ citySlug, cityName, activeFestivalYear, available
         <span className="material-symbols-rounded text-ink-muted">expand_more</span>
       </button>
 
-      {open && (
-        <CitySelectorSheet
-          currentCitySlug={citySlug}
-          selectedYear={selectedYear}
-          availableYears={availableYears}
-          onClose={() => setOpen(false)}
-        />
-      )}
+      <AnimatePresence>
+        {open && (
+          <CitySelectorSheet
+            currentCitySlug={citySlug}
+            selectedYear={selectedYear}
+            availableYears={availableYears}
+            onClose={() => setOpen(false)}
+          />
+        )}
+      </AnimatePresence>
     </>
   );
 }

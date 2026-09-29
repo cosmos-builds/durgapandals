@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import {
   type ColumnDef,
   type ExpandedState,
@@ -17,6 +18,8 @@ import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch, adminMutate, deletePandal } from "@/lib/admin-api";
 import { Button, ConfirmDialog, Input, Select, Table, TableHeadRow, Th, Tr, Td, useToast } from "@durgapandals/ui";
+
+const MotionTr = motion.create(Tr);
 import { PandalsClusterMap, type DashboardPandal } from "@/components/pandals-cluster-map";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
@@ -529,7 +532,7 @@ export default function PandalsListPage() {
           ))}
         </thead>
         <tbody>
-          {table.getRowModel().rows.map((row) =>
+          {table.getRowModel().rows.map((row, index) =>
             row.getIsGrouped() ? (
               <tr key={row.id} className="border-t border-border bg-card/60">
                 <td colSpan={row.getVisibleCells().length} className="px-4 py-2.5">
@@ -545,11 +548,16 @@ export default function PandalsListPage() {
                 </td>
               </tr>
             ) : (
-              <Tr key={row.id}>
+              <MotionTr
+                key={row.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: Math.min(index, 20) * 0.015 }}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
                 ))}
-              </Tr>
+              </MotionTr>
             )
           )}
           {pandals.length === 0 && (

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { AnimatePresence, motion } from "motion/react";
 import { pandalDetailHref, type PandalSummary } from "@/lib/api";
 import { getSavedPandalSlugs, pruneSavedSlugs, toggleSavedPandal, SAVED_KEY_BY_CITY } from "@/lib/visitor";
 import { DirectionsButton } from "./directions-button";
@@ -77,8 +78,17 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
           {saved.map((pandal) => (
-            <div key={pandal.id} className="overflow-hidden rounded-3xl border border-border bg-panel">
+            <motion.div
+              key={pandal.id}
+              layout
+              initial={{ opacity: 0, scale: 0.92 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.18 } }}
+              transition={{ type: "spring", stiffness: 340, damping: 32 }}
+              className="overflow-hidden rounded-3xl border border-border bg-panel"
+            >
               <div className="relative h-[150px] md:h-[140px]">
                 {pandal.year?.coverImage ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -104,8 +114,9 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
                 </div>
                 <DirectionsButton pandal={pandal} variant="compact" />
               </div>
-            </div>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </div>
 
         {saved.length === 0 && (

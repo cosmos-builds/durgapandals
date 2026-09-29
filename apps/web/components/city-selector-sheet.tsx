@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { motion } from "motion/react";
 import { useCitySearch } from "@/lib/use-city-search";
 import { useCityList } from "@/lib/use-city-list";
 import { useKeyboardListNav } from "@/lib/use-keyboard-list-nav";
@@ -91,8 +92,20 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-      <div className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col gap-4 rounded-t-[28px] bg-panel p-5 pb-8 shadow-2xl md:inset-0 md:m-auto md:h-fit md:max-h-[600px] md:w-[420px] md:rounded-3xl">
+      <motion.div
+        className="fixed inset-0 z-40 bg-black/50"
+        onClick={onClose}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      />
+      <motion.div
+        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[80dvh] flex-col gap-4 rounded-t-[28px] bg-panel p-5 pb-8 shadow-2xl md:inset-0 md:m-auto md:h-fit md:max-h-[600px] md:w-[420px] md:rounded-3xl"
+        initial={{ y: "100%" }}
+        animate={{ y: 0 }}
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", stiffness: 380, damping: 38 }}
+      >
         <div className="mx-auto h-1.5 w-10 flex-none rounded-full bg-white/20 md:hidden" />
 
         <div className="flex items-center justify-between">
@@ -264,7 +277,7 @@ export function CitySelectorSheet({ currentCitySlug, selectedYear, availableYear
         >
           About DurgaPandal.com
         </Link>
-      </div>
+      </motion.div>
     </>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
 
 interface Toast {
   id: number;
@@ -58,24 +59,31 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-2 px-4">
-        {toasts.map((toast) => (
-          <div
-            key={toast.id}
-            role="status"
-            className={`pointer-events-auto flex w-full max-w-sm items-center gap-2 rounded-xl border bg-panel px-4 py-3 font-body text-sm font-semibold shadow-2xl ${TONE_CLASSES[toast.tone]}`}
-          >
-            <span className="material-symbols-rounded text-lg">{TONE_ICON[toast.tone]}</span>
-            <span className="flex-1 text-ink">{toast.message}</span>
-            <button
-              type="button"
-              onClick={() => dismiss(toast.id)}
-              aria-label="Dismiss"
-              className="material-symbols-rounded text-base text-ink-muted"
+        <AnimatePresence initial={false}>
+          {toasts.map((toast) => (
+            <motion.div
+              key={toast.id}
+              role="status"
+              layout
+              initial={{ opacity: 0, y: 24, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.15 } }}
+              transition={{ type: "spring", stiffness: 500, damping: 34 }}
+              className={`pointer-events-auto flex w-full max-w-sm items-center gap-2 rounded-xl border bg-panel px-4 py-3 font-body text-sm font-semibold shadow-2xl ${TONE_CLASSES[toast.tone]}`}
             >
-              close
-            </button>
-          </div>
-        ))}
+              <span className="material-symbols-rounded text-lg">{TONE_ICON[toast.tone]}</span>
+              <span className="flex-1 text-ink">{toast.message}</span>
+              <button
+                type="button"
+                onClick={() => dismiss(toast.id)}
+                aria-label="Dismiss"
+                className="material-symbols-rounded text-base text-ink-muted"
+              >
+                close
+              </button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );

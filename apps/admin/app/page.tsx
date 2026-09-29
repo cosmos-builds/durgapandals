@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch } from "@/lib/admin-api";
@@ -14,6 +15,17 @@ import {
   PandalsByCityChart,
 } from "@/components/dashboard-charts";
 import { PandalsClusterMap, type DashboardPandal } from "@/components/pandals-cluster-map";
+import { AnimatedNumber } from "@/components/animated-number";
+
+const MotionCard = motion.create(Card);
+const fadeUpStagger = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.06 } },
+};
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 320, damping: 30 } },
+};
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
 const INDIA_CENTER = { latitude: 22.9734, longitude: 78.6569 };
@@ -140,20 +152,32 @@ export default function AdminDashboardPage() {
         <p className="font-body text-ink-muted">Loading…</p>
       ) : (
         <>
-          <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+          <motion.div
+            className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5"
+            variants={fadeUpStagger}
+            initial="hidden"
+            animate="show"
+          >
             {STAT_CARDS.map((card) => (
-              <Card key={card.key} padding="sm">
+              <MotionCard key={card.key} padding="sm" variants={fadeUp}>
                 <span className="material-symbols-rounded text-accent">{card.icon}</span>
-                <div className="mt-2 font-display text-3xl font-extrabold">{data[card.key]}</div>
+                <div className="mt-2 font-display text-3xl font-extrabold">
+                  <AnimatedNumber value={data[card.key]} />
+                </div>
                 <div className="mt-1 font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
                   {card.label}
                 </div>
-              </Card>
+              </MotionCard>
             ))}
-          </div>
+          </motion.div>
 
-          <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card padding="sm">
+          <motion.div
+            className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2"
+            variants={fadeUpStagger}
+            initial="hidden"
+            animate="show"
+          >
+            <MotionCard padding="sm" variants={fadeUp}>
               <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
                 Published pandals by city
               </h2>
@@ -162,20 +186,20 @@ export default function AdminDashboardPage() {
               ) : (
                 <p className="font-body text-sm text-ink-muted">No cities yet.</p>
               )}
-            </Card>
-            <Card padding="sm">
+            </MotionCard>
+            <MotionCard padding="sm" variants={fadeUp}>
               <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
                 Submissions, last 30 days
               </h2>
               <SubmissionsTimeseriesChart data={timeseries} />
-            </Card>
-            <Card padding="sm">
+            </MotionCard>
+            <MotionCard padding="sm" variants={fadeUp}>
               <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
                 Submissions by status
               </h2>
               <StatusBreakdownChart data={byStatus} />
-            </Card>
-            <Card padding="sm">
+            </MotionCard>
+            <MotionCard padding="sm" variants={fadeUp}>
               <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
                 Likes leaderboard
               </h2>
@@ -184,8 +208,8 @@ export default function AdminDashboardPage() {
               ) : (
                 <p className="font-body text-sm text-ink-muted">No likes yet.</p>
               )}
-            </Card>
-            <Card padding="sm">
+            </MotionCard>
+            <MotionCard padding="sm" variants={fadeUp}>
               <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
                 Top localities by submissions
               </h2>
@@ -194,8 +218,8 @@ export default function AdminDashboardPage() {
               ) : (
                 <p className="font-body text-sm text-ink-muted">No submissions yet.</p>
               )}
-            </Card>
-          </div>
+            </MotionCard>
+          </motion.div>
 
           <Card padding="sm" className="mb-8">
             <h2 className="mb-3 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
@@ -218,9 +242,13 @@ export default function AdminDashboardPage() {
             {pending.length === 0 ? (
               <p className="font-body text-sm text-ink-muted">Nothing pending review.</p>
             ) : (
-              <div className="flex flex-col">
+              <motion.div className="flex flex-col" variants={fadeUpStagger} initial="hidden" animate="show">
                 {pending.map((submission) => (
-                  <div key={submission._id} className="flex items-center gap-3 border-t border-border py-2.5 first:border-0">
+                  <motion.div
+                    key={submission._id}
+                    variants={fadeUp}
+                    className="flex items-center gap-3 border-t border-border py-2.5 first:border-0"
+                  >
                     <span className="h-2 w-2 flex-none rounded-full bg-accent" />
                     <span className="flex-1 truncate font-body text-sm font-semibold">
                       {submission.submittedData.canonicalName ?? "(update / correction)"}
@@ -229,9 +257,9 @@ export default function AdminDashboardPage() {
                     <span className="rounded-pill bg-chip px-2.5 py-1 font-body text-[11px] font-bold">
                       {submission.type.replace("_", " ")}
                     </span>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             )}
           </Card>
 
