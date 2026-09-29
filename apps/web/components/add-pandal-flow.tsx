@@ -81,6 +81,29 @@ const emptyAmenities = {
 
 type ScheduleRow = { time: string; label: string };
 
+const SCHEDULE_HOURS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const SCHEDULE_MINUTES = ["00", "15", "30", "45"];
+const SCHEDULE_PERIODS = ["AM", "PM"] as const;
+
+// `ScheduleRow.time` is still stored (and displayed elsewhere, e.g.
+// pandal-detail's schedule list) as a plain "7:00 PM"-style string, so the
+// hour/minute/AM-PM dropdowns below parse it in and compose it back out
+// rather than changing the stored shape — free text just let people type
+// anything unparseable ("evening", "7ish"), which this closes off.
+function parseScheduleTime(time: string): { hour: string; minute: string; period: (typeof SCHEDULE_PERIODS)[number] } {
+  const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
+  if (!match) return { hour: "7", minute: "00", period: "PM" };
+  const [rawHour, rawMinute, rawPeriod] = [match[1]!, match[2]!, match[3]!];
+  const hour = String(Math.min(12, Math.max(1, Number(rawHour))));
+  const minute = SCHEDULE_MINUTES.includes(rawMinute) ? rawMinute : "00";
+  const period = rawPeriod.toUpperCase() === "AM" ? "AM" : "PM";
+  return { hour, minute, period };
+}
+
+function formatScheduleTime(hour: string, minute: string, period: string): string {
+  return `${hour}:${minute} ${period}`;
+}
+
 const MAX_PHOTOS = 5;
 const MAX_PHOTO_SIZE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -369,7 +392,7 @@ export function AddPandalFlow({
   }
 
   function addScheduleRow() {
-    setSchedule((prev) => [...prev, { time: "", label: "" }]);
+    setSchedule((prev) => [...prev, { time: formatScheduleTime("7", "00", "PM"), label: "" }]);
   }
 
   function updateScheduleRow(index: number, field: keyof ScheduleRow, value: string) {
@@ -809,6 +832,29 @@ export function AddPandalFlow({
         <form onSubmit={submitDetails} className={formStepClass}>
           <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">Tell us about your pandal</h2>
 
+          {/* Reminder of the location picked on the previous step — that
+              screen scrolls out of view by the time someone's filling this
+              one in, so without this the address they typed is invisible
+              until after they've already submitted. */}
+          <div className="flex items-start gap-2.5 rounded-2xl border border-border bg-panel px-3.5 py-3 md:bg-card/60">
+            <span className="material-symbols-rounded mt-0.5 flex-none text-lg text-accent">location_on</span>
+            <div className="flex min-w-0 flex-col">
+              <span className="truncate font-body text-sm font-bold">
+                {details.address || "No address set"}
+              </span>
+              <span className="truncate font-body text-xs text-ink-muted">
+                {[details.locality, details.landmark].filter(Boolean).join(" · ") || "No locality set"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStep("location")}
+              className="ml-auto flex-none font-body text-xs font-bold text-brand"
+            >
+              Edit
+            </button>
+          </div>
+
           <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
@@ -987,14 +1033,48 @@ export function AddPandalFlow({
               <span className="font-display text-base font-bold">Puja schedule</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
-            {schedule.map((row, index) => (
+            {schedule.map((row, index) => {
+              const { hour, minute, period } = parseScheduleTime(row.time);
+              return (
               <div key={index} className="flex gap-2">
-                <Input
-                  placeholder="Time — e.g. 7:00 PM"
-                  value={row.time}
-                  onChange={(e) => updateScheduleRow(index, "time", e.target.value)}
-                  className="w-[130px] flex-none"
-                />
+                <div className="flex flex-none gap-1">
+                  <Select
+                    aria-label="Hour"
+                    value={hour}
+                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(e.target.value, minute, period))}
+                    className="w-[60px]"
+                  >
+                    {SCHEDULE_HOURS.map((h) => (
+                      <option key={h} value={h}>
+                        {h}
+                      </option>
+                    ))}
+                  </Select>
+                  <Select
+                    aria-label="Minute"
+                    value={minute}
+                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, e.target.value, period))}
+                    className="w-[68px]"
+                  >
+                    {SCHEDULE_MINUTES.map((m) => (
+                      <option key={m} value={m}>
+                        {m}
+                      </option>
+                    ))}
+                  </Select>
+                  <Select
+                    aria-label="AM or PM"
+                    value={period}
+                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, minute, e.target.value))}
+                    className="w-[68px]"
+                  >
+                    {SCHEDULE_PERIODS.map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
                 <Input
                   placeholder="Event — e.g. Evening Aarti"
                   value={row.label}
@@ -1009,7 +1089,8 @@ export function AddPandalFlow({
                   <span className="material-symbols-rounded text-ink-muted">close</span>
                 </button>
               </div>
-            ))}
+              );
+            })}
             <button
               type="button"
               onClick={addScheduleRow}
