@@ -125,6 +125,21 @@ export function markIntroSeen() {
   setCookie(SEEN_INTRO_COOKIE, "1");
 }
 
+// The mobile "no pandals yet, add one" empty-state banner (see MapHome) is
+// dismissible; remembered per city+year so it doesn't reappear on every
+// visit to a still-empty city, but comes back once that city/year actually
+// gets pandals (a fresh empty-state, e.g. next year, should still show).
+const DISMISSED_ADD_BANNER_KEY = "durgapandals_dismissed_add_banner";
+
+export function hasDismissedAddPandalBanner(citySlug: string, year: number): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(DISMISSED_ADD_BANNER_KEY) === `${citySlug}:${year}`;
+}
+
+export function dismissAddPandalBanner(citySlug: string, year: number) {
+  window.localStorage.setItem(DISMISSED_ADD_BANNER_KEY, `${citySlug}:${year}`);
+}
+
 // Lets a bare "/" visit resume wherever the visitor actually was, instead of
 // always falling back to the algorithmic default city — set on every city
 // page view (see LastCityTracker), read server-side by the root page.

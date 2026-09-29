@@ -8,7 +8,7 @@ import { AnimatePresence } from "motion/react";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { buildClusterIndex, getClusters } from "@durgapandals/maps";
 import { fetchPandalsForCity, pandalDetailHref, type LocationSearchResult, type PandalSummary } from "@/lib/api";
-import { hasSeenIntro, markIntroSeen } from "@/lib/visitor";
+import { hasSeenIntro, markIntroSeen, hasDismissedAddPandalBanner, dismissAddPandalBanner } from "@/lib/visitor";
 import { getTrail, TRAIL_CHANGED_EVENT } from "@/lib/trail";
 import { PandalPreviewSheet } from "./pandal-preview-sheet";
 import { LocationSearchBox } from "./location-search-box";
@@ -60,10 +60,15 @@ export function MapHome({
   const [searchingArea, setSearchingArea] = useState(false);
   const [showIntro, setShowIntro] = useState(false);
   const [pandalQuery, setPandalQuery] = useState("");
+  const [addBannerDismissed, setAddBannerDismissed] = useState(false);
 
   useEffect(() => {
     if (!hasSeenIntro()) setShowIntro(true);
   }, []);
+
+  useEffect(() => {
+    setAddBannerDismissed(hasDismissedAddPandalBanner(citySlug, year));
+  }, [citySlug, year]);
 
   // `useState(initialPandals)` only reads its argument on the very first
   // mount — switching the year (or city) via the picker changes the
@@ -271,16 +276,16 @@ export function MapHome({
 
       if (cluster.isCluster) {
         const size = 34 + Math.min(26, Math.log2(cluster.count) * 6);
+        el.style.position = "relative";
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.style.border = "2px solid #0F0C15";
         el.style.borderRadius = "50%";
         el.style.background = "linear-gradient(135deg, #FFB547, #FF4433)";
-        el.style.color = "#1A0710";
-        el.style.fontWeight = "800";
-        el.style.fontFamily = "'DM Sans', sans-serif";
-        el.style.fontSize = "13px";
-        el.textContent = String(cluster.count);
+        el.innerHTML = `
+          <img src="/images/marker-icon.svg" alt="" style="width:${size * 0.6}px;height:${size * 0.6}px" />
+          <span style="position:absolute;top:-4px;right:-4px;display:flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 4px;border-radius:9px;border:2px solid #0F0C15;background:#1A0710;color:#F4EFF6;font-weight:800;font-family:'DM Sans',sans-serif;font-size:11px;line-height:1;">${cluster.count}</span>
+        `;
         el.onclick = () => {
           const expansionZoom = Math.min(clusterIndex.getClusterExpansionZoom(cluster.id as number), 18);
           map.flyTo({ center: [cluster.longitude, cluster.latitude], zoom: expansionZoom });
@@ -427,20 +432,11 @@ export function MapHome({
   return (
     <div className="relative h-dvh w-full bg-ground md:flex md:h-[calc(100dvh-60px)]">
       {/* Mobile-only floating header (spec §4/§5) — brand row, then city/year
-          pill + notification icon, then a pandal search bar, overlaid on
-          the map instead of pushing it down. Desktop uses the persistent
-          TopHeader instead (rendered one level up), so this is hidden
-          there. */}
+          pill, then a pandal search bar, overlaid on the map instead of
+          pushing it down. Desktop uses the persistent TopHeader instead
+          (rendered one level up), so this is hidden there. */}
       <div className="absolute inset-x-3 top-3 z-20 flex flex-col gap-2 md:hidden">
-        <MobileHeader
-          citySlug={citySlug}
-          className="rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur"
-          right={
-            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-ground/40">
-              <span className="material-symbols-rounded text-lg">notifications</span>
-            </span>
-          }
-        />
+        <MobileHeader citySlug={citySlug} className="rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur" />
         {/* Search bar takes most of the width; the city/year pill is just
             a compact button on the right, not a second full-width row. */}
         <div className="relative flex items-center gap-2">
@@ -597,8 +593,18 @@ export function MapHome({
             above), so this exists purely because mobile has no sidebar to
             show it in. Sits above the "search this area"/"locate me" row so
             the two never overlap. */}
-        {pandals.length === 0 && (
+        {pandals.length === 0 && !addBannerDismissed && (
           <div className="absolute inset-x-4 bottom-[130px] z-10 flex flex-col items-center gap-2 rounded-2xl bg-panel/95 p-4 text-center shadow-2xl md:hidden">
+            <button
+              onClick={() => {
+                dismissAddPandalBanner(citySlug, year);
+                setAddBannerDismissed(true);
+              }}
+              aria-label="Dismiss"
+              className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-ink-muted"
+            >
+              <span className="material-symbols-rounded text-lg">close</span>
+            </button>
             <p className="font-body text-sm text-ink-muted">
               No pandals added yet for {cityName} in {year}. Know one? Be the first to add it.
             </p>
