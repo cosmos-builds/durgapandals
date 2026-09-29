@@ -2,6 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import {
+  type ColumnDef,
+  type ExpandedState,
+  type GroupingState,
+  type SortingState,
+  flexRender,
+  getCoreRowModel,
+  getExpandedRowModel,
+  getGroupedRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
 import { adminFetch, adminMutate, deletePandal } from "@/lib/admin-api";
@@ -41,13 +52,21 @@ interface Page<T> {
 const STATUS_OPTIONS = ["", "DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"];
 const YEAR_OPTIONS = ["", String(CURRENT_YEAR + 1), String(CURRENT_YEAR), String(CURRENT_YEAR - 1), "none"];
 
-const SORT_COLUMNS = [
-  { key: "name", label: "Name" },
-  { key: "locality", label: "Locality" },
-  { key: "status", label: "Status" },
-  { key: "updated", label: "Updated" },
-] as const;
-type SortKey = (typeof SORT_COLUMNS)[number]["key"];
+// Column ids double as the server's sortBy values — "name"/"locality"/
+// "status"/"updated" match SORT_FIELD in the admin pandals API route
+// exactly, so a TanStack sort click maps straight onto a server param with
+// no translation table needed.
+const GROUP_OPTIONS = [
+  { value: "", label: "No grouping" },
+  { value: "status", label: "Group by status" },
+  { value: "cityName", label: "Group by city" },
+];
+
+// Sorting is server-side (SORT_FIELD in the API route) since the table is
+// paginated — grouping isn't, since a group needs every matching row in
+// view at once, not just the current page. When grouping is on, this fetch
+// switches to one large unpaginated page instead.
+const GROUPED_PAGE_SIZE = 500;
 
 const STATUS_TONE: Record<string, string> = {
   PUBLISHED: "bg-[rgba(127,217,154,.18)] text-[#7FD99A]",
@@ -80,24 +99,19 @@ export default function PandalsListPage() {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState<SortKey | "">("");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [grouping, setGrouping] = useState<GroupingState>([]);
+  const [expanded, setExpanded] = useState<ExpandedState>(true);
   const [view, setView] = useState<"table" | "map">("table");
   const [mapPandals, setMapPandals] = useState<DashboardPandal[]>([]);
+  const [selectedMapPandal, setSelectedMapPandal] = useState<DashboardPandal | null>(null);
   const [result, setResult] = useState<Page<Pandal> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkBusy, setBulkBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Pandal | null>(null);
 
-  function toggleSort(key: SortKey) {
-    if (sortBy !== key) {
-      setSortBy(key);
-      setSortDir("asc");
-    } else {
-      setSortDir((prev) => (prev === "asc" ? "desc" : "asc"));
-    }
-  }
+  const isGrouped = grouping.length > 0;
 
   useEffect(() => {
     if (!ready) return;
@@ -126,14 +140,20 @@ export default function PandalsListPage() {
     return params;
   }
 
+  const VALID_SERVER_SORT_KEYS = new Set(["name", "locality", "status", "updated"]);
+
   useEffect(() => {
     if (!ready || view !== "table") return;
     const params = buildFilterParams();
-    params.set("page", String(page));
-    params.set("pageSize", "25");
-    if (sortBy) {
-      params.set("sortBy", sortBy);
-      params.set("sortDir", sortDir);
+    // Grouping needs every matching row in view at once, not just one page
+    // — the table falls back to one large fetch and hides its own
+    // pagination controls while a group-by is active.
+    params.set("page", String(isGrouped ? 1 : page));
+    params.set("pageSize", String(isGrouped ? GROUPED_PAGE_SIZE : 25));
+    const sort = sorting[0];
+    if (sort && VALID_SERVER_SORT_KEYS.has(sort.id)) {
+      params.set("sortBy", sort.id);
+      params.set("sortDir", sort.desc ? "desc" : "asc");
     }
 
     adminFetch(`/admin/pandals?${params}`)
@@ -141,7 +161,7 @@ export default function PandalsListPage() {
       .then(setResult);
     setSelected(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, view, cityId, status, year, debouncedSearch, page, sortBy, sortDir]);
+  }, [ready, view, cityId, status, year, debouncedSearch, page, sorting, isGrouped]);
 
   // The map has no pagination — it plots every pandal matching the current
   // filters, not just the table's current page, since "every pandal in the
@@ -152,6 +172,7 @@ export default function PandalsListPage() {
     adminFetch(`/admin/pandals-map?${params}`)
       .then((res) => (res.ok ? res.json() : []))
       .then(setMapPandals);
+    setSelectedMapPandal(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, view, cityId, status, year, debouncedSearch]);
 
@@ -203,9 +224,126 @@ export default function PandalsListPage() {
     toast.success(`"${deleteTarget.canonicalName}" deleted.`);
   }
 
-  if (!ready) return null;
-
   const pandals = result?.items ?? [];
+
+  const columns = useMemo<ColumnDef<Pandal>[]>(
+    () => [
+      {
+        id: "select",
+        header: "",
+        enableSorting: false,
+        enableGrouping: false,
+        cell: ({ row }) => (
+          <input
+            type="checkbox"
+            checked={selected.has(row.original._id)}
+            onChange={() => toggleSelected(row.original._id)}
+            className="h-4 w-4 accent-brand"
+          />
+        ),
+      },
+      {
+        id: "name",
+        accessorKey: "canonicalName",
+        header: "Name",
+        enableGrouping: false,
+        cell: ({ row }) => (
+          <Link href={`/pandals/${row.original._id}`} className="font-semibold text-ink hover:text-brand">
+            {row.original.canonicalName}
+          </Link>
+        ),
+      },
+      {
+        id: "cityName",
+        header: "City",
+        enableSorting: false,
+        accessorFn: (row) => cityNameById.get(row.cityId) ?? "—",
+      },
+      {
+        id: "locality",
+        accessorKey: "locality",
+        header: "Locality",
+      },
+      {
+        id: "status",
+        accessorKey: "publicationStatus",
+        header: "Status",
+        cell: ({ getValue }) => {
+          const value = getValue<string>();
+          return (
+            <span className={`rounded-pill px-2.5 py-1 font-body text-xs font-bold ${STATUS_TONE[value] ?? "bg-chip text-ink-muted"}`}>
+              {value}
+            </span>
+          );
+        },
+      },
+      {
+        id: "history",
+        header: "History",
+        enableSorting: false,
+        enableGrouping: false,
+        cell: ({ row }) => {
+          const pandal = row.original;
+          return (
+            <div className="flex flex-col gap-1 font-body text-xs">
+              <span className="text-ink-muted">
+                {pandal.yearCount === 0 ? "No years added" : `${pandal.yearCount} year${pandal.yearCount === 1 ? "" : "s"} on record`}
+              </span>
+              <span
+                className={`inline-flex w-fit items-center gap-1 rounded-pill px-2 py-0.5 font-bold ${
+                  pandal.hasCurrentYearEntry ? "bg-[rgba(127,217,154,.18)] text-[#7FD99A]" : "bg-chip text-ink-muted"
+                }`}
+              >
+                {pandal.hasCurrentYearEntry ? `${CURRENT_YEAR} ✓` : `No ${CURRENT_YEAR} entry`}
+              </span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "updated",
+        accessorKey: "updatedAt",
+        header: "Updated",
+        enableGrouping: false,
+        cell: ({ getValue }) => timeAgo(getValue<string>()),
+      },
+      {
+        id: "actions",
+        header: "",
+        enableSorting: false,
+        enableGrouping: false,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            onClick={() => setDeleteTarget(row.original)}
+            aria-label={`Delete ${row.original.canonicalName}`}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
+          >
+            <span className="material-symbols-rounded text-lg">delete</span>
+          </button>
+        ),
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [cityNameById, selected]
+  );
+
+  const table = useReactTable({
+    data: pandals,
+    columns,
+    state: { sorting, grouping, expanded },
+    onSortingChange: setSorting,
+    onGroupingChange: setGrouping,
+    onExpandedChange: setExpanded,
+    manualSorting: true,
+    enableMultiSort: false,
+    getCoreRowModel: getCoreRowModel(),
+    getGroupedRowModel: getGroupedRowModel(),
+    getExpandedRowModel: getExpandedRowModel(),
+    getRowId: (row) => row._id,
+  });
+
+  if (!ready) return null;
 
   return (
     <AdminShell>
@@ -275,27 +413,83 @@ export default function PandalsListPage() {
             </option>
           ))}
         </Select>
+        {view === "table" && (
+          <Select
+            value={grouping[0] ?? ""}
+            onChange={(e) => {
+              setGrouping(e.target.value ? [e.target.value] : []);
+              setPage(1);
+            }}
+            className="h-12 md:w-48"
+          >
+            {GROUP_OPTIONS.map((g) => (
+              <option key={g.value} value={g.value}>
+                {g.label}
+              </option>
+            ))}
+          </Select>
+        )}
       </div>
 
       {view === "map" ? (
         <>
           <p className="mb-3 font-body text-sm text-ink-muted">
             {mapPandals.length} pandal{mapPandals.length === 1 ? "" : "s"} plotted, matching the filters above — red
-            pins are published, gray pins are everything else.
+            pins are published, gray pins are everything else. Click a pin for details.
           </p>
-          <PandalsClusterMap
-            mapTilesUrl={MAP_TILES_URL}
-            center={
-              mapPandals.length > 0
-                ? {
-                    latitude: mapPandals.reduce((sum, p) => sum + p.latitude, 0) / mapPandals.length,
-                    longitude: mapPandals.reduce((sum, p) => sum + p.longitude, 0) / mapPandals.length,
-                  }
-                : INDIA_CENTER
-            }
-            zoom={mapPandals.length > 0 ? 5 : 4}
-            pandals={mapPandals}
-          />
+          {/* Left/right on desktop, stacked top/bottom on mobile — matches
+              how the map's own pin-click detail view should read on either
+              layout, rather than navigating away from the map entirely. */}
+          <div className="flex flex-col gap-3 md:flex-row">
+            <PandalsClusterMap
+              mapTilesUrl={MAP_TILES_URL}
+              center={
+                mapPandals.length > 0
+                  ? {
+                      latitude: mapPandals.reduce((sum, p) => sum + p.latitude, 0) / mapPandals.length,
+                      longitude: mapPandals.reduce((sum, p) => sum + p.longitude, 0) / mapPandals.length,
+                    }
+                  : INDIA_CENTER
+              }
+              zoom={mapPandals.length > 0 ? 5 : 4}
+              pandals={mapPandals}
+              onSelectPandal={setSelectedMapPandal}
+              className="h-[420px] w-full md:h-[560px] md:flex-1"
+            />
+            <div className="flex flex-col gap-3 rounded-xl border border-border p-4 md:h-[560px] md:w-[300px] md:flex-none md:overflow-y-auto">
+              {selectedMapPandal ? (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-display text-lg font-bold">{selectedMapPandal.canonicalName}</div>
+                      <div className="font-body text-sm text-ink-muted">
+                        {selectedMapPandal.locality ?? "—"} · {cityNameById.get(selectedMapPandal.cityId ?? "") ?? "—"}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMapPandal(null)}
+                      className="flex h-7 w-7 flex-none items-center justify-center rounded-lg text-ink-muted hover:bg-card"
+                    >
+                      <span className="material-symbols-rounded text-lg">close</span>
+                    </button>
+                  </div>
+                  <span
+                    className={`w-fit rounded-pill px-2.5 py-1 font-body text-xs font-bold ${
+                      STATUS_TONE[selectedMapPandal.publicationStatus] ?? "bg-chip text-ink-muted"
+                    }`}
+                  >
+                    {selectedMapPandal.publicationStatus}
+                  </span>
+                  <Link href={`/pandals/${selectedMapPandal.id}`}>
+                    <Button className="w-full">Open pandal</Button>
+                  </Link>
+                </>
+              ) : (
+                <p className="font-body text-sm text-ink-muted">Click a pin on the map to see its details here.</p>
+              )}
+            </div>
+          </div>
         </>
       ) : (
         <>
@@ -313,87 +507,51 @@ export default function PandalsListPage() {
 
       <Table>
         <thead>
-          <TableHeadRow>
-            <Th className="w-10" />
-            <Th>
-              <button type="button" onClick={() => toggleSort("name")} className="flex items-center gap-1">
-                Name {sortBy === "name" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
-              </button>
-            </Th>
-            <Th>City</Th>
-            <Th>
-              <button type="button" onClick={() => toggleSort("locality")} className="flex items-center gap-1">
-                Locality {sortBy === "locality" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
-              </button>
-            </Th>
-            <Th>
-              <button type="button" onClick={() => toggleSort("status")} className="flex items-center gap-1">
-                Status {sortBy === "status" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
-              </button>
-            </Th>
-            <Th>History</Th>
-            <Th>
-              <button type="button" onClick={() => toggleSort("updated")} className="flex items-center gap-1">
-                Updated {sortBy === "updated" && <span className="material-symbols-rounded text-sm">{sortDir === "asc" ? "arrow_upward" : "arrow_downward"}</span>}
-              </button>
-            </Th>
-            <Th className="w-10" />
-          </TableHeadRow>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableHeadRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <Th key={header.id} className={header.column.id === "select" || header.column.id === "actions" ? "w-10" : undefined}>
+                  {header.column.getCanSort() ? (
+                    <button type="button" onClick={header.column.getToggleSortingHandler()} className="flex items-center gap-1">
+                      {flexRender(header.column.columnDef.header, header.getContext())}
+                      {header.column.getIsSorted() && (
+                        <span className="material-symbols-rounded text-sm">
+                          {header.column.getIsSorted() === "desc" ? "arrow_downward" : "arrow_upward"}
+                        </span>
+                      )}
+                    </button>
+                  ) : (
+                    flexRender(header.column.columnDef.header, header.getContext())
+                  )}
+                </Th>
+              ))}
+            </TableHeadRow>
+          ))}
         </thead>
         <tbody>
-          {pandals.map((pandal) => (
-            <Tr key={pandal._id}>
-              <Td>
-                <input
-                  type="checkbox"
-                  checked={selected.has(pandal._id)}
-                  onChange={() => toggleSelected(pandal._id)}
-                  className="h-4 w-4 accent-brand"
-                />
-              </Td>
-              <Td>
-                <Link href={`/pandals/${pandal._id}`} className="font-semibold text-ink hover:text-brand">
-                  {pandal.canonicalName}
-                </Link>
-              </Td>
-              <Td className="text-ink-muted">{cityNameById.get(pandal.cityId) ?? "—"}</Td>
-              <Td className="text-ink-muted">{pandal.locality}</Td>
-              <Td>
-                <span className={`rounded-pill px-2.5 py-1 font-body text-xs font-bold ${STATUS_TONE[pandal.publicationStatus] ?? "bg-chip text-ink-muted"}`}>
-                  {pandal.publicationStatus}
-                </span>
-              </Td>
-              <Td>
-                <div className="flex flex-col gap-1 font-body text-xs">
-                  <span className="text-ink-muted">
-                    {pandal.yearCount === 0
-                      ? "No years added"
-                      : `${pandal.yearCount} year${pandal.yearCount === 1 ? "" : "s"} on record`}
-                  </span>
-                  <span
-                    className={`inline-flex w-fit items-center gap-1 rounded-pill px-2 py-0.5 font-bold ${
-                      pandal.hasCurrentYearEntry
-                        ? "bg-[rgba(127,217,154,.18)] text-[#7FD99A]"
-                        : "bg-chip text-ink-muted"
-                    }`}
+          {table.getRowModel().rows.map((row) =>
+            row.getIsGrouped() ? (
+              <tr key={row.id} className="border-t border-border bg-card/60">
+                <td colSpan={row.getVisibleCells().length} className="px-4 py-2.5">
+                  <button
+                    type="button"
+                    onClick={row.getToggleExpandedHandler()}
+                    className="flex items-center gap-1.5 font-body text-sm font-bold"
                   >
-                    {pandal.hasCurrentYearEntry ? `${CURRENT_YEAR} ✓` : `No ${CURRENT_YEAR} entry`}
-                  </span>
-                </div>
-              </Td>
-              <Td className="text-ink-muted">{timeAgo(pandal.updatedAt)}</Td>
-              <Td>
-                <button
-                  type="button"
-                  onClick={() => setDeleteTarget(pandal)}
-                  aria-label={`Delete ${pandal.canonicalName}`}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
-                >
-                  <span className="material-symbols-rounded text-lg">delete</span>
-                </button>
-              </Td>
-            </Tr>
-          ))}
+                    <span className="material-symbols-rounded text-lg">{row.getIsExpanded() ? "expand_more" : "chevron_right"}</span>
+                    {String(row.getValue(row.groupingColumnId as string))}
+                    <span className="font-body text-xs font-normal text-ink-muted">({row.subRows.length})</span>
+                  </button>
+                </td>
+              </tr>
+            ) : (
+              <Tr key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <Td key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</Td>
+                ))}
+              </Tr>
+            )
+          )}
           {pandals.length === 0 && (
             <tr>
               <td colSpan={8} className="px-4 py-6 text-center text-ink-muted">
@@ -417,7 +575,7 @@ export default function PandalsListPage() {
         confirmLabel="Delete pandal"
       />
 
-      {result && result.totalPages > 1 && (
+      {!isGrouped && result && result.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-3">
           <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
             Previous

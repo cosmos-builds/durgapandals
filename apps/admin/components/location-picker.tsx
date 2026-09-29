@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Map as MapLibreMap } from "maplibre-gl";
+import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
 import { reverseGeocode, searchLocations, type LocationSearchResult, type ReverseGeocodeResult } from "@/lib/admin-api";
 
@@ -42,6 +42,12 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
   const geocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // A real geographic marker (moves with the map, unlike the screen-fixed
+  // pending pin) showing the device's actual GPS position — Google Maps'
+  // "blue dot" convention. Separate from the pending pin because they can
+  // legitimately point at two different places (the admin can drag away
+  // from their own location after locating themselves).
+  const userLocationMarkerRef = useRef<maplibregl.Marker | null>(null);
 
   const hasPendingMove = pending.latitude !== center.latitude || pending.longitude !== center.longitude;
 
@@ -78,6 +84,22 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
   function jumpTo(next: { latitude: number; longitude: number }) {
     mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 16 });
     setPending(next);
+  }
+
+  function showUserLocationDot(position: { latitude: number; longitude: number }) {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!userLocationMarkerRef.current) {
+      const el = document.createElement("div");
+      el.style.width = "16px";
+      el.style.height = "16px";
+      el.style.borderRadius = "50%";
+      el.style.background = "#4285F4";
+      el.style.border = "2px solid white";
+      el.style.boxShadow = "0 0 0 2px rgba(66,133,244,.35), 0 1px 4px rgba(0,0,0,.4)";
+      userLocationMarkerRef.current = new maplibregl.Marker({ element: el });
+    }
+    userLocationMarkerRef.current.setLngLat([position.longitude, position.latitude]).addTo(map);
   }
 
   function useThisLocation() {
@@ -121,6 +143,7 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
       (position) => {
         setLocating(false);
         const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        showUserLocationDot(next);
         jumpTo(next);
         scheduleReverseGeocode(next);
       },
@@ -140,6 +163,12 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      userLocationMarkerRef.current?.remove();
+    };
   }, []);
 
   return (

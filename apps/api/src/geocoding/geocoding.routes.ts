@@ -1,18 +1,16 @@
 import type { FastifyPluginAsync } from "fastify";
 import { z } from "zod";
-import { CityModel } from "@durgapandals/database";
 
 const searchQuerySchema = z.object({
   q: z.string().min(2).max(200),
-  // Optional — only ever used to resolve a countryCode (always "in" for this
-  // app in practice). Not required: admin's pandal editor has no "current
-  // city" context to send, and the search itself is already unrestricted
-  // India-wide (see the /search handler), so there's nothing else a city
-  // would gate here.
+  // No longer used to restrict results (search is always India-wide — see
+  // below) — kept optional so existing callers that still send it don't
+  // break; safely ignored otherwise.
   citySlug: z.string().optional(),
   // Optional: bias to wherever the user is actually looking (e.g. the
-  // current pin in the Add Pandal flow) rather than always the city's fixed
-  // centre — "near me" should mean near the pin, not near city hall.
+  // current pending pin in the Add Pandal flow / admin picker) rather than
+  // always the city's fixed centre — "near me" should mean near the pin,
+  // not near city hall.
   lat: z.coerce.number().optional(),
   lon: z.coerce.number().optional(),
 });
@@ -22,26 +20,73 @@ const reverseQuerySchema = z.object({
   lon: z.coerce.number(),
 });
 
-interface NominatimResult {
-  display_name: string;
-  lat: string;
-  lon: string;
-  address?: {
-    road?: string;
+// Roughly India's mainland + island territories bounding box — same
+// constant apps/api/src/cities/cities.routes.ts already uses for its Photon
+// city search, kept in sync here rather than shared, since it's a single
+// literal and pulling in a shared module for one array isn't worth it.
+const INDIA_BBOX = "68,6,98,38";
+
+interface PhotonFeature {
+  properties: {
+    name?: string;
+    housenumber?: string;
+    street?: string;
+    locality?: string;
     suburb?: string;
-    neighbourhood?: string;
-    city_district?: string;
+    district?: string;
     city?: string;
+    county?: string;
+    state?: string;
+    country?: string;
+  };
+  geometry: { coordinates: [number, number] };
+}
+
+interface PhotonResponse {
+  features: PhotonFeature[];
+}
+
+function buildLabel(p: PhotonFeature["properties"]): string {
+  const streetLine = [p.housenumber, p.street].filter(Boolean).join(" ") || p.name;
+  const parts = [streetLine, p.locality ?? p.suburb ?? p.district, p.city, p.state, p.country].filter(
+    (part): part is string => Boolean(part)
+  );
+  // A locality search often repeats itself across two of these fields (e.g.
+  // name === locality) — dedup while preserving order so the label doesn't
+  // read "Anna Nagar, Anna Nagar, Chennai".
+  return Array.from(new Set(parts)).join(", ");
+}
+
+function toResult(feature: PhotonFeature) {
+  const p = feature.properties;
+  return {
+    label: buildLabel(p),
+    latitude: feature.geometry.coordinates[1],
+    longitude: feature.geometry.coordinates[0],
+    locality: p.locality ?? p.suburb ?? p.district,
+    road: p.street,
   };
 }
 
 // Free-tier geocoding behind a provider boundary (spec §5.4, §31.5) — the
-// browser can't send Nominatim's required User-Agent header itself, so this
-// proxies the request server-side. Pandals can be added anywhere in India
-// (not just near the visitor's currently-selected city), so this searches
-// all of India like Google Maps would — the live pin (when present) only
-// nudges ranking toward it for disambiguating same-named places, it never
-// excludes a legitimately distant, correctly-named result.
+// browser can't send Photon/Nominatim's required User-Agent header itself,
+// so this proxies the request server-side.
+//
+// Runs on Photon (Komoot's OSM-backed geocoder), the same provider
+// apps/api/src/cities/cities.routes.ts already uses for city search — it
+// does edge-ngram/prefix matching (unlike Nominatim, which tokenizes on
+// whole words and returned nothing for a still-being-typed query), and its
+// public instance tolerates the request rate an interactive search box
+// produces. Nominatim's public server enforces a strict ~1 request/second
+// limit; this endpoint's previous Nominatim-backed version was silently
+// rate-limited by ordinary fast typing, which looked exactly like "no
+// results" with no error surfaced anywhere.
+//
+// Pandals can be added anywhere in India (not just near the visitor's
+// currently-selected city), so this always searches all of India — the
+// live pin (when present) only nudges ranking toward it via Photon's native
+// lat/lon bias, it never excludes a legitimately distant, correctly-named
+// result.
 export const geocodingRoutes: FastifyPluginAsync = async (app) => {
   await app.register(import("@fastify/rate-limit"), {
     max: 30,
@@ -50,40 +95,26 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
 
   app.get("/search", async (request, reply) => {
     const query = searchQuerySchema.parse(request.query);
-    const city = query.citySlug ? await CityModel.findOne({ slug: query.citySlug }) : null;
 
-    const url = new URL("https://nominatim.openstreetmap.org/search");
+    const url = new URL("https://photon.komoot.io/api/");
     url.searchParams.set("q", query.q);
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("addressdetails", "1");
     url.searchParams.set("limit", "8");
-    url.searchParams.set("countrycodes", (city?.countryCode ?? "in").toLowerCase());
-
-    // Only nudge ranking toward the live pin when we actually have one (mid-
-    // flow, dragging the map) — a same-named locality near the pin should
-    // outrank an unrelated one elsewhere. No pin yet (first search) means no
-    // bias at all: unrestricted India-wide search, same as Google Maps.
-    // `bounded` is intentionally omitted — setting it to 1 hard-excludes
-    // anything outside the box (e.g. searching "Bhopal" while a Pune pin is
-    // active returned zero results); leaving it unset makes viewbox a soft
-    // ranking preference instead of a filter.
+    url.searchParams.set("lang", "en");
+    // Hard filter, not a ranking bias — Photon's `bbox` actually excludes
+    // non-Indian results instead of just deprioritizing them.
+    url.searchParams.set("bbox", INDIA_BBOX);
     if (query.lat != null && query.lon != null) {
-      const delta = 0.06;
-      const viewbox = [query.lon - delta, query.lat + delta, query.lon + delta, query.lat - delta].join(",");
-      url.searchParams.set("viewbox", viewbox);
+      url.searchParams.set("lat", String(query.lat));
+      url.searchParams.set("lon", String(query.lon));
     }
 
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)",
-        "Accept-Language": "en",
-      },
+      headers: { "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)" },
     });
-
     if (!response.ok) return reply.code(502).send({ error: "Geocoding provider unavailable" });
 
-    const results = (await response.json()) as NominatimResult[];
-    return results.map(toResult);
+    const data = (await response.json()) as PhotonResponse;
+    return data.features.map(toResult);
   });
 
   // Backs the "drag the pin, address fills in" pattern from Google Maps —
@@ -93,33 +124,19 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
   app.get("/reverse", async (request, reply) => {
     const query = reverseQuerySchema.parse(request.query);
 
-    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    const url = new URL("https://photon.komoot.io/reverse");
     url.searchParams.set("lat", String(query.lat));
     url.searchParams.set("lon", String(query.lon));
-    url.searchParams.set("format", "jsonv2");
-    url.searchParams.set("addressdetails", "1");
-    url.searchParams.set("zoom", "18");
+    url.searchParams.set("lang", "en");
 
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)",
-        "Accept-Language": "en",
-      },
+      headers: { "User-Agent": "DurgaPandal.com (contact: verify@durgapandal.com)" },
     });
-
     if (!response.ok) return reply.code(502).send({ error: "Geocoding provider unavailable" });
 
-    const result = (await response.json()) as NominatimResult;
-    return toResult(result);
+    const data = (await response.json()) as PhotonResponse;
+    const feature = data.features[0];
+    if (!feature) return reply.code(404).send({ error: "No address found for this location" });
+    return toResult(feature);
   });
 };
-
-function toResult(result: NominatimResult) {
-  return {
-    label: result.display_name,
-    latitude: Number(result.lat),
-    longitude: Number(result.lon),
-    locality: result.address?.suburb ?? result.address?.neighbourhood ?? result.address?.city_district,
-    road: result.address?.road,
-  };
-}

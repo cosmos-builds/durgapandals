@@ -1,0 +1,2553 @@
+[
+  {
+    "pandal": {
+      "id": 1001,
+      "cityId": "bhopal",
+      "slug": "teela-jamalpura-maa-durga-utsav",
+      "canonicalName": "Teela Jamalpura Maa Durga Utsav",
+      "alternateNames": [
+        "Shri Maa Durga Utsav Samiti Moti Quarter",
+        "Teela Jamalpura Durga Jhanki"
+      ],
+      "organizerName": "Shri Maa Durga Utsav Samiti",
+      "latitude": 23.2842,
+      "longitude": 77.4042,
+      "address": "Moti Quarter Ground, Near Police Thana, Teela Jamalpura, Bhopal, Madhya Pradesh",
+      "locality": "Teela Jamalpura",
+      "landmark": "Police Thana Teela Jamalpura",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/teela-jamalpura-maa-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "VERIFIED",
+      "publicationStatus": "PUBLISHED",
+      "addedBy": "SYSTEM_RESEARCHED",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6001,
+      "pandalId": 1001,
+      "year": 2026,
+      "displayName": "Teela Jamalpura Maa Durga Utsav",
+      "theme": "Niagara Falls Replica",
+      "description": "Featuring a grand 50-foot high and 150-foot wide jhanki modeled after Niagara Falls with actual cascading water structures and beautiful lighting effects to celebrate their 25th milestone year.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "water-theme",
+        "grand",
+        "landmark-replica"
+      ],
+      "tags": [
+        "niagara-falls",
+        "milestone-25th",
+        "cascading-water",
+        "lighting"
+      ],
+      "featured": true,
+      "publicationStatus": "PUBLISHED",
+      "verificationStatus": "VERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/reel/Dd17ppbMjOi/",
+        "sourceLabel": "Bhopal Culture Instagram Reel",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.95,
+        "quote": "Shri Maa Durga Utsav Samiti constructs a massive 50ft high Niagara Falls theme waterfall.",
+        "notes": "Officially verified ground construction video proof for 2026."
+      },
+      {
+        "sourceUrl": "https://www.facebook.com/bhopalforu/videos/1398053978529749/",
+        "sourceLabel": "Bhopal For U Video Update",
+        "sourceType": "FACEBOOK",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.95,
+        "quote": "Bhopal mein pehli baar... Shri Maa Durga Utsav Samiti Moti Quarter",
+        "notes": "Supporting media coverage."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1002,
+      "cityId": "bhopal",
+      "slug": "10-no-market-durga-utsav",
+      "canonicalName": "10 No. Market Durga Utsav",
+      "alternateNames": [
+        "10 Number Stop Market Durga Utsav",
+        "Nav Yuvak Durga Utsav Samiti Arera Colony"
+      ],
+      "organizerName": "Nav Yuvak Durga Utsav Samiti",
+      "latitude": 23.2241,
+      "longitude": 77.4265,
+      "address": "Smart Parking, 10 Number Stop Market, Arera Colony, Bhopal, Madhya Pradesh",
+      "locality": "Arera Colony",
+      "landmark": "Smart Parking area",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/10-no-market-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6002,
+      "pandalId": 1002,
+      "year": 2026,
+      "displayName": "10 No. Market Durga Utsav",
+      "theme": "Dubai Miracle Garden",
+      "description": "Celebrating its milestone 20th year with intricate floral installations, lighting marvels, and extensive conceptual flower setups.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "floral",
+        "family-friendly",
+        "decorative"
+      ],
+      "tags": [
+        "festival",
+        "lighting",
+        "theme-pandal",
+        "flower-setup"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/reel/DAllOXYMNQM/",
+        "sourceLabel": "Instagram reel reference",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.8,
+        "quote": "The event celebrates its 20th year with a Dubai Miracle Garden theme.",
+        "notes": "Sourced from local proposal documentation logs."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1003,
+      "cityId": "bhopal",
+      "slug": "gamon-india-building-pandal",
+      "canonicalName": "Gamon India Building Pandal",
+      "alternateNames": [
+        "New Market Gamon Building Pandal",
+        "TT Nagar Hindu Utsav Samiti Jhanki"
+      ],
+      "organizerName": "Hindu Utsav Samiti / Local Cultural Committee",
+      "latitude": 23.2428,
+      "longitude": 77.3995,
+      "address": "Ground in front of Gamon India Building, Opposite Jain Mandir, T.T. Nagar, Bhopal, Madhya Pradesh",
+      "locality": "T.T. Nagar",
+      "landmark": "Opposite Jain Mandir",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/gamon-india-building-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6003,
+      "pandalId": 1003,
+      "year": 2026,
+      "displayName": "Gamon India Building Pandal",
+      "theme": "Environmental Conservation (Paryavaran Sanrakshan)",
+      "description": "Explicitly designed around environmental protection, featuring detailed artificial mountains, lush greenery, wild animal installations, and messages on saving forests, wildlife, and water.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "eco-friendly",
+        "educational",
+        "nature-theme"
+      ],
+      "tags": [
+        "paryavaran",
+        "social-message",
+        "greenery",
+        "wildlife"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.dharmiklife.com/blogs/navratri/durga-puja-theme-pandals",
+        "sourceLabel": "Dharmik Life Theme Blog",
+        "sourceType": "WEBSITE",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.7,
+        "quote": "Pandal features detailed mountains and lush greenery for conservation theme.",
+        "notes": "Historical/trend blueprint pairing."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1004,
+      "cityId": "bhopal",
+      "slug": "new-market-roshanpura-square-durga-utsav",
+      "canonicalName": "New Market / Roshanpura Square Durga Utsav",
+      "alternateNames": [
+        "Roshanpura Chauraha Durga Jhanki",
+        "New Market Vyapari Pandal"
+      ],
+      "organizerName": "New Market Vyapari Durga Utsav Samiti",
+      "latitude": 23.2445,
+      "longitude": 77.4012,
+      "address": "Roshanpura Square, New Market, Bhopal, Madhya Pradesh",
+      "locality": "New Market",
+      "landmark": "Roshanpura Square intersection",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/new-market-roshanpura-square-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6004,
+      "pandalId": 1004,
+      "year": 2026,
+      "displayName": "New Market / Roshanpura Square Durga Utsav",
+      "theme": "Krishna Janmabhoomi Temple & Khatu Shyam Mandir Replica",
+      "description": "Spanning a massive 12,000 square feet, bringing the spiritual essence of Mathura with intricate temple architectural replicas and large screen live LED feeds.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "temple-replica",
+        "high-budget",
+        "grand"
+      ],
+      "tags": [
+        "mathura",
+        "khatu-shyam",
+        "led-broadcast",
+        "crowd-favorite"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.dharmiklife.com/blogs/navratri/durga-puja-theme-pandals",
+        "sourceLabel": "Dharmik Life Database",
+        "sourceType": "WEBSITE",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.7,
+        "quote": "Brings the spiritual essence of Mathura to Madhya Pradesh.",
+        "notes": "Sourced from historical design proposal data."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1005,
+      "cityId": "bhopal",
+      "slug": "vijay-market-durga-utsav-barkhera",
+      "canonicalName": "Vijay Market Durga Utsav (Barkhera)",
+      "alternateNames": [
+        "Barkhera BHEL Vijay Market Jhanki",
+        "Sarangpur Hanuman Mandir Replica Bhopal"
+      ],
+      "organizerName": "Vijay Market Durga Utsav Samiti",
+      "latitude": 23.2305,
+      "longitude": 77.4642,
+      "address": "Vijay Market, Barkhera, BHEL, Bhopal, Madhya Pradesh",
+      "locality": "Barkhera",
+      "landmark": "Vijay Market Square",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/vijay-market-durga-utsav-barkhera",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6005,
+      "pandalId": 1005,
+      "year": 2026,
+      "displayName": "Vijay Market Durga Utsav (Barkhera)",
+      "theme": "Shree Kashtabhanjan Dev Hanumanji Temple Replica",
+      "description": "A towering 100 feet tall structure spanning a 6,400 square foot layout mimicking the famous Sarangpur temple architecture with complex lighting arrays.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "temple-replica",
+        "tall-structure",
+        "lighting"
+      ],
+      "tags": [
+        "bhel-township",
+        "100-feet",
+        "sarangpur-replica",
+        "external-lighting"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1006,
+      "cityId": "bhopal",
+      "slug": "idgah-hills-traditional-bengali-durga-puja",
+      "canonicalName": "Idgah Hills Traditional Bengali Durga Puja",
+      "alternateNames": [
+        "Shahjahanabad City Traditional Puja",
+        "Judges Colony Bengali Pandal"
+      ],
+      "organizerName": "Shahjahanabad City Durga Utsav Committee",
+      "latitude": 23.2685,
+      "longitude": 77.3892,
+      "address": "Sindhi Community Hall, Judges Colony, Idgah Hills, Bhopal, Madhya Pradesh",
+      "locality": "Idgah Hills",
+      "landmark": "Sindhi Community Hall",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/idgah-hills-traditional-bengali-durga-puja",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": false,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6006,
+      "pandalId": 1006,
+      "year": 2026,
+      "displayName": "Idgah Hills Traditional Bengali Durga Puja",
+      "theme": "Traditional West Bengal Cultural Heritage",
+      "description": "Celebrating over 50 years of rich legacy, focusing purely on authentic classical rituals, traditional daker saaj, and dynamic live Dhunuchi Naach performances.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "traditional",
+        "bengali-style",
+        "heritage"
+      ],
+      "tags": [
+        "dhunuchi-naach",
+        "50-years-legacy",
+        "classical",
+        "authentic"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1007,
+      "cityId": "bhopal",
+      "slug": "arera-colony-bangiya-parishad-durga-puja",
+      "canonicalName": "Arera Colony Bangiya Parishad Durga Puja",
+      "alternateNames": [
+        "Bangiya Parishad E-7 Pandal",
+        "E7 Arera Colony Traditional Bengali Puja"
+      ],
+      "organizerName": "Bangiya Parishad Bhopal",
+      "latitude": 23.2182,
+      "longitude": 77.4312,
+      "address": "Bangiya Parishad Ground, E-7, Arera Colony, Bhopal, Madhya Pradesh",
+      "locality": "Arera Colony",
+      "landmark": "Near 11 Number Market",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/arera-colony-bangiya-parishad-durga-puja",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6007,
+      "pandalId": 1007,
+      "year": 2026,
+      "displayName": "Arera Colony Bangiya Parishad Durga Puja",
+      "theme": "Eco-Friendly Traditional Mati Environment",
+      "description": "Known for its peaceful clay-based decor, complete absence of loud music in favor of Vedic chants, and serving authentic community-cooked Bhog like Khichuri and Labra daily.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "eco-friendly",
+        "traditional",
+        "bhog-serving"
+      ],
+      "tags": [
+        "mati-decor",
+        "vedic-chants",
+        "authentic-bhog",
+        "peaceful-zone"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1008,
+      "cityId": "bhopal",
+      "slug": "jawahar-chowk-durga-utsav",
+      "canonicalName": "Jawahar Chowk Durga Utsav",
+      "alternateNames": [
+        "Jawahar Chowk Chauraha Jhanki",
+        "Terracotta Craft Pandal Bhopal"
+      ],
+      "organizerName": "Jawahar Chowk Durga Utsav Samiti",
+      "latitude": 23.2415,
+      "longitude": 77.3878,
+      "address": "Main Ground, Jawahar Chowk, Bhopal, Madhya Pradesh",
+      "locality": "Jawahar Chowk",
+      "landmark": "Jawahar Chowk Main Square",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/jawahar-chowk-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6008,
+      "pandalId": 1008,
+      "year": 2026,
+      "displayName": "Jawahar Chowk Durga Utsav",
+      "theme": "Regional Heritage & Terracotta Artistry",
+      "description": "Leverages exquisitely arranged terracotta installations, rustic jute ropes, and bamboo mats to build an organic regional heritage experience featuring evening live bhajan sets.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "artistic",
+        "handcrafted",
+        "eco-friendly"
+      ],
+      "tags": [
+        "terracotta",
+        "jute-craft",
+        "bamboo-lattice",
+        "live-bhajans"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1009,
+      "cityId": "bhopal",
+      "slug": "hindu-ekta-mitra-mandal-karond",
+      "canonicalName": "Hindu Ekta Mitra Mandal (Karond)",
+      "alternateNames": [
+        "Karond Jail Road Durga Jhanki",
+        "Sisodia Petrol Pump Pandal"
+      ],
+      "organizerName": "Hindu Ekta Mitra Mandal",
+      "latitude": 23.2985,
+      "longitude": 77.4128,
+      "address": "Near Sisodia Petrol Pump, Jail Road, Karond, Bhopal, Madhya Pradesh",
+      "locality": "Karond",
+      "landmark": "Sisodia Petrol Pump",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/hindu-ekta-mitra-mandal-karond",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6009,
+      "pandalId": 1009,
+      "year": 2026,
+      "displayName": "Hindu Ekta Mitra Mandal (Karond)",
+      "theme": "Grand High-Scale Musical Gathering & Massive Idols",
+      "description": "Famous for some of the grandest and tallest physical idol installations accompanied by multi-artist simultaneous musical events from 7 distinct setups.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "grand",
+        "musical",
+        "massive-idols"
+      ],
+      "tags": [
+        "jail-road",
+        "mega-idols",
+        "orchestra",
+        "high-crowd"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/reel/DAllOXYMNQM/",
+        "sourceLabel": "Instagram Regional Mentions",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.8,
+        "quote": "Highly coordinated large scale event in Karond.",
+        "notes": "Verified venue continuity."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1010,
+      "cityId": "bhopal",
+      "slug": "new-market-bengali-durga-bari",
+      "canonicalName": "New Market Bengali Durga Bari",
+      "alternateNames": [
+        "Kali Bari Complex New Market",
+        "Gramin Bengal Theme Pandal"
+      ],
+      "organizerName": "New Market Bengali Association",
+      "latitude": 23.2431,
+      "longitude": 77.3982,
+      "address": "Kali Bari Complex, Near New Market, Bhopal, Madhya Pradesh",
+      "locality": "New Market",
+      "landmark": "Kali Bari Complex",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/new-market-bengali-durga-bari",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6010,
+      "pandalId": 1010,
+      "year": 2026,
+      "displayName": "New Market Bengali Durga Bari",
+      "theme": "Rural Bengal (Gramin Bengal) Rustic Charm",
+      "description": "Replicates an ancient village setting using handcrafted clay structures, straw, and organic fibers. Houses a classical Daaker Saaj idol and hosts an Ananda Mela marketplace.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "traditional",
+        "village-theme",
+        "cultural"
+      ],
+      "tags": [
+        "daaker-saaj",
+        "ananda-mela",
+        "kali-bari",
+        "rural-aesthetic"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1011,
+      "cityId": "bhopal",
+      "slug": "shahpura-lake-front-pandal",
+      "canonicalName": "Shahpura Lake Front Pandal",
+      "alternateNames": [
+        "Shahpura Lake Cultural Jhanki",
+        "Lake Front Cave Temple Pandal"
+      ],
+      "organizerName": "Shahpura Cultural and Festive Committee",
+      "latitude": 23.2095,
+      "longitude": 77.4182,
+      "address": "Lake Front Ground, Near Shahpura Lake, Bhopal, Madhya Pradesh",
+      "locality": "Shahpura",
+      "landmark": "Shahpura Lake Promenade",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/shahpura-lake-front-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6011,
+      "pandalId": 1011,
+      "year": 2026,
+      "displayName": "Shahpura Lake Front Pandal",
+      "theme": "Spiritual Peace, Ancient Cave Temples & Laser Projection",
+      "description": "Outer facade meticulously sculpted like ancient cave shrines. Features automated evening laser projection mapping over the lake front charting mythological tales.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "scenic",
+        "laser-show",
+        "modern-tech"
+      ],
+      "tags": [
+        "lake-front",
+        "cave-temple",
+        "laser-mapping",
+        "photography-hub"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1012,
+      "cityId": "bhopal",
+      "slug": "piplani-bhel-durga-utsav",
+      "canonicalName": "Piplani BHEL Durga Utsav",
+      "alternateNames": [
+        "Piplani BHEL Township Puja",
+        "Akshardham Replica Bhopal Piplani"
+      ],
+      "organizerName": "Piplani Durga Puja Samiti",
+      "latitude": 23.2482,
+      "longitude": 77.4615,
+      "address": "BHEL Township Grounds, Piplani, Bhopal, Madhya Pradesh",
+      "locality": "Piplani",
+      "landmark": "BHEL Township Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/piplani-bhel-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6012,
+      "pandalId": 1012,
+      "year": 2026,
+      "displayName": "Piplani BHEL Durga Utsav",
+      "theme": "Akshardham Temple Architectural Copy",
+      "description": "One of the oldest community-corporate joint celebrations featuring a highly complex architectural mockup of Akshardham temple paired with a massive consumer funfair.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "temple-replica",
+        "amusement-fair",
+        "historic-venue"
+      ],
+      "tags": [
+        "bhel-township",
+        "akshardham",
+        "mela-stalls",
+        "giant-wheel"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1013,
+      "cityId": "bhopal",
+      "slug": "anna-nagar-durga-utsav-bhopal-ki-maharani",
+      "canonicalName": "Anna Nagar Durga Utsav (Bhopal ki Maharani)",
+      "alternateNames": [
+        "Bhopal ki Maharani Kali Idol",
+        "Anna Nagar Govindpura Grand Pandal"
+      ],
+      "organizerName": "Anna Nagar Durga Utsav Samiti",
+      "latitude": 23.2495,
+      "longitude": 77.4498,
+      "address": "Anna Nagar Main Ground, Near Govindpura, Bhopal, Madhya Pradesh",
+      "locality": "Govindpura",
+      "landmark": "Anna Nagar Main Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/anna-nagar-durga-utsav-bhopal-ki-maharani",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6013,
+      "pandalId": 1013,
+      "year": 2026,
+      "displayName": "Anna Nagar Durga Utsav (Bhopal ki Maharani)",
+      "theme": "Bhopal ki Maharani Majestic Kali Worship",
+      "description": "Widely known across the central state for its highly stylized, iconic, and imposing expression of Goddess Kali. Famous for midnight high-energy Maha Aarti programs.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "iconic-idol",
+        "high-devotion",
+        "energetic"
+      ],
+      "tags": [
+        "bhopal-ki-maharani",
+        "kali-puja",
+        "midnight-aarti",
+        "high-crowds"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1014,
+      "cityId": "bhopal",
+      "slug": "bharti-niketan-durga-utsav",
+      "canonicalName": "Bharti Niketan Durga Utsav",
+      "alternateNames": [
+        "Bharti Niketan BHEL Colony Pandal",
+        "Bharti Niketan Kali Jhanki"
+      ],
+      "organizerName": "Bharti Niketan Cultural Committee",
+      "latitude": 23.2458,
+      "longitude": 77.4412,
+      "address": "Bharti Niketan Ground, Near Piplani/BHEL, Bhopal, Madhya Pradesh",
+      "locality": "BHEL Colony",
+      "landmark": "Bharti Niketan Community Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/bharti-niketan-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6014,
+      "pandalId": 1014,
+      "year": 2026,
+      "displayName": "Bharti Niketan Durga Utsav",
+      "theme": "Magnificent Sculpted Warrior Goddess Kali",
+      "description": "Features a colossal, beautifully detailed physical idol framework paired with localized pinpoint dynamic spotlights to illustrate the detailed crown ornamentations.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "massive-idols",
+        "artistic-lighting",
+        "devotional"
+      ],
+      "tags": [
+        "kali-murti",
+        "spotlights",
+        "ornate-decor",
+        "bhel-region"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1015,
+      "cityId": "bhopal",
+      "slug": "gautam-nagar-kali-bari",
+      "canonicalName": "Gautam Nagar Kali Bari",
+      "alternateNames": [
+        "Gautam Nagar Puja Association Ground",
+        "Bhasma Aarti Theme Pandal"
+      ],
+      "organizerName": "Gautam Nagar Welfare and Puja Association",
+      "latitude": 23.2612,
+      "longitude": 77.4245,
+      "address": "Gautam Nagar Ground, Bhopal, Madhya Pradesh",
+      "locality": "Gautam Nagar",
+      "landmark": "Gautam Nagar Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/gautam-nagar-kali-bari",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6015,
+      "pandalId": 1015,
+      "year": 2026,
+      "displayName": "Gautam Nagar Kali Bari",
+      "theme": "Mahakal Shiva Integration & Live Ujjain Style Bhasma Aarti",
+      "description": "Integrates classical Durga forms with a massive background structural setup of Lord Shiva (Mahakal). Spotlights an intense rhythmic live Bhasma Aarti showcase on Maha Panchami.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "spiritual",
+        "ritual-heavy",
+        "shiva-theme"
+      ],
+      "tags": [
+        "bhasma-aarti",
+        "mahakal",
+        "panchami-event",
+        "rhythmic-drums"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1016,
+      "cityId": "bhopal",
+      "slug": "suraj-nagar-durga-jhanki",
+      "canonicalName": "Suraj Nagar Durga Jhanki",
+      "alternateNames": [
+        "Suraj Nagar Intersection Pandal",
+        "Raudra Roop Kali Jhanki Bhopal"
+      ],
+      "organizerName": "Suraj Nagar Utsav Samiti",
+      "latitude": 23.2185,
+      "longitude": 77.3412,
+      "address": "Suraj Nagar Main Intersection Ground, Bhopal, Madhya Pradesh",
+      "locality": "Suraj Nagar",
+      "landmark": "Main Intersection Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/suraj-nagar-durga-jhanki",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6016,
+      "pandalId": 1016,
+      "year": 2026,
+      "displayName": "Suraj Nagar Durga Jhanki",
+      "theme": "Fierce Warrior Raudra Roop Form of Kali",
+      "description": "Dominating the western sector celebrations, this venue presents highly detailed action postures of the Goddess defeating demons, flanked by a massive street-food mela.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "action-sculptures",
+        "fairground",
+        "suburban-hub"
+      ],
+      "tags": [
+        "raudra-roop",
+        "kali",
+        "street-food-fair",
+        "western-bhopal"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1017,
+      "cityId": "bhopal",
+      "slug": "mp-nagar-zone-ii-durga-utsav",
+      "canonicalName": "MP Nagar Zone-II Durga Utsav",
+      "alternateNames": [
+        "Konark Sun Temple Replica Bhopal",
+        "MP Nagar Commercial Hub Pandal"
+      ],
+      "organizerName": "MP Nagar Vyapari Utsav Samiti",
+      "latitude": 23.2325,
+      "longitude": 77.4342,
+      "address": "Main Ground, Zone-II, MP Nagar (Near Allahabad Bank square), Bhopal, Madhya Pradesh",
+      "locality": "MP Nagar",
+      "landmark": "Near Allahabad Bank square",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/mp-nagar-zone-ii-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6017,
+      "pandalId": 1017,
+      "year": 2026,
+      "displayName": "MP Nagar Zone-II Durga Utsav",
+      "theme": "Sun Temple of Konark Architectural Replica",
+      "description": "Constructed in the city's commercial downtown, replicating the giant stone wheels, pillars, and step carvings of Konark using automated moving focal spotlights.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "architectural",
+        "high-budget",
+        "business-hub"
+      ],
+      "tags": [
+        "konark-wheels",
+        "sun-temple",
+        "moving-spots",
+        "zone-2-market"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/reel/DAllOXYMNQM/",
+        "sourceLabel": "Instagram Regional Feeds",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.8,
+        "quote": "MP Nagar Zone II hosts high budget structural installations.",
+        "notes": "Verified business district venue profile."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1018,
+      "cityId": "bhopal",
+      "slug": "shahjahanabad-model-ground-pandal",
+      "canonicalName": "Shahjahanabad Model Ground Pandal",
+      "alternateNames": [
+        "Model Ground Maritime Jhanki",
+        "Old City Ship Style Pandal"
+      ],
+      "organizerName": "Model Ground Durga Samiti",
+      "latitude": 23.2715,
+      "longitude": 77.3945,
+      "address": "Model Ground, Shahjahanabad, Bhopal, Madhya Pradesh",
+      "locality": "Shahjahanabad",
+      "landmark": "Model Ground Sports Complex",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/shahjahanabad-model-ground-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6018,
+      "pandalId": 1018,
+      "year": 2026,
+      "displayName": "Shahjahanabad Model Ground Pandal",
+      "theme": "Ancient Indian Maritime Heritage & Historic Vessel",
+      "description": "The entire entrance is crafted like a massive wooden maritime vessel rising from ocean waves, built by local artisans using organic clay panels and terracotta fittings.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "creative",
+        "maritime-theme",
+        "handicraft"
+      ],
+      "tags": [
+        "model-ground",
+        "ship-facade",
+        "ancient-india",
+        "artisan-craft"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1019,
+      "cityId": "bhopal",
+      "slug": "south-t-t-nagar-kali-bari",
+      "canonicalName": "South T.T. Nagar Kali Bari",
+      "alternateNames": [
+        "South TT Nagar Bengali Association Pandal",
+        "Tribal Art Theme Durga Puja"
+      ],
+      "organizerName": "South TT Nagar Bengali Association",
+      "latitude": 23.2382,
+      "longitude": 77.3965,
+      "address": "Kali Bari Complex, South T.T. Nagar, Bhopal, Madhya Pradesh",
+      "locality": "South T.T. Nagar",
+      "landmark": "South TT Nagar Kali Bari",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/south-t-t-nagar-kali-bari",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6019,
+      "pandalId": 1019,
+      "year": 2026,
+      "displayName": "South T.T. Nagar Kali Bari",
+      "theme": "Indigenous Indian Tribal Art & Heritage (Adivasi Sanskriti)",
+      "description": "Marking its landmark 70th platinum year. Fully decorated by regional women using rustic Warli art drawings, raw bamboo structures, and organic earthy pigments.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "tribal-art",
+        "eco-friendly",
+        "legacy-70th"
+      ],
+      "tags": [
+        "warli-paintings",
+        "70-years",
+        "adivasi-culture",
+        "presidents-honour"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.freepressjournal.in/bhopal/bhopal-bengalis-in-city-all-set-to-welcome-maa-durga-women-decorate-kali-bari-on-tribal-theme-in-presidents-honour",
+        "sourceLabel": "Free Press Journal Report",
+        "sourceType": "WEBSITE",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.85,
+        "quote": "Bhopal Bengalis decorate South TT Nagar Kali Bari on tribal theme.",
+        "notes": "Historical record anchoring the venue's massive heritage stature."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1020,
+      "cityId": "bhopal",
+      "slug": "priyanka-nagar-bengali-kali-bari",
+      "canonicalName": "Priyanka Nagar Bengali Kali Bari",
+      "alternateNames": [
+        "Kolar Road Dakshineswar Replica",
+        "Priyanka Nagar Main Ground Puja"
+      ],
+      "organizerName": "Kolar Road Cultural & Puja Committee",
+      "latitude": 23.1895,
+      "longitude": 77.4115,
+      "address": "Near Priyanka Nagar Main Ground, Kolar Road, Bhopal, Madhya Pradesh",
+      "locality": "Kolar Road",
+      "landmark": "Priyanka Nagar Main Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/priyanka-nagar-bengali-kali-bari",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6020,
+      "pandalId": 1020,
+      "year": 2026,
+      "displayName": "Priyanka Nagar Bengali Kali Bari",
+      "theme": "Dakshineswar Kali Temple Architectural Facade",
+      "description": "Extends festive setups into the sprawling residential Kolar sector, building a high-fidelity replica of the iconic Kolkata temple alongside local sweet bazaars.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "temple-replica",
+        "residential-hub",
+        "bengali-style"
+      ],
+      "tags": [
+        "dakshineswar-replica",
+        "kolar-puja",
+        "sweets-bazaar",
+        "family-crowds"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1021,
+      "cityId": "bhopal",
+      "slug": "bhel-township-sector-a-pandal",
+      "canonicalName": "BHEL Township Sector-A Pandal",
+      "alternateNames": [
+        "Berkhera Sector A Varanasi Jhanki",
+        "Varanasi Sacred Ghats Bhopal Setup"
+      ],
+      "organizerName": "Sector-A Durga Puja Committee",
+      "latitude": 23.2355,
+      "longitude": 77.4685,
+      "address": "Main Community Center Ground, Sector-A, Berkhera, BHEL, Bhopal, Madhya Pradesh",
+      "locality": "Berkhera",
+      "landmark": "Sector-A Community Center",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/bhel-township-sector-a-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6021,
+      "pandalId": 1021,
+      "year": 2026,
+      "displayName": "BHEL Township Sector-A Pandal",
+      "theme": "Sacred Ghats & Dynamic Ganga Aarti of Varanasi",
+      "description": "Features stepped wooden stage platforms mimicking riverbanks, paired with rhythmic evening musical performances utilizing multi-tiered brass lamps.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "experiential",
+        "spiritual",
+        "performance-heavy"
+      ],
+      "tags": [
+        "ganga-aarti",
+        "varanasi-ghats",
+        "brass-lamps",
+        "bhel-community"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1022,
+      "cityId": "bhopal",
+      "slug": "katju-hospital-ground-durga-utsav",
+      "canonicalName": "Katju Hospital Ground Durga Utsav",
+      "alternateNames": [
+        "TT Nagar Katju Hospital Ground Jhanki",
+        "Shankar Parvati Live Performance Pandal"
+      ],
+      "organizerName": "Katju Hospital Durga Utsav Samiti",
+      "latitude": 23.2411,
+      "longitude": 77.3972,
+      "address": "Ground near Katju Hospital, TT Nagar, Bhopal, Madhya Pradesh",
+      "locality": "TT Nagar",
+      "landmark": "Katju Hospital Building",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/katju-hospital-ground-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6022,
+      "pandalId": 1022,
+      "year": 2026,
+      "displayName": "Katju Hospital Ground Durga Utsav",
+      "theme": "Live Theatrical Choreographed Shankar-Parvati Dance Drama",
+      "description": "Differs from static jhankis by integrating live stage performers executing devotional ballet plays utilizing automated moving sets and fog systems.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "theatrical",
+        "live-performance",
+        "mythological"
+      ],
+      "tags": [
+        "dance-drama",
+        "shankar-parvati",
+        "live-actors",
+        "fog-effects"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1023,
+      "cityId": "bhopal",
+      "slug": "new-market-yadav-medical-jhanki",
+      "canonicalName": "New Market Yadav Medical Jhanki",
+      "alternateNames": [
+        "Yadav Medical Store Lane Pandal",
+        "New Market Traditional Arch Jhanki"
+      ],
+      "organizerName": "New Market Vyapari Association / Local Samiti",
+      "latitude": 23.2435,
+      "longitude": 77.3998,
+      "address": "Near Yadav Medical store area, New Market, Bhopal, Madhya Pradesh",
+      "locality": "New Market",
+      "landmark": "Yadav Medical Store Lane",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/new-market-yadav-medical-jhanki",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6023,
+      "pandalId": 1023,
+      "year": 2026,
+      "displayName": "New Market Yadav Medical Jhanki",
+      "theme": "Illuminated Entrance Arches & Detailed Heritage Sculptures",
+      "description": "A staple shopping-route stopover known for high fine-art craftsmanship, utilizing custom neon running tubes and traditional clay styling panels.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "market-stop",
+        "artistic-lighting",
+        "traditional"
+      ],
+      "tags": [
+        "neon-arches",
+        "clay-sculpting",
+        "shopping-spree",
+        "central-bhopal"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1024,
+      "cityId": "bhopal",
+      "slug": "roshanpura-square-hinglaj-mata-replica",
+      "canonicalName": "Roshanpura Square Hinglaj Mata Replica",
+      "alternateNames": [
+        "Hinglaj Mata Cave Pandal Bhopal",
+        "Roshanpura Intersection Cave Shrine"
+      ],
+      "organizerName": "Roshanpura Utsav Samiti",
+      "latitude": 23.2442,
+      "longitude": 77.4018,
+      "address": "Roshanpura Square, near New Market intersection, Bhopal, Madhya Pradesh",
+      "locality": "New Market",
+      "landmark": "New Market Main Crossing",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/roshanpura-square-hinglaj-mata-replica",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6024,
+      "pandalId": 1024,
+      "year": 2026,
+      "displayName": "Roshanpura Square Hinglaj Mata Replica",
+      "theme": "Hinglaj Mata Balochistan Cave Miniature Replica",
+      "description": "Constructed over a highly secure frame to simulate the steep mountain passes and rocky desert caverns of the ancient overseas Shakti Peeth.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "pilgrimage-replica",
+        "mountain-facade",
+        "unique"
+      ],
+      "tags": [
+        "hinglaj-mata",
+        "cave-shrine",
+        "rocky-texture",
+        "heavy-crowds"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1025,
+      "cityId": "bhopal",
+      "slug": "kolar-road-shirdi-sai-theme-jhanki",
+      "canonicalName": "Kolar Road Shirdi Sai Theme Jhanki",
+      "alternateNames": [
+        "Mahabali Nagar Tiraha Pandal",
+        "Kolar Sector Sai Baba Theme Pandal"
+      ],
+      "organizerName": "Kolar Sector Durga Utsav Samiti",
+      "latitude": 23.1782,
+      "longitude": 77.4145,
+      "address": "Main Ground, Kolar Road (near Mahabali Nagar Tiraha), Bhopal, Madhya Pradesh",
+      "locality": "Kolar Road",
+      "landmark": "Mahabali Nagar Tiraha",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/kolar-road-shirdi-sai-theme-jhanki",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6025,
+      "pandalId": 1025,
+      "year": 2026,
+      "displayName": "Kolar Road Shirdi Sai Theme Jhanki",
+      "theme": "Shirdi Sai Baba Temple Harmony Architecture",
+      "description": "An expansive setup emphasizing community harmony, featuring neat dual-row visitor corridors and tranquil acoustic bhajan rollouts.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "serene",
+        "temple-replica",
+        "spacious"
+      ],
+      "tags": [
+        "sai-baba",
+        "harmony",
+        "orderly-queues",
+        "southern-bhopal"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1026,
+      "cityId": "bhopal",
+      "slug": "awadhpuri-b-sector-ground-pandal",
+      "canonicalName": "Awadhpuri B-Sector Ground Pandal",
+      "alternateNames": [
+        "Awadhpuri Organic Craft Jhanki",
+        "B Sector Community Ground Pandal"
+      ],
+      "organizerName": "Awadhpuri Cultural & Festive Committee",
+      "latitude": 23.2412,
+      "longitude": 77.4812,
+      "address": "B-Sector Community Ground, Awadhpuri, Bhopal, Madhya Pradesh",
+      "locality": "Awadhpuri",
+      "landmark": "B-Sector Community Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/awadhpuri-b-sector-ground-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6026,
+      "pandalId": 1026,
+      "year": 2026,
+      "displayName": "Awadhpuri B-Sector Ground Pandal",
+      "theme": "Local Art & Eco-Conscious Bamboo Lattices",
+      "description": "Constructed out of raw organic natural fibers, handwoven wicker shapes, and local mud coatings. Complemented by clean baby-friendly family resting strips.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "eco-friendly",
+        "handicraft",
+        "family-friendly"
+      ],
+      "tags": [
+        "bamboo-weaving",
+        "organic-clay",
+        "baby-stroller-friendly",
+        "suburban-fair"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://timesofindia.indiatimes.com/city/bhopal/bhopal-gears-up-for-spectacular-navratri-celebrations-as-maa-durga-arrives/articleshow/113884797.cms",
+        "sourceLabel": "Times of India City News",
+        "sourceType": "WEBSITE",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.85,
+        "quote": "Bhopal gears up for spectacular Navratri celebrations as Maa Durga arrives.",
+        "notes": "General city mobilization reference verification."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1027,
+      "cityId": "bhopal",
+      "slug": "habibganj-railway-colony-durga-utsav",
+      "canonicalName": "Habibganj Railway Colony Durga Utsav",
+      "alternateNames": [
+        "Rani Kamalapati Station Area Pandal",
+        "Mysore Palace Replica Bhopal Railway"
+      ],
+      "organizerName": "Railway Colony Durga Puja Samiti",
+      "latitude": 23.2212,
+      "longitude": 77.4395,
+      "address": "Habibganj Railway Colony Grounds (Near Rani Kamalapati Railway Station), Bhopal, Madhya Pradesh",
+      "locality": "Habibganj",
+      "landmark": "Rani Kamalapati Railway Station",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/habibganj-railway-colony-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6027,
+      "pandalId": 1027,
+      "year": 2026,
+      "displayName": "Habibganj Railway Colony Durga Utsav",
+      "theme": "Mysore Palace Royal Architecture & Faux-Gold Arches",
+      "description": "A high-visibility transit-zone hub mimicking regal Karnataka palaces with specialized golden foils. Features massive Bengali dessert confectionary networks.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "royal-palace",
+        "transit-hub",
+        "foodie-destination"
+      ],
+      "tags": [
+        "mysore-palace",
+        "kamalapati-station",
+        "rasgulla-stalls",
+        "gold-trimming"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1028,
+      "cityId": "bhopal",
+      "slug": "ashoka-garden-sector-a-pandal",
+      "canonicalName": "Ashoka Garden Sector-A Pandal",
+      "alternateNames": [
+        "Ashoka Garden ISRO Space Jhanki",
+        "Sports Ground Ashoka Garden Durga Puja"
+      ],
+      "organizerName": "Ashoka Garden Mitra Mandal",
+      "latitude": 23.2645,
+      "longitude": 77.4392,
+      "address": "Main Sports Ground, Sector-A, Ashoka Garden, Bhopal, Madhya Pradesh",
+      "locality": "Ashoka Garden",
+      "landmark": "Sector-A Main Sports Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/ashoka-garden-sector-a-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6028,
+      "pandalId": 1028,
+      "year": 2026,
+      "displayName": "Ashoka Garden Sector-A Pandal",
+      "theme": "The Golden Era of India's Space Exploration (ISRO Milestones)",
+      "description": "An educational walk-through space layout featuring high-scale model rockets, astronomical constellation projectors, and interactive children's clusters.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "educational",
+        "space-theme",
+        "kids-favorite"
+      ],
+      "tags": [
+        "isro-rockets",
+        "constellations",
+        "walk-through-science",
+        "high-footfall"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1029,
+      "cityId": "bhopal",
+      "slug": "nehru-nagar-square-durga-utsav",
+      "canonicalName": "Nehru Nagar Square Durga Utsav",
+      "alternateNames": [
+        "Nehru Nagar Vyapari Federation Jhanki",
+        "Blue Lotus Theme Pandal Bhopal"
+      ],
+      "organizerName": "Nehru Nagar Vyapari Federation",
+      "latitude": 23.2405,
+      "longitude": 77.3792,
+      "address": "Main Square intersection ground, Nehru Nagar, Bhopal, Madhya Pradesh",
+      "locality": "Nehru Nagar",
+      "landmark": "Nehru Nagar Intersection Crossing",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/nehru-nagar-square-durga-utsav",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": false,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": false,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "WALK_THROUGH"
+    },
+    "pandalYear": {
+      "id": 6029,
+      "pandalId": 1029,
+      "year": 2026,
+      "displayName": "Nehru Nagar Square Durga Utsav",
+      "theme": "Tranquil Blue Lotus Underwater Aesthetic",
+      "description": "Lined fully with handcrafted glowing blue lotus sculptures and sub-surface ambient lighting, creating a calm oceanic refuge across heavy traffic intersections.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "artistic",
+        "floral",
+        "stroller-friendly"
+      ],
+      "tags": [
+        "blue-lotus",
+        "underwater-vibe",
+        "pedestrian-barricades",
+        "baby-lanes"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/reel/DdxtfVNxjcs/",
+        "sourceLabel": "Instagram Regional Uploads",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T00:00:00Z",
+        "confidence": 0.8,
+        "quote": "Nehru Nagar square sets up dedicated family lanes.",
+        "notes": "Verified high traffic pedestrian configuration."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1030,
+      "cityId": "bhopal",
+      "slug": "anand-nagar-ch-durga-jhanki",
+      "canonicalName": "Anand Nagar Ch चौराहे Durga Jhanki",
+      "alternateNames": [
+        "Anand Nagar Crossing Maata Rani Darbar",
+        "Anand Nagar Vikas Samiti Pandal"
+      ],
+      "organizerName": "Anand Nagar Vikas Samiti",
+      "latitude": 23.2595,
+      "longitude": 77.4842,
+      "address": "Main Ch चौराहे Ground, Anand Nagar, Bhopal, Madhya Pradesh",
+      "locality": "Anand Nagar",
+      "landmark": "Anand Nagar Main Chauraha",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/anand-nagar-ch-durga-jhanki",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": true,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6030,
+      "pandalId": 1030,
+      "year": 2026,
+      "displayName": "Anand Nagar Ch चौराहे Durga Jhanki",
+      "theme": "Maternal Serene Maata Rani Darbar & Organic Diyas",
+      "description": "Emphasizes soft traditional textures, leveraging purely organic clay walls and hundreds of hand-poured clay lamps instead of aggressive neon setups. Features live instrumental flute sets.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "traditional",
+        "acoustic",
+        "serene"
+      ],
+      "tags": [
+        "clay-diyas",
+        "maata-rani-darbar",
+        "flute-recital",
+        "ashtami-event"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.giva.co/blogs/tales/when-is-durga-puja-in-2026-know-date-muhurat-timing-and-styling-ideas",
+        "sourceLabel": "Giva Festive Calendar Logs",
+        "sourceType": "WEBSITE",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.7,
+        "quote": "Durga puja core traditional scheduling for 2026 calendar years.",
+        "notes": "General seasonal alignment check."
+      }
+    ]
+  },
+  {
+    "pandal": {
+      "id": 1031,
+      "cityId": "bhopal",
+      "slug": "govindpura-industrial-area-pandal",
+      "canonicalName": "Govindpura Industrial Area Pandal",
+      "alternateNames": [
+        "Prem Mandir Vrindavan Replica Bhopal Govindpura",
+        "Govindpura Shramik Samiti Jhanki"
+      ],
+      "organizerName": "Govindpura Shramik Utsav Samiti",
+      "latitude": 23.2512,
+      "longitude": 77.4445,
+      "address": "Industrial Association Ground, Govindpura, Bhopal, Madhya Pradesh",
+      "locality": "Govindpura",
+      "landmark": "Industrial Association Ground",
+      "publicContact": null,
+      "instagramUrl": "https://www.instagram.com/govindpura-industrial-area-pandal",
+      "facebookUrl": null,
+      "websiteUrl": null,
+      "verificationStatus": "UNVERIFIED",
+      "publicationStatus": "DRAFT",
+      "addedBy": "PUBLIC_SUBMISSION",
+      "parkingAvailable": true,
+      "twoWheelerAccessible": true,
+      "fourWheelerAccessible": true,
+      "foodStallsNearby": true,
+      "streetShopsNearby": false,
+      "visitType": "PARK_AND_VISIT"
+    },
+    "pandalYear": {
+      "id": 6031,
+      "pandalId": 1031,
+      "year": 2026,
+      "displayName": "Govindpura Industrial Area Pandal",
+      "theme": "Prem Mandir of Vrindavan White Architectural Copy",
+      "description": "Built by mixed labor and merchant unions, featuring pristine white pillars and arches replicating Vrindavan. Houses a massive daily afternoon Bhandara community kitchen.",
+      "startDate": "2026-10-17T00:00:00Z",
+      "endDate": "2026-10-21T00:00:00Z",
+      "schedule": [
+        {
+          "event": "Maha Shashthi Aagman",
+          "time": "2026-10-17T18:00:00Z"
+        },
+        {
+          "event": "Maha Ashtami Sandhi Puja",
+          "time": "2026-10-19T12:30:00Z"
+        },
+        {
+          "event": "Vijaya Dashami Visarjan",
+          "time": "2026-10-21T16:00:00Z"
+        }
+      ],
+      "coverImage": null,
+      "photos": [],
+      "categories": [
+        "temple-replica",
+        "bhandara-serving",
+        "historic-venue"
+      ],
+      "tags": [
+        "vrindavan-prem-mandir",
+        "white-marble-look",
+        "mega-bhandara",
+        "industrial-belt"
+      ],
+      "featured": false,
+      "publicationStatus": "DRAFT",
+      "verificationStatus": "UNVERIFIED"
+    },
+    "sources": [
+      {
+        "sourceUrl": "https://www.instagram.com/bhopal_culture/",
+        "sourceLabel": "Hyperlocal Trackers",
+        "sourceType": "INSTAGRAM",
+        "retrievedAt": "2026-09-29T11:22:00Z",
+        "confidence": 0.6,
+        "quote": "Historical venue landmark configuration continuity checked.",
+        "notes": "Awaiting seasonal theme verification media drop."
+      }
+    ]
+  }
+]

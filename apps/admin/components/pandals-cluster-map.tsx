@@ -9,6 +9,8 @@ import { buildClusterIndex, getClusters, type ClusterResult } from "@durgapandal
 export interface DashboardPandal {
   id: string;
   canonicalName: string;
+  locality?: string;
+  cityId?: string;
   publicationStatus: string;
   latitude: number;
   longitude: number;
@@ -19,13 +21,30 @@ export interface PandalsClusterMapProps {
   center: { latitude: number; longitude: number };
   zoom: number;
   pandals: DashboardPandal[];
+  /** When given, a pin click calls this instead of navigating straight to
+   *  the pandal's edit page — the Pandals list page uses this to show a
+   *  details panel/drawer alongside the map instead of leaving it. Omit to
+   *  keep the original "click -> open the pandal" behavior (the dashboard's
+   *  overview map). */
+  onSelectPandal?: (pandal: DashboardPandal) => void;
+  /** Overrides the default h-[420px] w-full sizing — the Pandals list
+   *  page's split map/detail layout needs a taller, flex-sized map. */
+  className?: string;
 }
 
 // Google-Maps-style overview: clusters at low zoom (click -> zoom in),
-// individual pins at high zoom (click -> jump to that pandal's edit page).
-// The clustering index itself (@durgapandals/maps' buildClusterIndex/
-// getClusters) already existed but had zero callers anywhere in the app.
-export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: PandalsClusterMapProps) {
+// individual pins at high zoom (click -> select, or jump to that pandal's
+// edit page if no onSelectPandal is given). The clustering index itself
+// (@durgapandals/maps' buildClusterIndex/getClusters) already existed but
+// had zero callers anywhere in the app.
+export function PandalsClusterMap({
+  mapTilesUrl,
+  center,
+  zoom,
+  pandals,
+  onSelectPandal,
+  className = "h-[420px] w-full",
+}: PandalsClusterMapProps) {
   const router = useRouter();
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
@@ -85,13 +104,15 @@ export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: Pandal
         el.style.background = pandal?.publicationStatus === "PUBLISHED" ? "#FF4433" : "#A79FB0";
         el.setAttribute("aria-label", pandal?.canonicalName ?? "Pandal");
         el.onclick = () => {
-          if (pandal) router.push(`/pandals/${pandal.id}`);
+          if (!pandal) return;
+          if (onSelectPandal) onSelectPandal(pandal);
+          else router.push(`/pandals/${pandal.id}`);
         };
       }
 
       markersRef.current.push(new maplibregl.Marker({ element: el }).setLngLat([cluster.longitude, cluster.latitude]).addTo(map));
     }
-  }, [clusterIndex, router]);
+  }, [clusterIndex, router, onSelectPandal]);
 
   // `render` gets a new identity whenever `clusterIndex` changes (filters
   // touched on the Pandals list page) — routed through a ref so the
@@ -116,7 +137,7 @@ export function PandalsClusterMap({ mapTilesUrl, center, zoom, pandals }: Pandal
   }, []);
 
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-xl border border-border">
+    <div className={`relative overflow-hidden rounded-xl border border-border ${className}`}>
       <MapCanvas styleUrl={mapTilesUrl} center={center} zoom={zoom} onMapReady={handleMapReady} className="absolute inset-0" />
     </div>
   );
