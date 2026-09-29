@@ -38,6 +38,8 @@ export default function AdminLoginPage() {
           <div className="flex flex-col gap-3">
             <Input
               type="email"
+              name="email"
+              autoComplete="username"
               required
               placeholder="Email"
               value={email}
@@ -46,6 +48,8 @@ export default function AdminLoginPage() {
             <div className="relative">
               <Input
                 type={showPassword ? "text" : "password"}
+                name="password"
+                autoComplete="current-password"
                 required
                 placeholder="Password"
                 value={password}

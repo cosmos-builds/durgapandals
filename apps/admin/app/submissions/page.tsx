@@ -376,13 +376,14 @@ export default function SubmissionsPage() {
                     <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">Photos</span>
                     <div className="flex flex-wrap gap-2">
                       {data.photos.map((photo) => (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          key={photo.url}
-                          src={photo.url}
-                          alt=""
-                          className="h-24 w-24 flex-none rounded-xl object-cover"
-                        />
+                        <a key={photo.url} href={photo.url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt=""
+                            className="h-24 w-24 flex-none rounded-xl object-cover transition-opacity hover:opacity-80"
+                          />
+                        </a>
                       ))}
                     </div>
                   </div>

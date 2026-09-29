@@ -21,6 +21,24 @@ body {
   font-variation-settings: "FILL" 0;
 }
 
+/* iOS Safari auto-zooms the whole page on focus whenever the focused field's
+   font-size is under 16px — several fields (the map search bars in
+   particular) use Tailwind's text-[14.5px]-style classes on mobile for
+   layout reasons, which is exactly what was triggering it. There's no way
+   to satisfy iOS's heuristic without the text actually rendering at 16px,
+   so this does make those fields' text a hair bigger on phones — the
+   alternative (disabling pinch-zoom via the viewport meta tag) is an
+   accessibility regression, so this is the correct fix, not a workaround.
+   !important is needed to beat the Tailwind utility class it's overriding,
+   which shares the same specificity. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
 /* Subtle sparkle on featured/verified accents — static gold icons otherwise
    read as just another app badge. */
 @keyframes festive-shimmer {
