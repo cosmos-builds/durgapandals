@@ -8,6 +8,16 @@ module.exports = {
   darkMode: ["class"],
   theme: {
     extend: {
+      // Tailwind's default spacing scale has no "13" step, so every
+      // `h-13`/`w-13`/etc. utility in the app (Button's base height, the
+      // city-selector row) was silently generating no CSS at all — the
+      // element fell back to whatever height its padding/line-height
+      // produced instead of the intended 52px, which is exactly why button
+      // heights (and their top/bottom padding) looked inconsistent across
+      // the site instead of uniform.
+      spacing: {
+        13: "3.25rem",
+      },
       colors: {
         ground: "#170810",
         // Sticky/nav-bar tone one shade darker than the page body (top
