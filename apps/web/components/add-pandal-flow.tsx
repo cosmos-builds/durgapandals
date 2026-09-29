@@ -179,6 +179,16 @@ export function AddPandalFlow({
   const [draftRestored, setDraftRestored] = useState(() => initialDraft !== null);
   const [step, setStep] = useState<Step>(initialDraft?.step ?? "location");
   const [coords, setCoords] = useState(initialDraft?.coords ?? center);
+  // The map/search/locate-me pin only ever moves this — never `coords` or
+  // `details` directly. Those only change when "Use this location" commits
+  // them together (see useThisLocation below). This is exactly the pattern
+  // admin's LocationPicker already used (apps/admin/components/location-picker.tsx):
+  // without it, every stray drag silently overwrote the address fields with
+  // wherever the pin currently was, with no checkpoint where a visitor could
+  // actually see and confirm "yes, this resolved address is right" before
+  // it became part of the submission.
+  const [pendingCoords, setPendingCoords] = useState(initialDraft?.coords ?? center);
+  const [pendingAddress, setPendingAddress] = useState<LocationSearchResult | null>(null);
   const [nearby, setNearby] = useState<NearbyPandal[]>([]);
   const [nearbyCheckFailed, setNearbyCheckFailed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -214,6 +224,7 @@ export function AddPandalFlow({
   coordsRef.current = coords;
 
   const isNewPandal = !selectedExisting;
+  const hasPendingMove = pendingCoords.latitude !== coords.latitude || pendingCoords.longitude !== coords.longitude;
 
   // Autosaves the in-progress submission so a refresh, accidental back-nav,
   // or closed tab doesn't lose it — debounced so typing doesn't write on
@@ -252,6 +263,8 @@ export function AddPandalFlow({
     setDraftRestored(false);
     setStep("location");
     setCoords(center);
+    setPendingCoords(center);
+    setPendingAddress(null);
     setSelectedExisting(null);
     setUpdateChoice(null);
     setDetails(emptyDetails);
@@ -286,7 +299,7 @@ export function AddPandalFlow({
       map.on("moveend", () => {
         const c = map.getCenter();
         const next = { latitude: c.lat, longitude: c.lng };
-        setCoords(next);
+        setPendingCoords(next);
         scheduleNearbyFetch(next);
         scheduleReverseGeocode(next);
       });
@@ -304,40 +317,51 @@ export function AddPandalFlow({
 
   // Searching a place is an alternative to dragging the pin — flying the map
   // triggers the same 'moveend' handler above, so the nearby-duplicate check
-  // and coords state update exactly as if the user had dragged there by hand.
+  // and pending-address preview update exactly as if the user had dragged
+  // there by hand. The search result already carries a resolved address, so
+  // there's no need to wait on a separate reverse-geocode call for it.
   function handleLocationSelect(result: LocationSearchResult) {
     mapRef.current?.flyTo({ center: [result.longitude, result.latitude], zoom: 16 });
-    applyGeocodedDetails(result);
+    setPendingCoords({ latitude: result.latitude, longitude: result.longitude });
+    setPendingAddress(result);
+    setGeocodeFailed(false);
   }
 
-  function applyGeocodedDetails(result: LocationSearchResult) {
-    // Always overwrite from the new pin position, even with an empty string —
-    // falling back to `prev.locality` here would leave a moved pin showing
-    // the *previous* location's locality with no sign it's stale.
-    setDetails((prev) => ({
-      ...prev,
-      locality: result.locality ?? "",
-      address: result.road ?? result.label,
-    }));
+  // The one and only place a map move ever reaches the actual submission —
+  // current vs pending are always shown side by side (see the confirm bar
+  // below) so it's never ambiguous which address is currently committed.
+  function useThisLocation() {
+    setCoords(pendingCoords);
+    if (pendingAddress) {
+      // Always overwrite from the confirmed pin position, even with an
+      // empty string — falling back to `prev.locality` here would leave a
+      // moved pin showing the *previous* location's locality with no sign
+      // it's stale.
+      setDetails((prev) => ({
+        ...prev,
+        locality: pendingAddress.locality ?? "",
+        address: pendingAddress.road ?? pendingAddress.label,
+      }));
+    }
   }
 
   // Drag-to-adjust matching Google Maps: the pin stays fixed at screen
-  // centre, the map moves under it, and the address fields fill in from
-  // reverse geocoding — without this, dragging visibly did nothing and the
-  // Continue button stayed disabled since locality/address had nothing to
-  // populate them.
+  // centre, the map moves under it, and a preview address resolves below —
+  // without this, dragging visibly did nothing and there was no feedback at
+  // all until "Use this location" was clicked.
   const reverseGeocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   function scheduleReverseGeocode(next: { latitude: number; longitude: number }) {
     if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
     setGeocodeFailed(false);
+    setPendingAddress(null);
     reverseGeocodeTimer.current = setTimeout(async () => {
       setGeocoding(true);
       const result = await reverseGeocode(next.latitude, next.longitude);
       setGeocoding(false);
-      if (result) applyGeocodedDetails(result);
-      // Never leave someone stuck on a disabled Continue button with no
-      // explanation — if auto-fill didn't work (provider hiccup, network,
-      // whatever), tell them to type it in instead of just looking broken.
+      if (result) setPendingAddress(result);
+      // Never leave someone stuck with no explanation — if the preview
+      // didn't resolve (provider hiccup, network, whatever), tell them to
+      // type it in instead of just looking broken.
       else setGeocodeFailed(true);
     }, 500);
   }
@@ -351,7 +375,7 @@ export function AddPandalFlow({
     setSearchingArea(true);
     const c = map.getCenter();
     const next = { latitude: c.lat, longitude: c.lng };
-    setCoords(next);
+    setPendingCoords(next);
     scheduleNearbyFetch(next);
     scheduleReverseGeocode(next);
     setTimeout(() => setSearchingArea(false), 500);
@@ -371,7 +395,7 @@ export function AddPandalFlow({
         setLocating(false);
         const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
         mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 16 });
-        setCoords(next);
+        setPendingCoords(next);
         scheduleNearbyFetch(next);
         scheduleReverseGeocode(next);
       },
@@ -664,7 +688,7 @@ export function AddPandalFlow({
               </span>
             </div>
             <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
-              <LocationSearchBox citySlug={citySlug} placeholder="Search your pandal's area" onSelect={handleLocationSelect} biasCenter={coords} />
+              <LocationSearchBox citySlug={citySlug} placeholder="Search your pandal's area" onSelect={handleLocationSelect} biasCenter={pendingCoords} />
             </div>
             <button
               onClick={searchThisArea}
@@ -674,6 +698,28 @@ export function AddPandalFlow({
               <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
               {searchingArea ? "Searching…" : "Search this area"}
             </button>
+
+            {/* The only place a drag/search/locate ever reaches the actual
+                form — pending vs confirmed are always shown side by side so
+                it's never ambiguous which address is currently committed.
+                Same pattern as admin's LocationPicker. */}
+            {hasPendingMove && (
+              <div className="absolute inset-x-3 bottom-14 z-10 flex items-center justify-between gap-2 rounded-2xl bg-panel/95 px-3.5 py-2.5 shadow-2xl">
+                <span className="flex min-w-0 items-start gap-1.5 font-body text-xs text-accent">
+                  <span className="material-symbols-rounded flex-none text-sm">pin_drop</span>
+                  <span className="truncate">
+                    {geocoding ? "Resolving address…" : pendingAddress ? pendingAddress.label : "Couldn't resolve — type the address manually"}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={useThisLocation}
+                  className="flex-none rounded-xl bg-brand px-3 py-1.5 font-body text-xs font-bold text-brand-ink"
+                >
+                  Use this location
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
@@ -707,50 +753,32 @@ export function AddPandalFlow({
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Locality / area">
-                {geocoding && !details.locality ? (
-                  <div className="h-12 animate-pulse rounded-xl bg-card" />
-                ) : (
-                  <Input
-                    placeholder="e.g. Kumartuli"
-                    value={details.locality}
-                    onChange={(e) => setDetails({ ...details, locality: e.target.value })}
-                  />
-                )}
+                <Input
+                  placeholder="e.g. Kumartuli"
+                  value={details.locality}
+                  onChange={(e) => setDetails({ ...details, locality: e.target.value })}
+                />
               </Field>
               <Field label="Landmark">
-                {geocoding && !details.landmark ? (
-                  <div className="h-12 animate-pulse rounded-xl bg-card" />
-                ) : (
-                  <Input
-                    placeholder="Optional"
-                    value={details.landmark}
-                    onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
-                  />
-                )}
+                <Input
+                  placeholder="Optional"
+                  value={details.landmark}
+                  onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                />
               </Field>
             </div>
             <Field label="Address">
-              {geocoding && !details.address ? (
-                <div className="h-12 animate-pulse rounded-xl bg-card" />
-              ) : (
-                <Input
-                  placeholder="Full street address"
-                  value={details.address}
-                  onChange={(e) => setDetails({ ...details, address: e.target.value })}
-                />
-              )}
+              <Input
+                placeholder="Full street address"
+                value={details.address}
+                onChange={(e) => setDetails({ ...details, address: e.target.value })}
+              />
             </Field>
 
-            {geocoding && (
+            {!details.locality && !details.address && (
               <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
-                <span className="material-symbols-rounded animate-spin text-sm">progress_activity</span>
-                Locating your address…
-              </span>
-            )}
-            {!geocoding && geocodeFailed && !details.locality && !details.address && (
-              <span className="flex items-center gap-1.5 font-body text-xs text-accent">
                 <span className="material-symbols-rounded text-sm">info</span>
-                Couldn't auto-fill from the map — type your locality and address above.
+                Drag the map, search, or use your location above, then tap "Use this location" — or type the address directly.
               </span>
             )}
 
@@ -1204,6 +1232,8 @@ export function AddPandalFlow({
                 setDraftRestored(false);
                 setStep("location");
                 setCoords(center);
+                setPendingCoords(center);
+                setPendingAddress(null);
                 setSelectedExisting(null);
                 setUpdateChoice(null);
                 setDetails(emptyDetails);

@@ -44,6 +44,7 @@ interface Submission {
   submittedData: SubmittedPandalData;
   submitterIp?: string;
   possiblePandalId?: string;
+  cityDistanceMeters?: number;
   contributor: { id: string; identifier: string; blocked: boolean } | null;
   duplicateCandidates: (Candidate & { reasons: string[]; distanceMeters: number; canonicalName?: string })[];
   createdAt: string;
@@ -56,6 +57,12 @@ const TABS: { key: Tab; label: string }[] = [
   { key: "NEW_PANDAL", label: "New pandal" },
   { key: "CORRECTION", label: "Corrections" },
 ];
+
+// Generous on purpose — a real city's outskirts can genuinely be this far
+// from its center pin. This isn't trying to be precise, just to catch the
+// unambiguous case (a submission attributed to a city tens/hundreds of km
+// away from where it actually is).
+const CITY_DISTANCE_WARNING_METERS = 50_000;
 
 const VISIT_TYPE_LABELS: Record<string, string> = {
   WALKING_DARSHAN: "Walking darshan · quick visit",
@@ -269,6 +276,23 @@ export default function SubmissionsPage() {
                 </Button>
               </div>
             </div>
+
+            {/* A pandal can pass every other check (published, verified,
+                right festival year) and still never show up on its city's
+                map because its cityId was silently wrong from the start —
+                that has no visible symptom anywhere else in this review
+                card, since the address/coordinates themselves are usually
+                perfectly correct for wherever the contributor actually was.
+                This is the one place that surfaces it before approval. */}
+            {active.cityDistanceMeters != null && active.cityDistanceMeters > CITY_DISTANCE_WARNING_METERS && (
+              <div className="flex items-start gap-2.5 rounded-xl border border-brand/40 bg-brand/10 px-3.5 py-2.5">
+                <span className="material-symbols-rounded flex-none text-lg text-brand">warning</span>
+                <span className="font-body text-sm text-brand">
+                  This location is ~{Math.round(active.cityDistanceMeters / 1000)}km from the target city's center —
+                  double-check it's actually in the right city before approving.
+                </span>
+              </div>
+            )}
 
             {active.contributor && (
               <div className="flex flex-wrap items-center gap-2 rounded-xl bg-card px-3.5 py-2.5">

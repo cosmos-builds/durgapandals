@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 import { createSubmissionSchema } from "@durgapandals/validation";
-import { ContributorModel, SubmissionModel } from "@durgapandals/database";
+import { CityModel, ContributorModel, SubmissionModel } from "@durgapandals/database";
+import { distanceMeters } from "@durgapandals/deduplication";
 import { findNearbyDuplicates } from "../pandals/pandals.service";
 
 // Independent of REQUIRE_CONTRIBUTOR_VERIFICATION — this caps how many
@@ -60,6 +61,7 @@ export const submissionsRoutes: FastifyPluginAsync = async (app) => {
     };
 
     let duplicateCandidates: Awaited<ReturnType<typeof findNearbyDuplicates>> = [];
+    let cityDistanceMeters: number | undefined;
     if (
       body.type === "NEW_PANDAL" &&
       submittedData.canonicalName &&
@@ -74,6 +76,19 @@ export const submissionsRoutes: FastifyPluginAsync = async (app) => {
         latitude: submittedData.latitude,
         longitude: submittedData.longitude,
       });
+
+      // Never blocks the submission — a false positive here (a huge metro's
+      // genuine outskirts, an imprecise GPS fix) shouldn't stop a real
+      // contributor. It's purely a signal for the admin review queue.
+      const city = await CityModel.findById(body.cityId);
+      if (city) {
+        cityDistanceMeters = Math.round(
+          distanceMeters(
+            { latitude: submittedData.latitude, longitude: submittedData.longitude },
+            { latitude: city.latitude, longitude: city.longitude }
+          )
+        );
+      }
     }
 
     const submission = await SubmissionModel.create({
@@ -84,6 +99,7 @@ export const submissionsRoutes: FastifyPluginAsync = async (app) => {
       submittedData: body.submittedData,
       submitterIp: request.ip,
       duplicateCandidates,
+      cityDistanceMeters,
       status: "PENDING",
     });
 

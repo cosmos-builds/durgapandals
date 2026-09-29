@@ -25,6 +25,17 @@ const submissionSchema = new Schema(
 
     submittedData: { type: Schema.Types.Mixed, required: true },
 
+    // Straight-line distance (meters) between the submitted lat/lng and the
+    // target city's own center, computed once at creation time — surfaced
+    // on the admin review card so a mis-attributed submission (wrong city
+    // silently carried over from whatever page the contributor started on,
+    // while the pin/address itself was dragged somewhere else entirely) is
+    // visible *before* approval instead of only discoverable after, by a
+    // pandal that mysteriously never shows up on the map it was approved
+    // into. Undefined when there's no coordinate to check against (e.g. a
+    // CORRECTION submission, which only ever carries a note).
+    cityDistanceMeters: { type: Number },
+
     // Recorded for admin triage only ("who keeps submitting from this IP")
     // — never used as an authorization boundary on its own.
     submitterIp: { type: String },
