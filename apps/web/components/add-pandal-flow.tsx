@@ -5,7 +5,14 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
 import { MapCanvas } from "@durgapandals/maps/react";
-import { Button, Field, Input, Select, Textarea, useToast } from "@durgapandals/ui";
+import {
+  Button,
+  Field,
+  Input,
+  Select,
+  Textarea,
+  useToast,
+} from "@durgapandals/ui";
 import {
   fetchNearbyPandals,
   reverseGeocode,
@@ -29,7 +36,8 @@ import type { CitySearchResult } from "@/lib/api";
 // NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION=true (and the matching
 // server-side REQUIRE_CONTRIBUTOR_VERIFICATION on the API) to require it
 // again without restoring any deleted code.
-const REQUIRE_VERIFICATION = process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
+const REQUIRE_VERIFICATION =
+  process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
 
 export interface AddPandalFlowProps {
   cityId: string;
@@ -98,7 +106,13 @@ const emptyDetails = {
 // tags, and keeps the set meaningful. "Family Friendly" deliberately isn't
 // here: it described nearly every pandal, so it wasn't actually helping
 // anyone filter (see the Explore category chips it used to clutter).
-const CATEGORY_OPTIONS = ["Traditional", "Theme / Creative", "Community Pandal", "Eco-Friendly", "Historic"];
+const CATEGORY_OPTIONS = [
+  "Traditional",
+  "Theme / Creative",
+  "Community Pandal",
+  "Eco-Friendly",
+  "Historic",
+];
 
 const VISIT_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: "WALKING_DARSHAN", label: "Walking darshan · quick visit" },
@@ -125,7 +139,11 @@ const SCHEDULE_PERIODS = ["AM", "PM"] as const;
 // hour/minute/AM-PM dropdowns below parse it in and compose it back out
 // rather than changing the stored shape — free text just let people type
 // anything unparseable ("evening", "7ish"), which this closes off.
-function parseScheduleTime(time: string): { hour: string; minute: string; period: (typeof SCHEDULE_PERIODS)[number] } {
+function parseScheduleTime(time: string): {
+  hour: string;
+  minute: string;
+  period: (typeof SCHEDULE_PERIODS)[number];
+} {
   const match = /^(\d{1,2}):(\d{2})\s*(AM|PM)$/i.exec(time.trim());
   if (!match) return { hour: "7", minute: "00", period: "PM" };
   const [rawHour, rawMinute, rawPeriod] = [match[1]!, match[2]!, match[3]!];
@@ -135,7 +153,11 @@ function parseScheduleTime(time: string): { hour: string; minute: string; period
   return { hour, minute, period };
 }
 
-function formatScheduleTime(hour: string, minute: string, period: string): string {
+function formatScheduleTime(
+  hour: string,
+  minute: string,
+  period: string,
+): string {
   return `${hour}:${minute} ${period}`;
 }
 
@@ -240,9 +262,13 @@ export function AddPandalFlow({
   // Computed once per mount, not on every render — this is the only place
   // any of the fields below read it.
   const [initialDraft] = useState(() => loadDraft(citySlug));
-  const [draftRestored, setDraftRestored] = useState(() => initialDraft !== null);
+  const [draftRestored, setDraftRestored] = useState(
+    () => initialDraft !== null,
+  );
   const [step, setStep] = useState<Step>(initialDraft?.step ?? "city");
-  const [selectedCity, setSelectedCity] = useState<SelectedCityState>(initialDraft?.selectedCity ?? initialCity);
+  const [selectedCity, setSelectedCity] = useState<SelectedCityState>(
+    initialDraft?.selectedCity ?? initialCity,
+  );
   const [coords, setCoords] = useState(initialDraft?.coords ?? center);
   // The map/search/locate-me pin only ever moves this — never `coords` or
   // `details` directly. Those only change when "Use this location" commits
@@ -252,26 +278,41 @@ export function AddPandalFlow({
   // wherever the pin currently was, with no checkpoint where a visitor could
   // actually see and confirm "yes, this resolved address is right" before
   // it became part of the submission.
-  const [pendingCoords, setPendingCoords] = useState(initialDraft?.coords ?? center);
-  const [pendingAddress, setPendingAddress] = useState<LocationSearchResult | null>(null);
+  const [pendingCoords, setPendingCoords] = useState(
+    initialDraft?.coords ?? center,
+  );
+  const [pendingAddress, setPendingAddress] =
+    useState<LocationSearchResult | null>(null);
   const [nearby, setNearby] = useState<NearbyPandal[]>([]);
   const [nearbyCheckFailed, setNearbyCheckFailed] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [geocodeFailed, setGeocodeFailed] = useState(false);
-  const [categories, setCategories] = useState<string[]>(initialDraft?.categories ?? []);
-  const [photos, setPhotos] = useState<UploadedPhoto[]>(initialDraft?.photos ?? []);
+  const [categories, setCategories] = useState<string[]>(
+    initialDraft?.categories ?? [],
+  );
+  const [photos, setPhotos] = useState<UploadedPhoto[]>(
+    initialDraft?.photos ?? [],
+  );
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [details, setDetails] = useState(initialDraft?.details ?? emptyDetails);
   const [festivalYear, setFestivalYear] = useState(() =>
-    normalizeAddPandalFestivalYear(initialDraft?.festivalYear ?? activeFestivalYear)
+    normalizeAddPandalFestivalYear(
+      initialDraft?.festivalYear ?? activeFestivalYear,
+    ),
   );
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [searchingArea, setSearchingArea] = useState(false);
-  const [amenities, setAmenities] = useState(initialDraft?.amenities ?? emptyAmenities);
-  const [visitType, setVisitType] = useState(initialDraft?.visitType ?? "WALKING_DARSHAN");
-  const [schedule, setSchedule] = useState<ScheduleRow[]>(initialDraft?.schedule ?? []);
+  const [amenities, setAmenities] = useState(
+    initialDraft?.amenities ?? emptyAmenities,
+  );
+  const [visitType, setVisitType] = useState(
+    initialDraft?.visitType ?? "WALKING_DARSHAN",
+  );
+  const [schedule, setSchedule] = useState<ScheduleRow[]>(
+    initialDraft?.schedule ?? [],
+  );
   const [email, setEmail] = useState(initialDraft?.email ?? "");
   const [website, setWebsite] = useState(""); // honeypot — real visitors never see or fill this
   const [code, setCode] = useState("");
@@ -292,12 +333,18 @@ export function AddPandalFlow({
   const selectedCityRef = useRef(selectedCity);
   selectedCityRef.current = selectedCity;
 
-  const hasPendingMove = pendingCoords.latitude !== coords.latitude || pendingCoords.longitude !== coords.longitude;
+  const hasPendingMove =
+    pendingCoords.latitude !== coords.latitude ||
+    pendingCoords.longitude !== coords.longitude;
   // Only meaningful once the pin has actually moved away from the city's
   // own center (its starting position) — otherwise this would always read
   // ~0 and the check would be pointless.
-  const hasConfirmedLocation = coords.latitude !== selectedCity.latitude || coords.longitude !== selectedCity.longitude;
-  const cityDistanceMeters = hasConfirmedLocation ? distanceMeters(coords, selectedCity) : 0;
+  const hasConfirmedLocation =
+    coords.latitude !== selectedCity.latitude ||
+    coords.longitude !== selectedCity.longitude;
+  const cityDistanceMeters = hasConfirmedLocation
+    ? distanceMeters(coords, selectedCity)
+    : 0;
 
   // Autosaves the in-progress submission so a refresh, accidental back-nav,
   // or closed tab doesn't lose it — debounced so typing doesn't write on
@@ -322,7 +369,20 @@ export function AddPandalFlow({
       });
     }, 400);
     return () => clearTimeout(timeout);
-  }, [citySlug, step, selectedCity, coords, categories, photos, details, festivalYear, amenities, visitType, schedule, email]);
+  }, [
+    citySlug,
+    step,
+    selectedCity,
+    coords,
+    categories,
+    photos,
+    details,
+    festivalYear,
+    amenities,
+    visitType,
+    schedule,
+    email,
+  ]);
 
   // The draft is being resumed, not started fresh — deletes any photos it
   // was holding (they'd otherwise be orphaned the moment the form resets
@@ -352,7 +412,11 @@ export function AddPandalFlow({
     if (fetchTimer.current) clearTimeout(fetchTimer.current);
     fetchTimer.current = setTimeout(async () => {
       try {
-        const results = await fetchNearbyPandals(selectedCityRef.current.id, next.latitude, next.longitude);
+        const results = await fetchNearbyPandals(
+          selectedCityRef.current.id,
+          next.latitude,
+          next.longitude,
+        );
         setNearby(results);
         setNearbyCheckFailed(false);
       } catch {
@@ -383,7 +447,7 @@ export function AddPandalFlow({
       scheduleReverseGeocode(coordsRef.current);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   // Searching a place is an alternative to dragging the pin — flying the map
@@ -392,8 +456,14 @@ export function AddPandalFlow({
   // there by hand. The search result already carries a resolved address, so
   // there's no need to wait on a separate reverse-geocode call for it.
   function handleLocationSelect(result: LocationSearchResult) {
-    mapRef.current?.flyTo({ center: [result.longitude, result.latitude], zoom: 16 });
-    setPendingCoords({ latitude: result.latitude, longitude: result.longitude });
+    mapRef.current?.flyTo({
+      center: [result.longitude, result.latitude],
+      zoom: 16,
+    });
+    setPendingCoords({
+      latitude: result.latitude,
+      longitude: result.longitude,
+    });
     setPendingAddress(result);
     setGeocodeFailed(false);
   }
@@ -420,8 +490,13 @@ export function AddPandalFlow({
   // centre, the map moves under it, and a preview address resolves below —
   // without this, dragging visibly did nothing and there was no feedback at
   // all until "Use this location" was clicked.
-  const reverseGeocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  function scheduleReverseGeocode(next: { latitude: number; longitude: number }) {
+  const reverseGeocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  function scheduleReverseGeocode(next: {
+    latitude: number;
+    longitude: number;
+  }) {
     if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
     setGeocodeFailed(false);
     setPendingAddress(null);
@@ -464,8 +539,14 @@ export function AddPandalFlow({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setLocating(false);
-        const next = { latitude: position.coords.latitude, longitude: position.coords.longitude };
-        mapRef.current?.flyTo({ center: [next.longitude, next.latitude], zoom: 16 });
+        const next = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+        mapRef.current?.flyTo({
+          center: [next.longitude, next.latitude],
+          zoom: 16,
+        });
         setPendingCoords(next);
         scheduleNearbyFetch(next);
         scheduleReverseGeocode(next);
@@ -475,10 +556,10 @@ export function AddPandalFlow({
         setLocationError(
           err.code === err.PERMISSION_DENIED
             ? "Location permission denied — drag the map to your pandal instead."
-            : "Couldn't get your location — drag the map to your pandal instead."
+            : "Couldn't get your location — drag the map to your pandal instead.",
         );
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 8000 },
     );
   }
 
@@ -487,11 +568,20 @@ export function AddPandalFlow({
   }
 
   function addScheduleRow() {
-    setSchedule((prev) => [...prev, { time: formatScheduleTime("7", "00", "PM"), label: "" }]);
+    setSchedule((prev) => [
+      ...prev,
+      { time: formatScheduleTime("7", "00", "PM"), label: "" },
+    ]);
   }
 
-  function updateScheduleRow(index: number, field: keyof ScheduleRow, value: string) {
-    setSchedule((prev) => prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)));
+  function updateScheduleRow(
+    index: number,
+    field: keyof ScheduleRow,
+    value: string,
+  ) {
+    setSchedule((prev) =>
+      prev.map((row, i) => (i === index ? { ...row, [field]: value } : row)),
+    );
   }
 
   function removeScheduleRow(index: number) {
@@ -519,7 +609,8 @@ export function AddPandalFlow({
       el.style.width = "26px";
       el.style.height = "26px";
       el.style.cursor = "pointer";
-      el.innerHTML = '<img src="/images/marker-icon.svg" alt="" style="width:26px;height:26px" />';
+      el.innerHTML =
+        '<img src="/images/marker-icon.svg" alt="" style="width:26px;height:26px" />';
       return new maplibregl.Marker({ element: el })
         .setLngLat([candidate.longitude, candidate.latitude])
         .addTo(map);
@@ -558,7 +649,7 @@ export function AddPandalFlow({
       longitude: city.longitude,
       zoom: city.defaultMapZoom,
       activeFestivalYear: city.activeFestivalYear,
-    })
+    }),
   );
 
   // The one place all location-dependent state resets together once the
@@ -566,7 +657,10 @@ export function AddPandalFlow({
   // city (a half-dropped pin, its nearby-duplicate results) lingers after
   // switching.
   function proceedFromCityStep() {
-    const c = { latitude: selectedCity.latitude, longitude: selectedCity.longitude };
+    const c = {
+      latitude: selectedCity.latitude,
+      longitude: selectedCity.longitude,
+    };
     setCoords(c);
     setPendingCoords(c);
     setPendingAddress(null);
@@ -596,7 +690,9 @@ export function AddPandalFlow({
 
   function toggleCategory(category: string) {
     setCategories((prev) =>
-      prev.includes(category) ? prev.filter((c) => c !== category) : [...prev, category]
+      prev.includes(category)
+        ? prev.filter((c) => c !== category)
+        : [...prev, category],
     );
   }
 
@@ -618,7 +714,9 @@ export function AddPandalFlow({
         continue;
       }
       if (file.size > MAX_PHOTO_SIZE_BYTES) {
-        setPhotoError(`"${file.name}" is larger than ${MAX_PHOTO_SIZE_BYTES / 1024 / 1024}MB.`);
+        setPhotoError(
+          `"${file.name}" is larger than ${MAX_PHOTO_SIZE_BYTES / 1024 / 1024}MB.`,
+        );
         continue;
       }
 
@@ -738,18 +836,34 @@ export function AddPandalFlow({
       <div className="flex items-center justify-between">
         {/* Back arrow: mobile only — desktop relies on the persistent top
             nav bar instead, matching the design. */}
-        <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden">
+        <button
+          onClick={goBack}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden"
+        >
           <span className="material-symbols-rounded">arrow_back</span>
         </button>
-        <MobileHeader citySlug={citySlug} cityName={selectedCity.name} year={festivalYear} className="md:hidden" />
-        <span className="hidden font-body text-sm font-bold md:inline">Add your pandal</span>
+        <MobileHeader
+          citySlug={citySlug}
+          cityName={selectedCity.name}
+          year={festivalYear}
+          className="md:hidden"
+        />
+        <span className="hidden font-body text-sm font-bold md:inline">
+          Add your pandal
+        </span>
         <span className="font-mono text-xs text-ink-muted">
           Step {progress.index + 1} of {progress.total} · {STEP_LABELS[step]}
         </span>
       </div>
-      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${progress.total}, 1fr)` }}>
+      <div
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${progress.total}, 1fr)` }}
+      >
         {Array.from({ length: progress.total }).map((_, i) => (
-          <div key={i} className={`h-1 rounded-full ${i <= progress.index ? "bg-brand" : "bg-chip"}`} />
+          <div
+            key={i}
+            className={`h-1 rounded-full ${i <= progress.index ? "bg-brand" : "bg-chip"}`}
+          />
         ))}
       </div>
     </div>
@@ -761,12 +875,21 @@ export function AddPandalFlow({
 
       {draftRestored && step !== "done" && (
         <div className="mx-4 mb-1 flex items-center justify-between gap-3 rounded-2xl border border-accent/30 bg-accent/10 px-3.5 py-2.5 md:mx-auto md:max-w-xl">
-          <span className="font-body text-xs text-ink-dim">Resumed your in-progress submission.</span>
+          <span className="font-body text-xs text-ink-dim">
+            Resumed your in-progress submission.
+          </span>
           <div className="flex flex-none items-center gap-3">
-            <button onClick={discardDraft} className="font-body text-xs font-bold text-brand">
+            <button
+              onClick={discardDraft}
+              className="font-body text-xs font-bold text-brand"
+            >
               Start over
             </button>
-            <button onClick={() => setDraftRestored(false)} aria-label="Dismiss" className="flex text-ink-muted">
+            <button
+              onClick={() => setDraftRestored(false)}
+              aria-label="Dismiss"
+              className="flex text-ink-muted"
+            >
               <span className="material-symbols-rounded text-base">close</span>
             </button>
           </div>
@@ -775,28 +898,41 @@ export function AddPandalFlow({
 
       {step === "city" && (
         <div className={formStepClass}>
-          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">Which city is this pandal in?</h2>
+          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">
+            Which city is this pandal in?
+          </h2>
           <p className="font-body text-sm text-ink-muted">
-            This decides which city's map it shows up on — you can add a pandal for any city in India, not just{" "}
-            {initialCity.name}.
+            This decides which city's map it shows up on — you can add a pandal
+            for any city in India, not just {initialCity.name}.
           </p>
 
           <button
             type="button"
             onClick={() => selectCityCandidate(initialCity)}
             className={`flex items-center gap-3 rounded-2xl border p-3 text-left ${
-              selectedCity.id === initialCity.id ? "border-brand bg-card ring-2 ring-brand" : "border-border bg-panel md:bg-card/60"
+              selectedCity.id === initialCity.id
+                ? "border-brand bg-card ring-2 ring-brand"
+                : "border-border bg-panel md:bg-card/60"
             }`}
           >
             <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip">
-              <span className="material-symbols-rounded text-brand">location_on</span>
+              <span className="material-symbols-rounded text-brand">
+                location_on
+              </span>
             </span>
             <span className="flex flex-col">
-              <span className="font-body text-[15.5px] font-bold">{initialCity.name}</span>
-              <span className="font-body text-xs text-ink-muted">Where you're browsing from</span>
+              <span className="font-body text-[15.5px] font-bold">
+                {initialCity.name}
+              </span>
+              <span className="font-body text-xs text-ink-muted">
+                Where you're browsing from
+              </span>
             </span>
             {selectedCity.id === initialCity.id && (
-              <span className="material-symbols-rounded ml-auto text-2xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className="material-symbols-rounded ml-auto text-2xl text-brand"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 check_circle
               </span>
             )}
@@ -814,9 +950,13 @@ export function AddPandalFlow({
           {cityQuery.trim().length >= 2 && (
             <div className="flex flex-col gap-1">
               {cityLoading ? (
-                <p className="py-4 text-center font-body text-sm text-ink-muted">Searching…</p>
+                <p className="py-4 text-center font-body text-sm text-ink-muted">
+                  Searching…
+                </p>
               ) : cityResults.length === 0 ? (
-                <p className="py-4 text-center font-body text-sm text-ink-muted">No matching places in India.</p>
+                <p className="py-4 text-center font-body text-sm text-ink-muted">
+                  No matching places in India.
+                </p>
               ) : (
                 cityResults.map((result, index) => {
                   const isDb = result.source === "db";
@@ -833,17 +973,23 @@ export function AddPandalFlow({
                       disabled={cityResolving}
                       onClick={() => citySearchSelect(result)}
                       className={`flex items-center gap-3 rounded-2xl p-2.5 text-left disabled:opacity-60 ${
-                        isSelected ? "bg-card ring-2 ring-brand" : "hover:bg-card/60"
+                        isSelected
+                          ? "bg-card ring-2 ring-brand"
+                          : "hover:bg-card/60"
                       }`}
                     >
                       <span className="material-symbols-rounded flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip text-lg text-ink-muted">
                         {cityResolving ? "sync" : "location_on"}
                       </span>
                       <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-body text-sm font-bold">{result.name}</span>
+                        <span className="truncate font-body text-sm font-bold">
+                          {result.name}
+                        </span>
                         <span className="truncate font-body text-xs text-ink-muted">
                           {result.state}
-                          {isDb && result.status !== "ACTIVE" ? " · not live yet" : ""}
+                          {isDb && result.status !== "ACTIVE"
+                            ? " · not live yet"
+                            : ""}
                         </span>
                       </span>
                     </button>
@@ -854,19 +1000,31 @@ export function AddPandalFlow({
           )}
 
           <Field label="Festival year">
-            <Select uiSize="sm" value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
+            <Select
+              uiSize="sm"
+              value={String(festivalYear)}
+              onChange={(e) => setFestivalYear(Number(e.target.value))}
+            >
               {getAddPandalFestivalYears().map((year) => (
                 <option key={year} value={year}>
                   {year}
-                  {year === new Date().getFullYear() ? " (current)" : " (upcoming)"}
+                  {year === new Date().getFullYear()
+                    ? " (current)"
+                    : " (upcoming)"}
                 </option>
               ))}
             </Select>
           </Field>
 
-          <Button uiSize="sm" onClick={proceedFromCityStep} className="mt-1 flex items-center justify-center gap-1.5">
+          <Button
+            uiSize="sm"
+            onClick={proceedFromCityStep}
+            className="mt-1 flex items-center justify-center gap-1.5"
+          >
             Continue with {selectedCity.name}
-            <span className="material-symbols-rounded text-lg">arrow_forward</span>
+            <span className="material-symbols-rounded text-lg">
+              arrow_forward
+            </span>
           </Button>
         </div>
       )}
@@ -885,12 +1043,21 @@ export function AddPandalFlow({
                 center here meant the map visually snapped back to it on
                 return, even though `coords` (and the nearby/geocode results
                 tied to it) had already moved with the visitor's drag. */}
-            <MapCanvas styleUrl={mapTilesUrl} center={coords} zoom={selectedCity.zoom} onMapReady={handleMapReady} className="absolute inset-0" />
+            <MapCanvas
+              styleUrl={mapTilesUrl}
+              center={coords}
+              zoom={selectedCity.zoom}
+              onMapReady={handleMapReady}
+              className="absolute inset-0"
+            />
             <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
               <span className="mb-1.5 rounded-xl bg-accent px-2.5 py-1 font-body text-xs font-bold text-accent-ink shadow">
                 Your pandal · drag map to adjust
               </span>
-              <span className="material-symbols-rounded text-[38px] text-accent" style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className="material-symbols-rounded text-[38px] text-accent"
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 add_location
               </span>
             </div>
@@ -900,7 +1067,10 @@ export function AddPandalFlow({
                 placeholder={`Search your pandal's area in ${selectedCity.name}`}
                 onSelect={handleLocationSelect}
                 biasCenter={pendingCoords}
-                restrictNear={{ latitude: selectedCity.latitude, longitude: selectedCity.longitude }}
+                restrictNear={{
+                  latitude: selectedCity.latitude,
+                  longitude: selectedCity.longitude,
+                }}
               />
             </div>
             <button
@@ -908,7 +1078,9 @@ export function AddPandalFlow({
               disabled={searchingArea}
               className="absolute bottom-3 left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ground/80 pl-2.5 pr-3 font-body text-xs font-bold text-ink shadow-lg disabled:opacity-70"
             >
-              <span className="material-symbols-rounded text-base">{searchingArea ? "sync" : "search"}</span>
+              <span className="material-symbols-rounded text-base">
+                {searchingArea ? "sync" : "search"}
+              </span>
               {searchingArea ? "Searching…" : "Search this area"}
             </button>
 
@@ -919,9 +1091,15 @@ export function AddPandalFlow({
             {hasPendingMove && (
               <div className="absolute inset-x-3 bottom-14 z-10 flex items-center justify-between gap-2 rounded-2xl bg-panel/95 px-3.5 py-2.5 shadow-2xl">
                 <span className="flex min-w-0 items-start gap-1.5 font-body text-xs text-accent">
-                  <span className="material-symbols-rounded flex-none text-sm">pin_drop</span>
+                  <span className="material-symbols-rounded flex-none text-sm">
+                    pin_drop
+                  </span>
                   <span className="truncate">
-                    {geocoding ? "Resolving address…" : pendingAddress ? pendingAddress.label : "Couldn't resolve — type the address manually"}
+                    {geocoding
+                      ? "Resolving address…"
+                      : pendingAddress
+                        ? pendingAddress.label
+                        : "Couldn't resolve — type the address manually"}
                   </span>
                 </span>
                 <button
@@ -937,9 +1115,17 @@ export function AddPandalFlow({
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
             <div className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
-              <span className="material-symbols-rounded text-sm text-accent">location_on</span>
-              Adding to <span className="font-bold text-ink">{selectedCity.name}</span>, {festivalYear}
-              <button type="button" onClick={() => setStep("city")} className="ml-auto font-bold text-brand">
+              <span className="material-symbols-rounded text-sm text-accent">
+                location_on
+              </span>
+              Adding to{" "}
+              <span className="font-bold text-ink">{selectedCity.name}</span>,{" "}
+              {festivalYear}
+              <button
+                type="button"
+                onClick={() => setStep("city")}
+                className="ml-auto font-bold text-brand"
+              >
                 Change
               </button>
             </div>
@@ -949,7 +1135,9 @@ export function AddPandalFlow({
               disabled={locating}
               className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-3 font-body text-sm font-bold text-brand-ink disabled:opacity-70"
             >
-              <span className="material-symbols-rounded text-lg">{locating ? "sync" : "my_location"}</span>
+              <span className="material-symbols-rounded text-lg">
+                {locating ? "sync" : "my_location"}
+              </span>
               {locating ? "Locating…" : "Use my current location"}
             </button>
             {locationError && (
@@ -959,7 +1147,9 @@ export function AddPandalFlow({
               </span>
             )}
 
-            <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
+            <span className="font-body text-xs font-extrabold tracking-wide text-accent">
+              BASIC DETAILS
+            </span>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Locality / area">
@@ -967,7 +1157,9 @@ export function AddPandalFlow({
                   uiSize="sm"
                   placeholder="e.g. Kumartuli"
                   value={details.locality}
-                  onChange={(e) => setDetails({ ...details, locality: e.target.value })}
+                  onChange={(e) =>
+                    setDetails({ ...details, locality: e.target.value })
+                  }
                 />
               </Field>
               <Field label="Landmark">
@@ -975,7 +1167,9 @@ export function AddPandalFlow({
                   uiSize="sm"
                   placeholder="Optional"
                   value={details.landmark}
-                  onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
+                  onChange={(e) =>
+                    setDetails({ ...details, landmark: e.target.value })
+                  }
                 />
               </Field>
             </div>
@@ -984,14 +1178,17 @@ export function AddPandalFlow({
                 uiSize="sm"
                 placeholder="Full street address"
                 value={details.address}
-                onChange={(e) => setDetails({ ...details, address: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, address: e.target.value })
+                }
               />
             </Field>
 
             {!details.locality && !details.address && (
               <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
                 <span className="material-symbols-rounded text-sm">info</span>
-                Drag the map, search, or use your location above, then tap "Use this location" — or type the address directly.
+                Drag the map, search, or use your location above, then tap "Use
+                this location" — or type the address directly.
               </span>
             )}
 
@@ -1000,15 +1197,19 @@ export function AddPandalFlow({
                 *before* submitting instead of it only surfacing in admin
                 review after the fact (see the equivalent banner on the
                 admin submissions page). */}
-            {hasConfirmedLocation && cityDistanceMeters > CITY_DISTANCE_WARNING_METERS && (
-              <div className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2.5">
-                <span className="material-symbols-rounded flex-none text-base text-accent">warning</span>
-                <span className="font-body text-xs text-accent">
-                  This looks ~{Math.round(cityDistanceMeters / 1000)}km from {selectedCity.name} — if that's not right, go
-                  back and pick a different city.
-                </span>
-              </div>
-            )}
+            {hasConfirmedLocation &&
+              cityDistanceMeters > CITY_DISTANCE_WARNING_METERS && (
+                <div className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2.5">
+                  <span className="material-symbols-rounded flex-none text-base text-accent">
+                    warning
+                  </span>
+                  <span className="font-body text-xs text-accent">
+                    This looks ~{Math.round(cityDistanceMeters / 1000)}km from{" "}
+                    {selectedCity.name} — if that's not right, go back and pick
+                    a different city.
+                  </span>
+                </div>
+              )}
 
             {/* Only surfaced once a location is actually confirmed, and only
                 when there's something to say — testers didn't understand
@@ -1017,35 +1218,45 @@ export function AddPandalFlow({
                 exploring the map. A spot with no nearby matches now shows
                 nothing here at all; the plain Continue button below is the
                 only thing that appears either way. */}
-            {Boolean(details.locality && details.address) && (nearby.length > 0 || nearbyCheckFailed) && (
-              <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
-                <div className="flex flex-col gap-1">
-                  <span className="font-display text-[15px] font-extrabold">
-                    {nearbyCheckFailed ? "Couldn't check for existing pandals nearby" : "Is one of these your pandal?"}
-                  </span>
-                  <span className="font-body text-sm text-ink-muted">
-                    {nearbyCheckFailed
-                      ? "Please look on the map or Explore before continuing, to avoid adding a duplicate."
-                      : `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} already listed near this spot.`}
-                  </span>
-                </div>
-                {nearby.map((candidate) => (
-                  <div key={candidate.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel">
-                    <div className="flex min-w-0 flex-1 flex-col">
-                      <span className="truncate font-body text-sm font-bold">{candidate.canonicalName}</span>
-                      <span className="truncate font-body text-xs text-ink-muted">{candidate.locality}</span>
-                    </div>
-                    <Link
-                      href={`/${selectedCity.slug}/pandal/${candidate.slug}`}
-                      target="_blank"
-                      className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
-                    >
-                      View pandal
-                    </Link>
+            {Boolean(details.locality && details.address) &&
+              (nearby.length > 0 || nearbyCheckFailed) && (
+                <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-display text-[15px] font-extrabold">
+                      {nearbyCheckFailed
+                        ? "Couldn't check for existing pandals nearby"
+                        : "Is one of these your pandal?"}
+                    </span>
+                    <span className="font-body text-sm text-ink-muted">
+                      {nearbyCheckFailed
+                        ? "Please look on the map or Explore before continuing, to avoid adding a duplicate."
+                        : `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} already listed near this spot.`}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
+                  {nearby.map((candidate) => (
+                    <div
+                      key={candidate.id}
+                      className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel"
+                    >
+                      <div className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate font-body text-sm font-bold">
+                          {candidate.canonicalName}
+                        </span>
+                        <span className="truncate font-body text-xs text-ink-muted">
+                          {candidate.locality}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/${selectedCity.slug}/pandal/${candidate.slug}`}
+                        target="_blank"
+                        className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
+                      >
+                        View pandal
+                      </Link>
+                    </div>
+                  ))}
+                </div>
+              )}
 
             <Button
               uiSize="sm"
@@ -1054,29 +1265,36 @@ export function AddPandalFlow({
               className="flex items-center justify-center gap-1.5"
             >
               Continue
-              <span className="material-symbols-rounded text-lg">arrow_forward</span>
+              <span className="material-symbols-rounded text-lg">
+                arrow_forward
+              </span>
             </Button>
           </div>
-
         </div>
       )}
 
       {step === "details" && (
         <form onSubmit={submitDetails} className={formStepClass}>
-          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">Tell us about your pandal</h2>
+          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">
+            Tell us about your pandal
+          </h2>
 
           {/* Reminder of the location picked on the previous step — that
               screen scrolls out of view by the time someone's filling this
               one in, so without this the address they typed is invisible
               until after they've already submitted. */}
           <div className="flex items-start gap-2.5 rounded-2xl border border-border bg-panel px-3.5 py-3 md:bg-card/60">
-            <span className="material-symbols-rounded mt-0.5 flex-none text-lg text-accent">location_on</span>
+            <span className="material-symbols-rounded mt-0.5 flex-none text-lg text-accent">
+              location_on
+            </span>
             <div className="flex min-w-0 flex-col">
               <span className="truncate font-body text-sm font-bold">
                 {details.address || "No address set"}
               </span>
               <span className="truncate font-body text-xs text-ink-muted">
-                {[details.locality, details.landmark].filter(Boolean).join(" · ") || "No locality set"}
+                {[details.locality, details.landmark]
+                  .filter(Boolean)
+                  .join(" · ") || "No locality set"}
               </span>
             </div>
             <button
@@ -1088,12 +1306,16 @@ export function AddPandalFlow({
             </button>
           </div>
 
-          <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
+          <span className="font-body text-xs font-extrabold tracking-wide text-accent">
+            BASIC DETAILS
+          </span>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-brand">storefront</span>
+                <span className="material-symbols-rounded text-brand">
+                  storefront
+                </span>
               </span>
               <span className="font-display text-[15px] font-bold">Basics</span>
             </div>
@@ -1103,7 +1325,9 @@ export function AddPandalFlow({
                 required
                 placeholder="e.g. Kumartuli Sarbojanin"
                 value={details.canonicalName}
-                onChange={(e) => setDetails({ ...details, canonicalName: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, canonicalName: e.target.value })
+                }
               />
             </Field>
             <Field label="Organiser / committee">
@@ -1111,27 +1335,39 @@ export function AddPandalFlow({
                 uiSize="sm"
                 placeholder="Optional"
                 value={details.organizerName}
-                onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, organizerName: e.target.value })
+                }
               />
             </Field>
           </div>
 
-          <span className="mt-1 font-body text-xs font-extrabold tracking-wide text-accent">OPTIONAL DETAILS</span>
+          <span className="mt-1 font-body text-xs font-extrabold tracking-wide text-accent">
+            OPTIONAL DETAILS
+          </span>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-3.5">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-accent">palette</span>
+                <span className="material-symbols-rounded text-accent">
+                  palette
+                </span>
               </span>
-              <span className="font-display text-[15px] font-bold">Theme for {festivalYear}</span>
-              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+              <span className="font-display text-[15px] font-bold">
+                Theme for {festivalYear}
+              </span>
+              <span className="ml-auto font-body text-xs text-ink-muted">
+                optional
+              </span>
             </div>
             <Field label="Theme name">
               <Input
                 uiSize="sm"
                 placeholder="e.g. Rural Bengal"
                 value={details.theme}
-                onChange={(e) => setDetails({ ...details, theme: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, theme: e.target.value })
+                }
               />
             </Field>
             <Field label="Theme details">
@@ -1139,7 +1375,9 @@ export function AddPandalFlow({
                 uiSize="sm"
                 placeholder="What makes it worth visiting?"
                 value={details.description}
-                onChange={(e) => setDetails({ ...details, description: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, description: e.target.value })
+                }
               />
             </Field>
           </div>
@@ -1147,33 +1385,52 @@ export function AddPandalFlow({
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-brand">photo_camera</span>
+                <span className="material-symbols-rounded text-brand">
+                  photo_camera
+                </span>
               </span>
               <span className="font-display text-[15px] font-bold">Photos</span>
-              <span className="ml-auto font-body text-xs text-ink-muted">optional · up to {MAX_PHOTOS}</span>
+              <span className="ml-auto font-body text-xs text-ink-muted">
+                optional · up to {MAX_PHOTOS}
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {photos.map((photo) => (
-                <div key={photo.url} className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-card">
+                <div
+                  key={photo.url}
+                  className="relative h-20 w-20 flex-none overflow-hidden rounded-xl bg-card"
+                >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photo.url} alt="" className="h-full w-full object-cover" />
+                  <img
+                    src={photo.url}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => removePhoto(photo.url)}
                     className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-ground/80"
                   >
-                    <span className="material-symbols-rounded text-xs">close</span>
+                    <span className="material-symbols-rounded text-xs">
+                      close
+                    </span>
                   </button>
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
                 <label className="flex h-20 w-20 flex-none cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-ink-muted">
                   {uploadingPhoto ? (
-                    <span className="material-symbols-rounded animate-spin text-xl">progress_activity</span>
+                    <span className="material-symbols-rounded animate-spin text-xl">
+                      progress_activity
+                    </span>
                   ) : (
                     <>
-                      <span className="material-symbols-rounded text-xl">add_photo_alternate</span>
-                      <span className="font-body text-[10px] font-semibold">Add</span>
+                      <span className="material-symbols-rounded text-xl">
+                        add_photo_alternate
+                      </span>
+                      <span className="font-body text-[10px] font-semibold">
+                        Add
+                      </span>
                     </>
                   )}
                   <input
@@ -1187,16 +1444,24 @@ export function AddPandalFlow({
                 </label>
               )}
             </div>
-            {photoError && <p className="font-body text-xs text-brand">{photoError}</p>}
+            {photoError && (
+              <p className="font-body text-xs text-brand">{photoError}</p>
+            )}
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-brand">sell</span>
+                <span className="material-symbols-rounded text-brand">
+                  sell
+                </span>
               </span>
-              <span className="font-display text-[15px] font-bold">Categories</span>
-              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+              <span className="font-display text-[15px] font-bold">
+                Categories
+              </span>
+              <span className="ml-auto font-body text-xs text-ink-muted">
+                optional
+              </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {CATEGORY_OPTIONS.map((category) => {
@@ -1207,7 +1472,9 @@ export function AddPandalFlow({
                     type="button"
                     onClick={() => toggleCategory(category)}
                     className={`rounded-pill border px-3 py-1.5 font-body text-sm font-semibold transition-colors ${
-                      isActive ? "border-brand bg-brand text-brand-ink" : "border-border bg-card text-ink-dim"
+                      isActive
+                        ? "border-brand bg-brand text-brand-ink"
+                        : "border-border bg-card text-ink-dim"
                     }`}
                   >
                     {category}
@@ -1220,17 +1487,25 @@ export function AddPandalFlow({
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-brand">local_parking</span>
+                <span className="material-symbols-rounded text-brand">
+                  local_parking
+                </span>
               </span>
-              <span className="font-display text-[15px] font-bold">Good to know for visitors</span>
-              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+              <span className="font-display text-[15px] font-bold">
+                Good to know for visitors
+              </span>
+              <span className="ml-auto font-body text-xs text-ink-muted">
+                optional
+              </span>
             </div>
             <Field label="Public contact">
               <Input
                 uiSize="sm"
                 placeholder="Phone number visitors can call"
                 value={details.publicContact}
-                onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
+                onChange={(e) =>
+                  setDetails({ ...details, publicContact: e.target.value })
+                }
               />
             </Field>
             {(
@@ -1242,7 +1517,10 @@ export function AddPandalFlow({
                 ["streetShopsNearby", "Street shops nearby"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="flex items-center justify-between font-body text-sm">
+              <label
+                key={key}
+                className="flex items-center justify-between font-body text-sm"
+              >
                 {label}
                 <input
                   type="checkbox"
@@ -1253,7 +1531,11 @@ export function AddPandalFlow({
               </label>
             ))}
             <Field label="Visit type">
-              <Select uiSize="sm" value={visitType} onChange={(e) => setVisitType(e.target.value)}>
+              <Select
+                uiSize="sm"
+                value={visitType}
+                onChange={(e) => setVisitType(e.target.value)}
+              >
                 {VISIT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -1266,71 +1548,99 @@ export function AddPandalFlow({
           <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
               <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
-                <span className="material-symbols-rounded text-brand">schedule</span>
+                <span className="material-symbols-rounded text-brand">
+                  schedule
+                </span>
               </span>
-              <span className="font-display text-[15px] font-bold">Puja schedule</span>
-              <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
+              <span className="font-display text-[15px] font-bold">
+                Puja schedule
+              </span>
+              <span className="ml-auto font-body text-xs text-ink-muted">
+                optional
+              </span>
             </div>
             {schedule.map((row, index) => {
               const { hour, minute, period } = parseScheduleTime(row.time);
               return (
-              <div key={index} className="flex gap-2">
-                <div className="flex flex-none gap-1">
-                  <Select
+                <div key={index} className="flex gap-2">
+                  <div className="flex flex-none gap-1">
+                    <Select
+                      uiSize="sm"
+                      aria-label="Hour"
+                      value={hour}
+                      onChange={(e) =>
+                        updateScheduleRow(
+                          index,
+                          "time",
+                          formatScheduleTime(e.target.value, minute, period),
+                        )
+                      }
+                      className="w-[56px]"
+                    >
+                      {SCHEDULE_HOURS.map((h) => (
+                        <option key={h} value={h}>
+                          {h}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      uiSize="sm"
+                      aria-label="Minute"
+                      value={minute}
+                      onChange={(e) =>
+                        updateScheduleRow(
+                          index,
+                          "time",
+                          formatScheduleTime(hour, e.target.value, period),
+                        )
+                      }
+                      className="w-[64px]"
+                    >
+                      {SCHEDULE_MINUTES.map((m) => (
+                        <option key={m} value={m}>
+                          {m}
+                        </option>
+                      ))}
+                    </Select>
+                    <Select
+                      uiSize="sm"
+                      aria-label="AM or PM"
+                      value={period}
+                      onChange={(e) =>
+                        updateScheduleRow(
+                          index,
+                          "time",
+                          formatScheduleTime(hour, minute, e.target.value),
+                        )
+                      }
+                      className="w-[64px]"
+                    >
+                      {SCHEDULE_PERIODS.map((p) => (
+                        <option key={p} value={p}>
+                          {p}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+                  <Input
                     uiSize="sm"
-                    aria-label="Hour"
-                    value={hour}
-                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(e.target.value, minute, period))}
-                    className="w-[56px]"
+                    placeholder="Event — e.g. Evening Aarti"
+                    value={row.label}
+                    onChange={(e) =>
+                      updateScheduleRow(index, "label", e.target.value)
+                    }
+                    className="flex-1"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeScheduleRow(index)}
+                    className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-card"
                   >
-                    {SCHEDULE_HOURS.map((h) => (
-                      <option key={h} value={h}>
-                        {h}
-                      </option>
-                    ))}
-                  </Select>
-                  <Select
-                    uiSize="sm"
-                    aria-label="Minute"
-                    value={minute}
-                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, e.target.value, period))}
-                    className="w-[64px]"
-                  >
-                    {SCHEDULE_MINUTES.map((m) => (
-                      <option key={m} value={m}>
-                        {m}
-                      </option>
-                    ))}
-                  </Select>
-                  <Select
-                    uiSize="sm"
-                    aria-label="AM or PM"
-                    value={period}
-                    onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, minute, e.target.value))}
-                    className="w-[64px]"
-                  >
-                    {SCHEDULE_PERIODS.map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </Select>
+                    <span className="material-symbols-rounded text-ink-muted">
+                      close
+                    </span>
+                  </button>
                 </div>
-                <Input
-                  uiSize="sm"
-                  placeholder="Event — e.g. Evening Aarti"
-                  value={row.label}
-                  onChange={(e) => updateScheduleRow(index, "label", e.target.value)}
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeScheduleRow(index)}
-                  className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-card"
-                >
-                  <span className="material-symbols-rounded text-ink-muted">close</span>
-                </button>
-              </div>
               );
             })}
             <button
@@ -1353,7 +1663,9 @@ export function AddPandalFlow({
         <div className={formStepClass.replace("gap-4", "gap-5")}>
           <div className="flex flex-col gap-2">
             <h2 className="font-display text-[20px] md:text-[22px] font-extrabold leading-tight">
-              {REQUIRE_VERIFICATION ? "Quick check it's you" : "How can we reach you?"}
+              {REQUIRE_VERIFICATION
+                ? "Quick check it's you"
+                : "How can we reach you?"}
             </h2>
             <p className="font-body text-sm text-ink-muted">
               {REQUIRE_VERIFICATION
@@ -1362,7 +1674,9 @@ export function AddPandalFlow({
             </p>
           </div>
           <div className="flex h-10 md:h-11 items-center gap-2.5 rounded-2xl border border-border bg-panel px-3 md:bg-card">
-            <span className="material-symbols-rounded text-[18px] text-ink-muted">mail</span>
+            <span className="material-symbols-rounded text-[18px] text-ink-muted">
+              mail
+            </span>
             <input
               type="email"
               required
@@ -1373,7 +1687,10 @@ export function AddPandalFlow({
               className="flex-1 bg-transparent font-body text-[13px] md:text-[13.5px] outline-none"
             />
             {REQUIRE_VERIFICATION && codeSent && (
-              <button className="font-body text-sm font-bold text-brand" onClick={() => setCodeSent(false)}>
+              <button
+                className="font-body text-sm font-bold text-brand"
+                onClick={() => setCodeSent(false)}
+              >
                 Change
               </button>
             )}
@@ -1394,13 +1711,21 @@ export function AddPandalFlow({
           />
 
           {!REQUIRE_VERIFICATION && (
-            <Button uiSize="sm" onClick={handleSubmitRequest} disabled={submitting || !email}>
+            <Button
+              uiSize="sm"
+              onClick={handleSubmitRequest}
+              disabled={submitting || !email}
+            >
               {submitting ? "Submitting…" : "Submit request"}
             </Button>
           )}
 
           {REQUIRE_VERIFICATION && !codeSent && (
-            <Button uiSize="sm" onClick={handleSendCode} disabled={sending || !email}>
+            <Button
+              uiSize="sm"
+              onClick={handleSendCode}
+              disabled={sending || !email}
+            >
               {sending ? "Sending…" : "Send code"}
             </Button>
           )}
@@ -1408,15 +1733,23 @@ export function AddPandalFlow({
           {REQUIRE_VERIFICATION && codeSent && (
             <>
               <label className="flex flex-col gap-2">
-                <span className="font-body text-xs font-semibold text-ink-muted">Enter the 6-digit code we sent</span>
+                <span className="font-body text-xs font-semibold text-ink-muted">
+                  Enter the 6-digit code we sent
+                </span>
                 <input
                   value={code}
-                  onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onChange={(e) =>
+                    setCode(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
                   className="h-11 md:h-12 rounded-2xl bg-ink text-center font-mono text-base md:text-lg text-ground tracking-[0.4em]"
                   placeholder="000000"
                 />
               </label>
-              <Button uiSize="sm" onClick={handleVerifyAndSubmit} disabled={submitting || code.length !== 6}>
+              <Button
+                uiSize="sm"
+                onClick={handleVerifyAndSubmit}
+                disabled={submitting || code.length !== 6}
+              >
                 {submitting ? "Submitting…" : "Verify & submit"}
               </Button>
             </>
@@ -1429,18 +1762,31 @@ export function AddPandalFlow({
       {step === "done" && (
         <div className="flex flex-col items-center gap-5 px-6 pt-20 text-center md:mx-auto md:max-w-md md:rounded-3xl md:border md:border-border md:bg-panel md:pb-10 md:pt-16">
           <span className="flex h-24 w-24 items-center justify-center rounded-full bg-brand">
-            <span className="material-symbols-rounded text-5xl text-brand-ink" style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span
+              className="material-symbols-rounded text-5xl text-brand-ink"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
               check
             </span>
           </span>
-          <h2 className="font-display text-[22px] md:text-[26px] font-extrabold">Shubho! It's in the queue.</h2>
+          <h2 className="font-display text-[22px] md:text-[26px] font-extrabold">
+            Shubho! It's in the queue.
+          </h2>
           <p className="font-body text-ink-dim">
-            Every listing is checked before it appears on the {selectedCity.name} map. We'll email you only if something
-            needs a fix.
+            Every listing is checked before it appears on the{" "}
+            {selectedCity.name} map. We'll email you only if something needs a
+            fix.
           </p>
-          {submissionId && <p className="font-mono text-xs text-ink-muted">#{submissionId.slice(-6)}</p>}
+          {submissionId && (
+            <p className="font-mono text-xs text-ink-muted">
+              #{submissionId.slice(-6)}
+            </p>
+          )}
           <div className="mt-4 flex w-full flex-col gap-2.5">
-            <Button uiSize="sm" onClick={() => router.push(`/${selectedCity.slug}`)}>
+            <Button
+              uiSize="sm"
+              onClick={() => router.push(`/${selectedCity.slug}`)}
+            >
               Back to map
             </Button>
             <Button
@@ -1462,7 +1808,9 @@ export function AddPandalFlow({
                 setPhotos([]);
                 setPhotoError(null);
                 setSubmissionId(null);
-                setFestivalYear(normalizeAddPandalFestivalYear(activeFestivalYear));
+                setFestivalYear(
+                  normalizeAddPandalFestivalYear(activeFestivalYear),
+                );
                 setAmenities(emptyAmenities);
                 setVisitType("WALKING_DARSHAN");
                 setSchedule([]);
