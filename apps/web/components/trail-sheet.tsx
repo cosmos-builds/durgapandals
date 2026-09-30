@@ -43,6 +43,12 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
     fetchPandalsForCity(citySlug).then(setAllPandals);
   }, [open, citySlug, allPandals]);
 
+  // The trail's *slugs* are already known synchronously from localStorage
+  // (orderedSlugs, above) — only their full details (name, cover photo)
+  // need this fetch. Without distinguishing the two, "0 of 10 stops" and
+  // the "No stops yet" empty state both flashed on every open, even for a
+  // trail that already had stops, for exactly as long as the fetch took.
+  const loading = open && allPandals === null;
   const bySlug = new Map((allPandals ?? []).map((p) => [p.slug, p]));
   const stops = orderedSlugs.map((slug) => bySlug.get(slug)).filter((p): p is PandalSummary => Boolean(p));
 
@@ -115,7 +121,11 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
               <div>
                 <h2 className="font-display text-2xl font-extrabold">Your trail</h2>
                 <p className="font-body text-xs text-ink-muted">
-                  {stops.length} of {MAX_TRAIL_STOPS} stops · drag to reorder
+                  {/* orderedSlugs.length, not stops.length — the count is
+                      known immediately from localStorage; stops.length
+                      would read 0 until the pandal-details fetch below
+                      resolves, understating a real trail as empty. */}
+                  {orderedSlugs.length} of {MAX_TRAIL_STOPS} stops · drag to reorder
                 </p>
               </div>
               <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-full bg-card">
@@ -123,7 +133,12 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
               </button>
             </div>
 
-            {stops.length === 0 ? (
+            {loading ? (
+              <div className="flex flex-col items-center gap-2 px-6 py-10 text-center">
+                <span className="material-symbols-rounded animate-spin text-3xl text-accent">progress_activity</span>
+                <span className="font-body text-sm text-ink-muted">Loading your trail…</span>
+              </div>
+            ) : stops.length === 0 ? (
               <div className="flex flex-col items-center gap-2 rounded-3xl border border-border bg-card/40 px-6 py-10 text-center">
                 <span className="material-symbols-rounded text-4xl text-accent" style={{ transform: "rotate(-6deg)" }}>
                   route
