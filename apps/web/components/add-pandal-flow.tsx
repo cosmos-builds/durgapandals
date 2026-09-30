@@ -1089,18 +1089,6 @@ export function AddPandalFlow({
               into the already-small map viewport. */}
           <div className="flex flex-col md:h-full md:flex-1">
             <div className="relative h-[420px] w-full flex-none overflow-hidden md:h-auto md:flex-1">
-              {/* Replaces the shared header's back arrow — that header is
-                  hidden on mobile for this step to free up room for the map
-                  (see `headerBlock` above), so back navigation needs its own
-                  affordance directly on the map instead. */}
-              <button
-                onClick={goBack}
-                className="absolute left-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-ground/85 shadow-lg md:hidden"
-              >
-                <span className="material-symbols-rounded text-lg">
-                  arrow_back
-                </span>
-              </button>
               {/* `coords`, not the fixed `center` prop — MapCanvas only reads
                   its `center` at mount time (see packages/maps/src/react), and
                   this step's subtree unmounts/remounts on every trip through
@@ -1126,7 +1114,7 @@ export function AddPandalFlow({
                   add_location
                 </span>
               </div>
-              <div className="absolute left-14 right-3 top-3 z-10 md:left-3 md:max-w-[420px]">
+              <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
                 <LocationSearchBox
                   citySlug={selectedCity.slug}
                   placeholder={`Search your pandal's area in ${selectedCity.name}`}
