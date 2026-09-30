@@ -849,50 +849,68 @@ export function AddPandalFlow({
   // One header for every step — a bare "2/4" counter left a test user
   // unsure what each step actually was; naming it plus the count together
   // ("Step 2 of 4 · Location") gives an explicit sense of place, not just
-  // progress.
-  // Hidden on mobile for the location step alone — that step is the one
-  // genuinely starved for vertical space (it's mostly a map), and back
-  // navigation there is covered instead by a small floating button directly
-  // on the map (see the `goBack` button inside the location step below).
-  // Desktop keeps this as-is, same as every other step.
-  const headerBlock = step !== "done" && (
+  // progress. The location step is the one genuinely starved for vertical
+  // space (it's mostly a map), so on mobile it swaps this full header for a
+  // compact one below (back button + step dots only, no logo/city-name row
+  // or "Step X of Y" caption) instead of dropping the stepper entirely —
+  // losing it there while every other step keeps it made the flow feel
+  // inconsistent. Desktop always gets the full header, regardless of step.
+  const stepDots = (
     <div
-      className={`flex-col gap-3 px-4 pb-3 pt-4 md:mx-auto md:flex md:max-w-xl ${
-        step === "location" ? "hidden md:flex" : "flex"
-      }`}
+      className="grid flex-1 gap-1.5"
+      style={{ gridTemplateColumns: `repeat(${progress.total}, 1fr)` }}
     >
-      <div className="flex items-center justify-between">
-        {/* Back arrow: mobile only — desktop relies on the persistent top
-            nav bar instead, matching the design. */}
-        <button
-          onClick={goBack}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden"
-        >
-          <span className="material-symbols-rounded">arrow_back</span>
-        </button>
-        <MobileHeader
-          citySlug={citySlug}
-          cityName={selectedCity.name}
-          year={festivalYear}
-          className="md:hidden"
+      {Array.from({ length: progress.total }).map((_, i) => (
+        <div
+          key={i}
+          className={`h-1 rounded-full ${i <= progress.index ? "bg-brand" : "bg-chip"}`}
         />
-        <span className="hidden font-body text-sm font-bold md:inline">
-          Add your pandal
-        </span>
-        <span className="font-mono text-xs text-ink-muted">
-          Step {progress.index + 1} of {progress.total} · {STEP_LABELS[step]}
-        </span>
-      </div>
+      ))}
+    </div>
+  );
+  const headerBlock = step !== "done" && (
+    <div className="md:mx-auto md:max-w-xl">
+      {step === "location" && (
+        <div className="flex items-center gap-2.5 px-4 py-2 md:hidden">
+          <button
+            onClick={goBack}
+            className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-card"
+          >
+            <span className="material-symbols-rounded text-lg">
+              arrow_back
+            </span>
+          </button>
+          {stepDots}
+        </div>
+      )}
       <div
-        className="grid gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${progress.total}, 1fr)` }}
+        className={`flex-col gap-3 px-4 pb-3 pt-4 md:flex ${
+          step === "location" ? "hidden md:flex" : "flex"
+        }`}
       >
-        {Array.from({ length: progress.total }).map((_, i) => (
-          <div
-            key={i}
-            className={`h-1 rounded-full ${i <= progress.index ? "bg-brand" : "bg-chip"}`}
+        <div className="flex items-center justify-between">
+          {/* Back arrow: mobile only — desktop relies on the persistent top
+              nav bar instead, matching the design. */}
+          <button
+            onClick={goBack}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden"
+          >
+            <span className="material-symbols-rounded">arrow_back</span>
+          </button>
+          <MobileHeader
+            citySlug={citySlug}
+            cityName={selectedCity.name}
+            year={festivalYear}
+            className="md:hidden"
           />
-        ))}
+          <span className="hidden font-body text-sm font-bold md:inline">
+            Add your pandal
+          </span>
+          <span className="font-mono text-xs text-ink-muted">
+            Step {progress.index + 1} of {progress.total} · {STEP_LABELS[step]}
+          </span>
+        </div>
+        {stepDots}
       </div>
     </div>
   );
@@ -1147,9 +1165,9 @@ export function AddPandalFlow({
                   type="button"
                   onClick={useThisLocation}
                   disabled={!hasPendingMove}
-                  className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand px-3 font-body text-sm font-bold text-brand-ink disabled:opacity-50"
+                  className="flex h-10 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl bg-brand px-2 font-body text-xs font-bold text-brand-ink disabled:opacity-50"
                 >
-                  <span className="material-symbols-rounded text-lg">
+                  <span className="material-symbols-rounded text-base">
                     pin_drop
                   </span>
                   Use marked location
@@ -1158,9 +1176,9 @@ export function AddPandalFlow({
                   type="button"
                   onClick={locateMe}
                   disabled={locating}
-                  className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-brand px-3 font-body text-sm font-bold text-brand disabled:opacity-70"
+                  className="flex h-10 flex-1 items-center justify-center gap-1 whitespace-nowrap rounded-xl border-[1.5px] border-brand px-2 font-body text-xs font-bold text-brand disabled:opacity-70"
                 >
-                  <span className="material-symbols-rounded text-lg">
+                  <span className="material-symbols-rounded text-base">
                     {locating ? "sync" : "my_location"}
                   </span>
                   {locating ? "Locating…" : "Use current location"}
