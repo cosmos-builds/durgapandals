@@ -21,7 +21,6 @@ import {
 import { distanceMeters } from "@durgapandals/deduplication";
 import { LocationSearchBox } from "./location-search-box";
 import { MobileHeader } from "./mobile-header";
-import { getAvailableFestivalYears } from "@/lib/festival-years";
 import { useCitySearch } from "@/lib/use-city-search";
 import type { CitySearchResult } from "@/lib/api";
 
@@ -52,6 +51,16 @@ const STEP_LABELS: Record<Step, string> = {
   verify: "Contact",
   done: "Done",
 };
+
+function getAddPandalFestivalYears(): number[] {
+  const currentYear = new Date().getFullYear();
+  return [currentYear, currentYear + 1];
+}
+
+function normalizeAddPandalFestivalYear(year: number): number {
+  const currentYear = new Date().getFullYear();
+  return Math.min(Math.max(year, currentYear), currentYear + 1);
+}
 
 // The one place `cityId` ever gets set for the submission (spec fix: the
 // flow used to silently keep whichever city's URL it was opened from, even
@@ -254,7 +263,9 @@ export function AddPandalFlow({
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
   const [details, setDetails] = useState(initialDraft?.details ?? emptyDetails);
-  const [festivalYear, setFestivalYear] = useState(initialDraft?.festivalYear ?? activeFestivalYear);
+  const [festivalYear, setFestivalYear] = useState(() =>
+    normalizeAddPandalFestivalYear(initialDraft?.festivalYear ?? activeFestivalYear)
+  );
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [searchingArea, setSearchingArea] = useState(false);
@@ -330,7 +341,7 @@ export function AddPandalFlow({
     setDetails(emptyDetails);
     setCategories([]);
     setPhotos([]);
-    setFestivalYear(activeFestivalYear);
+    setFestivalYear(normalizeAddPandalFestivalYear(activeFestivalYear));
     setAmenities(emptyAmenities);
     setVisitType("WALKING_DARSHAN");
     setSchedule([]);
@@ -527,7 +538,8 @@ export function AddPandalFlow({
   // clicked.
   function selectCityCandidate(city: SelectedCityState) {
     setSelectedCity(city);
-    setFestivalYear(city.activeFestivalYear);
+    setFestivalYear(normalizeAddPandalFestivalYear(city.activeFestivalYear));
+    setCityQuery("");
   }
 
   const {
@@ -843,10 +855,10 @@ export function AddPandalFlow({
 
           <Field label="Festival year">
             <Select uiSize="sm" value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
-              {getAvailableFestivalYears().map((year) => (
+              {getAddPandalFestivalYears().map((year) => (
                 <option key={year} value={year}>
                   {year}
-                  {year === selectedCity.activeFestivalYear ? " (current)" : ""}
+                  {year === new Date().getFullYear() ? " (current)" : " (upcoming)"}
                 </option>
               ))}
             </Select>
@@ -1450,7 +1462,7 @@ export function AddPandalFlow({
                 setPhotos([]);
                 setPhotoError(null);
                 setSubmissionId(null);
-                setFestivalYear(activeFestivalYear);
+                setFestivalYear(normalizeAddPandalFestivalYear(activeFestivalYear));
                 setAmenities(emptyAmenities);
                 setVisitType("WALKING_DARSHAN");
                 setSchedule([]);
