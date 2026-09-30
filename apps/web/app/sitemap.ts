@@ -3,6 +3,15 @@ import { fetchCities, fetchPandalsForCity } from "@/lib/api";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 
+// Forces this to be computed per-request (with the underlying fetches'
+// own `next: { revalidate }` still caching normally) instead of at build
+// time. Without this, Next tries to prerender /sitemap.xml as a static
+// file during `next build` — a slow/unreachable API at that moment (it
+// happened: `fetchCities()` timed out mid-build) throws an unhandled
+// error that fails the *entire* deployment, not just this one route. A
+// stale or momentarily-unavailable sitemap is a non-issue; a site that
+// can't deploy at all is not.
+export const dynamic = "force-dynamic";
 export const revalidate = 3600;
 
 // `/`, `/[citySlug]/add`, and `/[citySlug]/saved` are deliberately excluded:

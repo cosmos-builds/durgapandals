@@ -11,12 +11,32 @@ const API_BASE_URL =
     ? (process.env.INTERNAL_API_URL ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000")
     : (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000");
 
-// A transient proxy/redirect/error page (HTML, not JSON) previously crashed
-// the caller with an unhandled JSON.parse SyntaxError instead of degrading
-// gracefully — this treats "response body isn't valid JSON" the same as
-// "request failed".
-async function safeJson<T>(response: Response, fallback: T): Promise<T> {
-  if (!response.ok) return fallback;
+// `fetch()` itself throws (not just resolves with a bad response) on a
+// network-level failure — DNS, connection refused, or a timeout — and
+// that's exactly what took down a production deploy: sitemap.ts's
+// `fetchCities()` call hit `ETIMEDOUT` reaching the API mid-build, which
+// propagated as an unhandled rejection and failed the entire `next build`,
+// blocking deployment over what should have been, at worst, a stale
+// sitemap. `safeJson` below already handled a bad *response* gracefully,
+// but every caller still did the actual `fetch()` unguarded. This wraps
+// that step too, so a network failure degrades the same way a bad response
+// already did — `null` in, `null` out of safeJson, no throw either way.
+async function safeFetch(url: string, init?: RequestInit): Promise<Response | null> {
+  try {
+    return await fetch(url, init);
+  } catch {
+    return null;
+  }
+}
+
+// A transient proxy/redirect/error page (HTML, not JSON), or a network
+// failure that never produced a response at all (see safeFetch above),
+// previously crashed the caller with an unhandled error instead of
+// degrading gracefully — this treats all three ("no response," "bad
+// response," "response body isn't valid JSON") the same as "request
+// failed."
+async function safeJson<T>(response: Response | null, fallback: T): Promise<T> {
+  if (!response || !response.ok) return fallback;
   try {
     return await response.json();
   } catch {
@@ -37,7 +57,7 @@ export interface CityApiModel {
 }
 
 export async function fetchCities(): Promise<CityApiModel[]> {
-  const response = await fetch(`${API_BASE_URL}/cities`, { next: { revalidate: 300 } });
+  const response = await safeFetch(`${API_BASE_URL}/cities`, { next: { revalidate: 300 } });
   return safeJson(response, []);
 }
 
@@ -69,7 +89,7 @@ export function fetchCitiesCached(force = false): Promise<CityApiModel[]> {
 }
 
 export async function fetchCityBySlug(slug: string): Promise<CityApiModel | null> {
-  const response = await fetch(`${API_BASE_URL}/cities/${slug}`, { next: { revalidate: 300 } });
+  const response = await safeFetch(`${API_BASE_URL}/cities/${slug}`, { next: { revalidate: 300 } });
   return safeJson(response, null);
 }
 
@@ -94,7 +114,7 @@ export type CitySearchResult =
 
 export async function searchCities(q: string): Promise<CitySearchResult[]> {
   if (q.trim().length < 2) return [];
-  const response = await fetch(`${API_BASE_URL}/cities/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
+  const response = await safeFetch(`${API_BASE_URL}/cities/search?q=${encodeURIComponent(q)}`, { cache: "no-store" });
   return safeJson(response, []);
 }
 
@@ -107,7 +127,7 @@ export async function resolveCity(candidate: {
   latitude: number;
   longitude: number;
 }): Promise<CityApiModel | null> {
-  const response = await fetch(`${API_BASE_URL}/cities/resolve`, {
+  const response = await safeFetch(`${API_BASE_URL}/cities/resolve`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(candidate),
@@ -223,7 +243,7 @@ export async function fetchPandalsForCity(
   bbox?: BoundingBox,
   year?: number
 ): Promise<PandalSummary[]> {
-  const response = await fetch(pandalsUrl(citySlug, bbox, year), pandalsFetchInit(bbox, year));
+  const response = await safeFetch(pandalsUrl(citySlug, bbox, year), pandalsFetchInit(bbox, year));
   return safeJson(response, []);
 }
 
@@ -249,7 +269,7 @@ function pandalDetailUrl(cityId: string, slug: string, year?: number): string {
 // where the existing graceful-fallback-to-null is appropriate (a broken
 // link preview is much lower stakes than the page itself 404ing).
 export async function fetchPandalDetail(cityId: string, slug: string, year?: number): Promise<PandalSummary | null> {
-  const response = await fetch(pandalDetailUrl(cityId, slug, year), { next: { revalidate: 30 } });
+  const response = await safeFetch(pandalDetailUrl(cityId, slug, year), { next: { revalidate: 30 } });
   return safeJson(response, null);
 }
 
@@ -315,7 +335,7 @@ export async function fetchNearbyRadiusPandals(
     longitude: String(longitude),
     year: String(year),
   });
-  const response = await fetch(`${API_BASE_URL}/pandals/nearby-radius?${params}`, { cache: "no-store" });
+  const response = await safeFetch(`${API_BASE_URL}/pandals/nearby-radius?${params}`, { cache: "no-store" });
   return safeJson(response, []);
 }
 
@@ -373,12 +393,12 @@ export async function searchLocations(
     params.set("nearLat", String(restrictNear.latitude));
     params.set("nearLon", String(restrictNear.longitude));
   }
-  const response = await fetch(`${API_BASE_URL}/geocode/search?${params}`, { cache: "no-store" });
+  const response = await safeFetch(`${API_BASE_URL}/geocode/search?${params}`, { cache: "no-store" });
   return safeJson(response, []);
 }
 
 export async function reverseGeocode(latitude: number, longitude: number): Promise<LocationSearchResult | null> {
-  const response = await fetch(`${API_BASE_URL}/geocode/reverse?lat=${latitude}&lon=${longitude}`, {
+  const response = await safeFetch(`${API_BASE_URL}/geocode/reverse?lat=${latitude}&lon=${longitude}`, {
     cache: "no-store",
   });
   return safeJson(response, null);
@@ -459,7 +479,7 @@ export async function deletePhoto(url: string): Promise<void> {
 // for a returning visitor and tapping it would silently un-like instead.
 export async function fetchLikedStatus(pandalYearId: string, anonymousVisitorId: string): Promise<boolean> {
   const params = new URLSearchParams({ pandalYearId, anonymousVisitorId });
-  const response = await fetch(`${API_BASE_URL}/reactions/mine?${params}`, { cache: "no-store" });
+  const response = await safeFetch(`${API_BASE_URL}/reactions/mine?${params}`, { cache: "no-store" });
   const body = await safeJson<{ liked: boolean }>(response, { liked: false });
   return body.liked;
 }
