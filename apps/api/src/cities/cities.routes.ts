@@ -95,7 +95,7 @@ async function searchExternalCities(q: string): Promise<ExternalCityCandidate[]>
   if (!response.ok) return [];
 
   const data = (await response.json()) as PhotonResponse;
-  const results = data.features
+  const rawResults = data.features
     .filter((f) => f.properties.osm_key === "place" && (!f.properties.osm_value || SETTLEMENT_TYPES.has(f.properties.osm_value)))
     .filter((f) => !f.properties.countrycode || f.properties.countrycode.toUpperCase() === "IN")
     .map((f) => ({
@@ -105,6 +105,18 @@ async function searchExternalCities(q: string): Promise<ExternalCityCandidate[]>
       longitude: f.geometry.coordinates[0],
     }))
     .filter((r) => r.name && r.state);
+
+  // Photon frequently returns several raw features for the same place (e.g.
+  // a `place` node plus an `administrative` boundary entry) — collapse those
+  // before caching/returning so callers never see the same city twice.
+  const results: ExternalCityCandidate[] = [];
+  for (const candidate of rawResults) {
+    const isDuplicate = results.some(
+      (existing) =>
+        existing.name.toLowerCase() === candidate.name.toLowerCase() || distanceMeters(existing, candidate) <= 15_000
+    );
+    if (!isDuplicate) results.push(candidate);
+  }
 
   externalSearchCache.set(cacheKey, { expiresAt: Date.now() + EXTERNAL_SEARCH_CACHE_TTL_MS, results });
   return results;

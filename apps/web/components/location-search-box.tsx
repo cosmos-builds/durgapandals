@@ -87,7 +87,7 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
       </div>
 
       {open && (results.length > 0 || (searched && !loading)) && (
-        <div className="absolute inset-x-0 top-[calc(100%+8px)] z-20 flex flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
+        <div className="absolute inset-x-0 top-[calc(100%+8px)] z-20 flex max-h-[260px] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
           {results.length === 0 ? (
             <p className="px-3 py-3 font-body text-sm text-ink-muted">
               No results nearby for "{query}" — try a broader area name.

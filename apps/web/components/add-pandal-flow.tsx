@@ -1031,65 +1031,62 @@ export function AddPandalFlow({
 
       {step === "location" && (
         <div className="flex flex-col md:h-[600px] md:flex-row-reverse">
-          {/* DOM order is [map, panel] so mobile (flex-col, no reverse) stacks
-              map-on-top/panel-below like the design; md:flex-row-reverse then
-              flips it to panel-left/map-right on desktop, matching the
-              Google Maps "add a place" split — both from the same markup. */}
-          <div className="relative h-[360px] w-full flex-none overflow-hidden md:h-full md:flex-1">
-            {/* `coords`, not the fixed `center` prop — MapCanvas only reads
-                its `center` at mount time (see packages/maps/src/react), and
-                this step's subtree unmounts/remounts on every trip through
-                "details" and back (see `goBack`). Passing the city's fixed
-                center here meant the map visually snapped back to it on
-                return, even though `coords` (and the nearby/geocode results
-                tied to it) had already moved with the visitor's drag. */}
-            <MapCanvas
-              styleUrl={mapTilesUrl}
-              center={coords}
-              zoom={selectedCity.zoom}
-              onMapReady={handleMapReady}
-              className="absolute inset-0"
-            />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
-              <span className="mb-1.5 rounded-xl bg-accent px-2.5 py-1 font-body text-xs font-bold text-accent-ink shadow">
-                Your pandal · drag map to adjust
-              </span>
-              <span
-                className="material-symbols-rounded text-[38px] text-accent"
-                style={{ fontVariationSettings: "'FILL' 1" }}
-              >
-                add_location
-              </span>
-            </div>
-            <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
-              <LocationSearchBox
-                citySlug={selectedCity.slug}
-                placeholder={`Search your pandal's area in ${selectedCity.name}`}
-                onSelect={handleLocationSelect}
-                biasCenter={pendingCoords}
-                restrictNear={{
-                  latitude: selectedCity.latitude,
-                  longitude: selectedCity.longitude,
-                }}
+          {/* DOM order is [map column, panel] so mobile (flex-col, no
+              reverse) stacks map-column-on-top/panel-below like the design;
+              md:flex-row-reverse then flips it to panel-left/map-right on
+              desktop, matching the Google Maps "add a place" split — both
+              from the same markup. The map column bundles the map with a
+              fixed action row directly under it (not overlaid on top of the
+              map) so "use this location"/"use current location" stop eating
+              into the already-small map viewport. */}
+          <div className="flex flex-col md:h-full md:flex-1">
+            <div className="relative h-[320px] w-full flex-none overflow-hidden md:h-auto md:flex-1">
+              {/* `coords`, not the fixed `center` prop — MapCanvas only reads
+                  its `center` at mount time (see packages/maps/src/react), and
+                  this step's subtree unmounts/remounts on every trip through
+                  "details" and back (see `goBack`). Passing the city's fixed
+                  center here meant the map visually snapped back to it on
+                  return, even though `coords` (and the nearby/geocode results
+                  tied to it) had already moved with the visitor's drag. */}
+              <MapCanvas
+                styleUrl={mapTilesUrl}
+                center={coords}
+                zoom={selectedCity.zoom}
+                onMapReady={handleMapReady}
+                className="absolute inset-0"
               />
+              <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
+                <span className="mb-1.5 rounded-xl bg-accent px-2.5 py-1 font-body text-xs font-bold text-accent-ink shadow">
+                  Your pandal · drag map to adjust
+                </span>
+                <span
+                  className="material-symbols-rounded text-[38px] text-accent"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  add_location
+                </span>
+              </div>
+              <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
+                <LocationSearchBox
+                  citySlug={selectedCity.slug}
+                  placeholder={`Search your pandal's area in ${selectedCity.name}`}
+                  onSelect={handleLocationSelect}
+                  biasCenter={pendingCoords}
+                  restrictNear={{
+                    latitude: selectedCity.latitude,
+                    longitude: selectedCity.longitude,
+                  }}
+                />
+              </div>
             </div>
-            <button
-              onClick={searchThisArea}
-              disabled={searchingArea}
-              className="absolute bottom-3 left-1/2 z-10 flex h-8 -translate-x-1/2 items-center gap-1 rounded-pill bg-ground/80 pl-2.5 pr-3 font-body text-xs font-bold text-ink shadow-lg disabled:opacity-70"
-            >
-              <span className="material-symbols-rounded text-base">
-                {searchingArea ? "sync" : "search"}
-              </span>
-              {searchingArea ? "Searching…" : "Search this area"}
-            </button>
 
-            {/* The only place a drag/search/locate ever reaches the actual
-                form — pending vs confirmed are always shown side by side so
-                it's never ambiguous which address is currently committed.
-                Same pattern as admin's LocationPicker. */}
-            {hasPendingMove && (
-              <div className="absolute inset-x-3 bottom-14 z-10 flex items-center justify-between gap-2 rounded-2xl bg-panel/95 px-3.5 py-2.5 shadow-2xl">
+            {/* Fixed action row, directly under the map instead of overlaid
+                on top of it — pending vs confirmed address are still always
+                shown side by side so it's never ambiguous which address is
+                currently committed, same pattern as admin's LocationPicker,
+                just no longer covering part of the map itself. */}
+            <div className="flex flex-none flex-col gap-2 border-b border-border bg-panel px-3 py-3 md:bg-card/60">
+              {hasPendingMove && (
                 <span className="flex min-w-0 items-start gap-1.5 font-body text-xs text-accent">
                   <span className="material-symbols-rounded flex-none text-sm">
                     pin_drop
@@ -1102,15 +1099,38 @@ export function AddPandalFlow({
                         : "Couldn't resolve — type the address manually"}
                   </span>
                 </span>
+              )}
+              <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={useThisLocation}
-                  className="flex-none rounded-xl bg-brand px-3 py-1.5 font-body text-xs font-bold text-brand-ink"
+                  disabled={!hasPendingMove}
+                  className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl bg-brand px-3 font-body text-sm font-bold text-brand-ink disabled:opacity-50"
                 >
-                  Use this location
+                  <span className="material-symbols-rounded text-lg">
+                    pin_drop
+                  </span>
+                  Use marked location
+                </button>
+                <button
+                  type="button"
+                  onClick={locateMe}
+                  disabled={locating}
+                  className="flex h-11 flex-1 items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-brand px-3 font-body text-sm font-bold text-brand disabled:opacity-70"
+                >
+                  <span className="material-symbols-rounded text-lg">
+                    {locating ? "sync" : "my_location"}
+                  </span>
+                  {locating ? "Locating…" : "Use current location"}
                 </button>
               </div>
-            )}
+              {locationError && (
+                <span className="flex items-center gap-1.5 font-body text-xs text-accent">
+                  <span className="material-symbols-rounded text-sm">info</span>
+                  {locationError}
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
@@ -1129,23 +1149,6 @@ export function AddPandalFlow({
                 Change
               </button>
             </div>
-
-            <button
-              onClick={locateMe}
-              disabled={locating}
-              className="flex h-11 items-center justify-center gap-1.5 rounded-xl bg-brand px-3 font-body text-sm font-bold text-brand-ink disabled:opacity-70"
-            >
-              <span className="material-symbols-rounded text-lg">
-                {locating ? "sync" : "my_location"}
-              </span>
-              {locating ? "Locating…" : "Use my current location"}
-            </button>
-            {locationError && (
-              <span className="flex items-center gap-1.5 font-body text-xs text-accent">
-                <span className="material-symbols-rounded text-sm">info</span>
-                {locationError}
-              </span>
-            )}
 
             <span className="font-body text-xs font-extrabold tracking-wide text-accent">
               BASIC DETAILS
@@ -1233,28 +1236,30 @@ export function AddPandalFlow({
                         : `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} already listed near this spot.`}
                     </span>
                   </div>
-                  {nearby.map((candidate) => (
-                    <div
-                      key={candidate.id}
-                      className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel"
-                    >
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate font-body text-sm font-bold">
-                          {candidate.canonicalName}
-                        </span>
-                        <span className="truncate font-body text-xs text-ink-muted">
-                          {candidate.locality}
-                        </span>
-                      </div>
-                      <Link
-                        href={`/${selectedCity.slug}/pandal/${candidate.slug}`}
-                        target="_blank"
-                        className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
+                  <div className="flex max-h-[260px] flex-col gap-2 overflow-y-auto">
+                    {nearby.map((candidate) => (
+                      <div
+                        key={candidate.id}
+                        className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel"
                       >
-                        View pandal
-                      </Link>
-                    </div>
-                  ))}
+                        <div className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate font-body text-sm font-bold">
+                            {candidate.canonicalName}
+                          </span>
+                          <span className="truncate font-body text-xs text-ink-muted">
+                            {candidate.locality}
+                          </span>
+                        </div>
+                        <Link
+                          href={`/${selectedCity.slug}/pandal/${candidate.slug}`}
+                          target="_blank"
+                          className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
+                        >
+                          View pandal
+                        </Link>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
