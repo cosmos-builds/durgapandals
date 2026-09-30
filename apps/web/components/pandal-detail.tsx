@@ -151,7 +151,13 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
               >
                 <span className="material-symbols-rounded">arrow_back</span>
               </Link>
-              <MobileHeader citySlug={citySlug} variant="overlay" className="md:hidden" />
+              <MobileHeader
+                citySlug={citySlug}
+                cityName={cityName}
+                year={pandal.year?.year}
+                variant="overlay"
+                className="md:hidden"
+              />
             </div>
             <div className="relative flex items-center gap-2">
               <button onClick={handleShare} className="flex h-11 w-11 items-center justify-center rounded-full bg-ground/70">
@@ -305,6 +311,14 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
               View on map
             </Link>
           </div>
+
+          <Link
+            href={`/${citySlug}/pandal/${pandal.slug}/report`}
+            className="flex w-fit items-center gap-1.5 font-body text-sm font-bold text-brand"
+          >
+            <span className="material-symbols-rounded text-lg">flag</span>
+            Suggest an edit / report an issue
+          </Link>
 
           <p className="font-body text-xs text-ink-muted/70">
             Details here are crowdsourced and not independently verified — timings and themes may

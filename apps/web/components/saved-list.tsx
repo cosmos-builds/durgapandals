@@ -13,13 +13,14 @@ import { TrailButton } from "./trail-button";
 export interface SavedListProps {
   citySlug: string;
   cityName: string;
+  activeFestivalYear: number;
   allPandals: PandalSummary[];
 }
 
 // Saved is purely local — no account, no sync (spec §12). This filters the
 // city's pandal list down to whatever slugs are in this browser's
 // localStorage, so "Saved" only ever reflects this device.
-export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
+export function SavedList({ citySlug, cityName, activeFestivalYear, allPandals }: SavedListProps) {
   const [savedSlugs, setSavedSlugs] = useState<string[]>([]);
 
   useEffect(() => {
@@ -67,7 +68,7 @@ export function SavedList({ citySlug, cityName, allPandals }: SavedListProps) {
       {/* Mobile-only minimal header — logo + brand present on every screen
           (spec §5); desktop uses the persistent TopHeader instead. */}
       <div className="relative px-4 pt-4 md:hidden">
-        <MobileHeader citySlug={citySlug} />
+        <MobileHeader citySlug={citySlug} cityName={cityName} year={activeFestivalYear} />
       </div>
 
       {/* Constrained + centered on desktop instead of stretching edge to edge */}

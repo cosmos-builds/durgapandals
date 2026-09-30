@@ -268,6 +268,7 @@ export async function fetchPandalDetailOrThrow(cityId: string, slug: string, yea
 
 export interface NearbyPandal {
   id: string;
+  slug: string;
   canonicalName: string;
   locality: string;
   latitude: number;
@@ -376,7 +377,7 @@ export async function reverseGeocode(latitude: number, longitude: number): Promi
 
 export interface SubmitPandalInput {
   cityId: string;
-  type: "NEW_PANDAL" | "UPDATE_PANDAL" | "NEW_YEAR" | "CORRECTION";
+  type: "NEW_PANDAL" | "UPDATE_PANDAL" | "NEW_YEAR" | "CORRECTION" | "REPORT";
   possiblePandalId?: string;
   submittedData: Record<string, unknown>;
   contributorContact: string;

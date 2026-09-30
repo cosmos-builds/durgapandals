@@ -431,16 +431,21 @@ export function MapHome({
 
   return (
     <div className="relative h-dvh w-full bg-ground md:flex md:h-[calc(100dvh-60px)]">
-      {/* Mobile-only floating header (spec §4/§5) — brand row, then city/year
-          pill, then a pandal search bar, overlaid on the map instead of
+      {/* Mobile-only floating header (spec §4/§5) — brand row (with the
+          current city/year now shown as a subtitle there, see
+          mobile-header.tsx), then a pandal search bar with a small icon
+          button to change city/year, overlaid on the map instead of
           pushing it down. Desktop uses the persistent TopHeader instead
           (rendered one level up), so this is hidden there. */}
       <div className="absolute inset-x-3 top-3 z-20 flex flex-col gap-2 md:hidden">
-        <MobileHeader citySlug={citySlug} className="rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur" />
-        {/* Search bar takes most of the width; the city/year pill is just
-            a compact button on the right, not a second full-width row. */}
-        <div className="relative flex items-center gap-2">
-          <div className="flex h-[42px] flex-1 items-center gap-2 rounded-2xl bg-card px-3">
+        <MobileHeader
+          citySlug={citySlug}
+          cityName={cityName}
+          year={year}
+          className="rounded-xl bg-card/90 px-2.5 py-1.5 backdrop-blur"
+        />
+        <div className="relative flex min-w-0 items-center gap-2">
+          <div className="flex h-[42px] min-w-0 flex-1 items-center gap-2 rounded-2xl bg-card px-3">
             <span className="material-symbols-rounded text-lg text-ink-muted">search</span>
             <input
               value={pandalQuery}
@@ -454,7 +459,8 @@ export function MapHome({
             cityName={cityName}
             activeFestivalYear={activeFestivalYear}
             availableYears={availableYears}
-            className="flex h-[42px] flex-none items-center gap-1 rounded-2xl bg-card px-2.5 font-body text-xs font-bold"
+            variant="icon"
+            className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-2xl bg-card"
           />
           {pandalMatches.length > 0 && (
             <div className="absolute inset-x-0 top-[calc(100%+6px)] flex flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">

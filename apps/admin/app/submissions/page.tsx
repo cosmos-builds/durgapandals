@@ -35,6 +35,10 @@ interface SubmittedPandalData {
   visitType?: string;
   schedule?: { time: string; label: string }[];
   note?: string;
+  // REPORT type only (see apps/web's report-pandal-flow.tsx) — a visitor
+  // flagging something about an *existing* pandal, replacing the old
+  // "It's mine" claim flow that captured no real content.
+  category?: string;
 }
 
 interface Submission {
@@ -50,13 +54,23 @@ interface Submission {
   createdAt: string;
 }
 
-type Tab = "ALL" | "NEW_PANDAL" | "CORRECTION";
+type Tab = "ALL" | "NEW_PANDAL" | "REPORT" | "CORRECTION";
 
 const TABS: { key: Tab; label: string }[] = [
   { key: "ALL", label: "All" },
   { key: "NEW_PANDAL", label: "New pandal" },
+  { key: "REPORT", label: "Reports" },
   { key: "CORRECTION", label: "Corrections" },
 ];
+
+const REPORT_CATEGORY_LABELS: Record<string, string> = {
+  OUTDATED_INFO: "Info is outdated",
+  WRONG_LOCATION: "Wrong location",
+  PERMANENTLY_CLOSED: "No longer exists",
+  DUPLICATE: "Duplicate listing",
+  INAPPROPRIATE: "Inappropriate content",
+  OTHER: "Other",
+};
 
 // Generous on purpose — a real city's outskirts can genuinely be this far
 // from its center pin. This isn't trying to be precise, just to catch the
@@ -243,7 +257,8 @@ export default function SubmissionsPage() {
                     {submission.type}
                   </div>
                   <div className="truncate font-display text-base font-bold">
-                    {rowData.canonicalName ?? "(update / correction)"}
+                    {rowData.canonicalName ??
+                      (submission.type === "REPORT" ? REPORT_CATEGORY_LABELS[rowData.category ?? ""] ?? "Report" : "(update / correction)")}
                   </div>
                   <div className="truncate font-body text-xs text-ink-muted">{rowData.locality}</div>
                 </div>
@@ -262,17 +277,20 @@ export default function SubmissionsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
               <div>
                 <div className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">{active.type}</div>
-                <h2 className="font-display text-2xl font-extrabold">{data.canonicalName ?? "Update / correction"}</h2>
+                <h2 className="font-display text-2xl font-extrabold">
+                  {data.canonicalName ??
+                    (active.type === "REPORT" ? REPORT_CATEGORY_LABELS[data.category ?? ""] ?? "Report" : "Update / correction")}
+                </h2>
                 <span className="font-body text-xs text-ink-muted">
                   Submitted {new Date(active.createdAt).toLocaleString()}
                 </span>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" disabled={busyId === active._id} onClick={() => review(active._id, "REJECT")}>
-                  Reject
+                  {active.type === "REPORT" ? "Dismiss" : "Reject"}
                 </Button>
                 <Button disabled={busyId === active._id} onClick={() => review(active._id, "APPROVE")}>
-                  Approve
+                  {active.type === "REPORT" ? "Mark resolved" : "Approve"}
                 </Button>
               </div>
             </div>
@@ -320,8 +338,32 @@ export default function SubmissionsPage() {
                 target="_blank"
                 className="font-body text-xs font-bold text-brand"
               >
-                View possibly-related pandal →
+                {active.type === "REPORT" ? "View reported pandal →" : "View possibly-related pandal →"}
               </Link>
+            )}
+
+            {active.type === "REPORT" && (
+              <>
+                <DetailRow label="Category" value={REPORT_CATEGORY_LABELS[data.category ?? ""] ?? data.category} />
+                <DetailRow label="Details" value={data.description} />
+                {data.photos && data.photos.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">Photos</span>
+                    <div className="flex flex-wrap gap-2">
+                      {data.photos.map((photo) => (
+                        <a key={photo.url} href={photo.url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={photo.url}
+                            alt=""
+                            className="h-24 w-24 flex-none rounded-xl object-cover transition-opacity hover:opacity-80"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {data.note && (

@@ -23,5 +23,12 @@ export default async function SavedPage({ params }: { params: Promise<{ citySlug
     }
   }
 
-  return <SavedList citySlug={city.slug} cityName={city.name} allPandals={[...byId.values()]} />;
+  return (
+    <SavedList
+      citySlug={city.slug}
+      cityName={city.name}
+      activeFestivalYear={city.activeFestivalYear}
+      allPandals={[...byId.values()]}
+    />
+  );
 }

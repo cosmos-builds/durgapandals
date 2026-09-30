@@ -16,7 +16,7 @@ const submissionSchema = new Schema(
 
     type: {
       type: String,
-      enum: ["NEW_PANDAL", "UPDATE_PANDAL", "NEW_YEAR", "CORRECTION"],
+      enum: ["NEW_PANDAL", "UPDATE_PANDAL", "NEW_YEAR", "CORRECTION", "REPORT"],
       required: true,
     },
 

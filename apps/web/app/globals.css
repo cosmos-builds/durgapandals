@@ -16,6 +16,18 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Safety net, not the fix itself — the real bugs (an unshrinkable flex
+   child pushing a row wider than the viewport) get fixed at the source
+   (see city-year-pill.tsx / map-home.tsx). This just guarantees any future
+   overflow clips instead of ever producing a page-level horizontal
+   scrollbar, which on mobile also visually drags position:fixed elements
+   (the bottom tab bar) along with the scroll instead of keeping them
+   pinned to the viewport. */
+html,
+body {
+  overflow-x: hidden;
+}
+
 .material-symbols-rounded {
   font-family: "Material Symbols Rounded";
   font-variation-settings: "FILL" 0;

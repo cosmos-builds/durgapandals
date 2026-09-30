@@ -55,7 +55,7 @@ export function ExploreBrowser({
   const [activeCategories, setActiveCategories] = useState<Set<string>>(() =>
     parseCategoriesParam(searchParams.get("categories")),
   );
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Every filter on this page (not just `q`) now round-trips through the
   // URL — this effect pulls in a change that came from outside this
@@ -187,112 +187,36 @@ export function ExploreBrowser({
         }}
       />
 
-      {/* Mobile-only compact header (spec: logo + title + sort) — desktop
-          uses the persistent TopHeader instead, and gets its own title row
-          further down alongside the category rail. A native <select> always
-          renders its selected option's full text, so it can't be squeezed
-          into an icon-sized box without clipping — this is a small custom
-          menu instead, matching the mockup's icon-only trigger while
-          staying fully readable. */}
+      {/* Mobile-only compact header (spec: logo + title) — desktop uses the
+          persistent TopHeader instead, and gets its own title row further
+          down. Sort/area/category filters all live in the single filter
+          panel next to the search bar below (see "Search + filters"),
+          instead of a separate sort menu up here. */}
       <div className="relative flex flex-col gap-1.5 px-4 pt-4 md:hidden">
-        <MobileHeader
-          citySlug={citySlug}
-          right={
-            <div className="relative">
-              <button
-                onClick={() => setSortMenuOpen((prev) => !prev)}
-                aria-label="Sort"
-                className="flex h-9 w-9 items-center justify-center rounded-xl bg-chip"
-              >
-                <span className="material-symbols-rounded text-lg">sort</span>
-              </button>
-              {sortMenuOpen && (
-                <>
-                  {/* Invisible full-screen backdrop — clicking anywhere
-                      outside the menu closes it, matching every other
-                      dropdown/sheet in the app instead of only closing via
-                      the trigger button itself. */}
-                  <button
-                    aria-hidden
-                    tabIndex={-1}
-                    onClick={() => setSortMenuOpen(false)}
-                    className="fixed inset-0 z-10 cursor-default"
-                  />
-                  <div className="absolute right-0 top-[calc(100%+6px)] z-20 flex w-48 flex-col gap-0.5 rounded-2xl border border-border bg-panel p-1.5 shadow-2xl">
-                    {SORT_OPTIONS.map((o) => (
-                      <button
-                        key={o.key}
-                        onClick={() => {
-                          setSort(o.key);
-                          setSortMenuOpen(false);
-                        }}
-                        className={`rounded-xl px-3 py-2 text-left font-body text-sm font-semibold ${
-                          sort === o.key
-                            ? "bg-card text-brand"
-                            : "hover:bg-card"
-                        }`}
-                      >
-                        {o.label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          }
-        />
+        <MobileHeader citySlug={citySlug} cityName={cityName} year={year} />
         <h2 className="font-display text-[18px] font-extrabold">
           Explore <span className="text-brand">{cityName}</span>
         </h2>
       </div>
 
       <div className="relative md:flex md:items-start md:gap-8 md:px-8 md:pt-6">
-        {/* Desktop-only category rail (spec: 200px sidebar) */}
-        {categories.length > 0 && (
-          <aside className="hidden md:flex md:w-[200px] md:flex-none md:flex-col md:gap-2.5 md:border-r md:border-border md:pr-6">
-            <span className="mb-1 font-mono text-xs font-extrabold uppercase tracking-wide text-accent">
-              Category
-            </span>
-            {categories.map((category) => (
-              <label
-                key={category}
-                className="flex items-center gap-2 font-body text-sm"
-              >
-                <input
-                  type="checkbox"
-                  checked={activeCategories.has(category)}
-                  onChange={() => toggleCategory(category)}
-                  className="h-4 w-4 accent-brand"
-                />
-                {category}
-              </label>
-            ))}
-          </aside>
-        )}
-
         <div className="min-w-0 flex-1">
-          <div className="hidden items-baseline justify-between px-4 md:flex md:px-0">
+          <div className="hidden items-baseline px-4 md:flex md:px-0">
             <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">
               Explore <span className="text-brand">{cityName}</span>
             </h1>
-            <Select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as SortKey)}
-              className="w-[190px] text-sm font-semibold"
-            >
-              {SORT_OPTIONS.map((o) => (
-                <option key={o.key} value={o.key}>
-                  {o.label}
-                </option>
-              ))}
-            </Select>
           </div>
           <p className="mt-1 px-4 font-body text-sm text-ink-muted md:px-0">
             {pandals.length} pandals this festival season
           </p>
 
-          {/* Search + area filter */}
-          <div className="mt-5 flex flex-col gap-2.5 px-4 md:flex-row md:px-0">
+          {/* Search + filters — one search bar, one small filter icon.
+              Sort/area/category all used to be spread across a separate
+              mobile sort menu, an inline area <Select>, a desktop sidebar
+              rail, and a mobile chip row — four different places for what
+              is really one "filters" concept. Consolidated into a single
+              icon button that opens all of it in one panel. */}
+          <div className="relative mt-5 flex items-center gap-2.5 px-4 md:px-0">
             <div className="flex h-11 md:h-12 flex-1 items-center gap-2.5 rounded-2xl bg-ink px-3.5 md:px-4">
               <span className="material-symbols-rounded text-[20px] text-ground/50">
                 search
@@ -312,41 +236,94 @@ export function ExploreBrowser({
               )}
             </div>
 
-            <Select
-              value={area}
-              onChange={(e) => setArea(e.target.value)}
-              className="text-sm font-semibold md:w-[180px]"
+            <button
+              onClick={() => setFiltersOpen((prev) => !prev)}
+              aria-label="Filters"
+              className="relative flex h-11 w-11 flex-none items-center justify-center rounded-2xl bg-ink text-ground md:h-12 md:w-12"
             >
-              <option value="all">All areas</option>
-              {areas.map((a) => (
-                <option key={a} value={a}>
-                  {a}
-                </option>
-              ))}
-            </Select>
-          </div>
+              <span className="material-symbols-rounded text-[20px]">tune</span>
+              {(area !== "all" || activeCategories.size > 0 || sort !== "featured") && (
+                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-brand" />
+              )}
+            </button>
 
-          {/* Category filter chips — mobile only (desktop uses the rail above) */}
-          {categories.length > 0 && (
-            <div className="mt-3 flex flex-wrap gap-2 px-4 md:hidden">
-              {categories.map((category) => {
-                const isActive = activeCategories.has(category);
-                return (
-                  <button
-                    key={category}
-                    onClick={() => toggleCategory(category)}
-                    className={`rounded-pill border px-3 py-1.5 font-body text-sm font-semibold transition-colors ${
-                      isActive
-                        ? "border-brand bg-brand text-brand-ink"
-                        : "border-border bg-panel text-ink-dim hover:border-accent/40"
-                    }`}
-                  >
-                    {category}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            {filtersOpen && (
+              <>
+                {/* Invisible full-screen backdrop — clicking anywhere
+                    outside the panel closes it, matching every other
+                    dropdown/sheet in the app. */}
+                <button
+                  aria-hidden
+                  tabIndex={-1}
+                  onClick={() => setFiltersOpen(false)}
+                  className="fixed inset-0 z-10 cursor-default"
+                />
+                <div className="absolute right-0 top-[calc(100%+8px)] z-20 flex max-h-[70vh] w-[280px] max-w-[calc(100vw-2rem)] flex-col gap-4 overflow-y-auto rounded-2xl border border-border bg-panel p-4 shadow-2xl">
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-body text-xs font-extrabold uppercase tracking-wide text-accent">Sort</span>
+                    <Select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="text-sm">
+                      {SORT_OPTIONS.map((o) => (
+                        <option key={o.key} value={o.key}>
+                          {o.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-1.5">
+                    <span className="font-body text-xs font-extrabold uppercase tracking-wide text-accent">Area</span>
+                    <Select value={area} onChange={(e) => setArea(e.target.value)} className="text-sm">
+                      <option value="all">All areas</option>
+                      {areas.map((a) => (
+                        <option key={a} value={a}>
+                          {a}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
+
+                  {categories.length > 0 && (
+                    <div className="flex flex-col gap-1.5">
+                      <span className="font-body text-xs font-extrabold uppercase tracking-wide text-accent">
+                        Category
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {categories.map((category) => {
+                          const isActive = activeCategories.has(category);
+                          return (
+                            <button
+                              key={category}
+                              onClick={() => toggleCategory(category)}
+                              className={`rounded-pill border px-3 py-1.5 font-body text-xs font-semibold transition-colors ${
+                                isActive
+                                  ? "border-brand bg-brand text-brand-ink"
+                                  : "border-border bg-card text-ink-dim hover:border-accent/40"
+                              }`}
+                            >
+                              {category}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {isFiltering && (
+                    <button
+                      onClick={() => {
+                        setArea("all");
+                        setActiveCategories(new Set());
+                        setSort("featured");
+                      }}
+                      className="font-body text-xs font-bold text-brand"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
 
           {/* Featured — festive treatment, only shown when not actively filtering */}
           {!isFiltering && featured.length > 0 && (

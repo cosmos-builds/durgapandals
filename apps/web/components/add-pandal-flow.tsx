@@ -39,14 +39,7 @@ export interface AddPandalFlowProps {
   mapTilesUrl: string;
 }
 
-type Step = "location" | "update-choice" | "details" | "verify" | "done";
-
-const UPDATE_OPTIONS = [
-  { key: "NEW_YEAR", icon: "event", title: "Add this year's information", subtitle: "Theme, dates, photos for the current festival" },
-  { key: "PHOTOS", icon: "photo_camera", title: "Add photos", subtitle: "Share photos from this year" },
-  { key: "CORRECTION", icon: "edit_note", title: "Correct details", subtitle: "Name, organiser, contact info" },
-  { key: "LOCATION", icon: "location_on", title: "Correct location", subtitle: "The pin is in the wrong place" },
-] as const;
+type Step = "location" | "details" | "verify" | "done";
 
 const emptyDetails = {
   canonicalName: "",
@@ -120,8 +113,6 @@ interface AddPandalDraft {
   coords: { latitude: number; longitude: number };
   categories: string[];
   photos: UploadedPhoto[];
-  selectedExisting: NearbyPandal | null;
-  updateChoice: (typeof UPDATE_OPTIONS)[number]["key"] | null;
   details: typeof emptyDetails;
   festivalYear: number;
   amenities: typeof emptyAmenities;
@@ -157,11 +148,18 @@ function clearDraft(citySlug: string) {
   window.sessionStorage.removeItem(draftKey(citySlug));
 }
 
-// The full contribution flow from spec §14.2: drop pin (with a live nearby
-// check) -> either "it's mine" (update/correction) or continue as new ->
-// progressive details -> OTP verify -> pending-review confirmation. Nothing
-// here writes a canonical Pandal directly — it always ends in a
-// PandalSubmission (spec §14.1).
+// The contribution flow from spec §14.2: drop pin (with a live nearby check,
+// purely informational — see below) -> progressive details -> OTP verify ->
+// pending-review confirmation. Nothing here writes a canonical Pandal
+// directly — it always ends in a PandalSubmission (spec §14.1).
+//
+// This used to also offer "it's mine" on any nearby pandal, jumping into an
+// update/correction path — removed because it let any anonymous visitor
+// claim any existing pandal and submit only a fixed category label (no real
+// content), which even on admin approval never actually changed anything.
+// Updating or reporting an issue on an *existing* pandal now lives on that
+// pandal's own detail page instead (see report-pandal-flow.tsx), where it
+// captures an actual description instead of a bare label.
 export function AddPandalFlow({
   cityId,
   citySlug,
@@ -197,10 +195,6 @@ export function AddPandalFlow({
   const [photos, setPhotos] = useState<UploadedPhoto[]>(initialDraft?.photos ?? []);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
-  const [selectedExisting, setSelectedExisting] = useState<NearbyPandal | null>(initialDraft?.selectedExisting ?? null);
-  const [updateChoice, setUpdateChoice] = useState<(typeof UPDATE_OPTIONS)[number]["key"] | null>(
-    initialDraft?.updateChoice ?? null
-  );
   const [details, setDetails] = useState(initialDraft?.details ?? emptyDetails);
   const [festivalYear, setFestivalYear] = useState(initialDraft?.festivalYear ?? activeFestivalYear);
   const [locating, setLocating] = useState(false);
@@ -223,7 +217,6 @@ export function AddPandalFlow({
   const coordsRef = useRef(coords);
   coordsRef.current = coords;
 
-  const isNewPandal = !selectedExisting;
   const hasPendingMove = pendingCoords.latitude !== coords.latitude || pendingCoords.longitude !== coords.longitude;
 
   // Autosaves the in-progress submission so a refresh, accidental back-nav,
@@ -239,8 +232,6 @@ export function AddPandalFlow({
         coords,
         categories,
         photos,
-        selectedExisting,
-        updateChoice,
         details,
         festivalYear,
         amenities,
@@ -250,7 +241,7 @@ export function AddPandalFlow({
       });
     }, 400);
     return () => clearTimeout(timeout);
-  }, [citySlug, step, coords, categories, photos, selectedExisting, updateChoice, details, festivalYear, amenities, visitType, schedule, email]);
+  }, [citySlug, step, coords, categories, photos, details, festivalYear, amenities, visitType, schedule, email]);
 
   // The draft is being resumed, not started fresh — deletes any photos it
   // was holding (they'd otherwise be orphaned the moment the form resets
@@ -265,8 +256,6 @@ export function AddPandalFlow({
     setCoords(center);
     setPendingCoords(center);
     setPendingAddress(null);
-    setSelectedExisting(null);
-    setUpdateChoice(null);
     setDetails(emptyDetails);
     setCategories([]);
     setPhotos([]);
@@ -427,42 +416,37 @@ export function AddPandalFlow({
     setSchedule((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function pickExisting(candidate: NearbyPandal) {
-    setSelectedExisting(candidate);
-    setStep("update-choice");
-  }
-
   // Plots whatever the live proximity check just found — same marker style
   // used everywhere else in the app, so it's immediately readable as "an
-  // existing pandal is right here" instead of just a name buried in the
-  // list below the map. Tapping one is the same as tapping "It's mine".
+  // existing pandal is right here" before someone adds a duplicate. Purely
+  // informational: tapping one opens that pandal's own page in a new tab
+  // (where "Suggest an edit" lives, see report-pandal-flow.tsx) rather than
+  // claiming/updating it from here — see the flow comment above for why.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
 
     nearbyMarkersRef.current.forEach((marker) => marker.remove());
     nearbyMarkersRef.current = nearby.map((candidate) => {
-      const el = document.createElement("button");
+      const el = document.createElement("a");
+      el.href = `/${citySlug}/pandal/${candidate.slug}`;
+      el.target = "_blank";
+      el.rel = "noopener noreferrer";
       el.setAttribute("aria-label", candidate.canonicalName);
+      el.style.display = "block";
       el.style.width = "26px";
       el.style.height = "26px";
       el.style.cursor = "pointer";
       el.innerHTML = '<img src="/images/marker-icon.svg" alt="" style="width:26px;height:26px" />';
-      el.onclick = () => pickExisting(candidate);
       return new maplibregl.Marker({ element: el })
         .setLngLat([candidate.longitude, candidate.latitude])
         .addTo(map);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearby]);
+  }, [nearby, citySlug]);
 
   function continueAsNew() {
-    setSelectedExisting(null);
     setStep("details");
-  }
-
-  function confirmUpdateChoice() {
-    setStep("verify");
   }
 
   // Mirrors the forward progression so "back" always lands on the step the
@@ -471,7 +455,7 @@ export function AddPandalFlow({
     if (step === "location") {
       router.push(`/${citySlug}`);
     } else if (step === "verify") {
-      setStep(isNewPandal ? "details" : "update-choice");
+      setStep("details");
     } else {
       setStep("location");
     }
@@ -535,31 +519,28 @@ export function AddPandalFlow({
   }
 
   async function doSubmit() {
-    const submittedData = isNewPandal
-      ? {
-          canonicalName: details.canonicalName,
-          organizerName: details.organizerName || undefined,
-          latitude: coords.latitude,
-          longitude: coords.longitude,
-          address: details.address,
-          locality: details.locality,
-          landmark: details.landmark || undefined,
-          publicContact: details.publicContact || undefined,
-          theme: details.theme || undefined,
-          description: details.description || undefined,
-          categories,
-          photos: photos.map((p) => ({ url: p.url })),
-          year: festivalYear,
-          ...amenities,
-          visitType,
-          schedule: schedule.filter((row) => row.time && row.label),
-        }
-      : { note: `Requested update: ${updateChoice}` };
+    const submittedData = {
+      canonicalName: details.canonicalName,
+      organizerName: details.organizerName || undefined,
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+      address: details.address,
+      locality: details.locality,
+      landmark: details.landmark || undefined,
+      publicContact: details.publicContact || undefined,
+      theme: details.theme || undefined,
+      description: details.description || undefined,
+      categories,
+      photos: photos.map((p) => ({ url: p.url })),
+      year: festivalYear,
+      ...amenities,
+      visitType,
+      schedule: schedule.filter((row) => row.time && row.label),
+    };
 
     const result = await submitPandal({
       cityId,
-      type: isNewPandal ? "NEW_PANDAL" : updateChoice === "CORRECTION" || updateChoice === "LOCATION" ? "CORRECTION" : "UPDATE_PANDAL",
-      possiblePandalId: selectedExisting?.id,
+      type: "NEW_PANDAL",
       submittedData,
       contributorContact: email,
       website: website || undefined,
@@ -609,10 +590,10 @@ export function AddPandalFlow({
   }
 
   const progress = useMemo(() => {
-    const order: Step[] = isNewPandal ? ["location", "details", "verify"] : ["location", "update-choice", "verify"];
+    const order: Step[] = ["location", "details", "verify"];
     const index = order.indexOf(step === "done" ? "verify" : step);
     return { index: index === -1 ? 0 : index, total: order.length };
-  }, [step, isNewPandal]);
+  }, [step]);
 
   // Non-location steps are a single scrollable form — full width reads fine
   // on mobile, but needs an explicit constrained column on desktop instead of
@@ -632,7 +613,7 @@ export function AddPandalFlow({
         <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden">
           <span className="material-symbols-rounded">arrow_back</span>
         </button>
-        <MobileHeader citySlug={citySlug} className="md:hidden" />
+        <MobileHeader citySlug={citySlug} cityName={cityName} year={activeFestivalYear} className="md:hidden" />
         <span className="hidden font-body text-sm font-bold md:inline">Add your pandal</span>
         <span className="font-mono text-xs text-ink-muted">
           {progress.index + 1}/{progress.total}
@@ -799,12 +780,13 @@ export function AddPandalFlow({
                     <span className="truncate font-body text-sm font-bold">{candidate.canonicalName}</span>
                     <span className="truncate font-body text-xs text-ink-muted">{candidate.locality}</span>
                   </div>
-                  <button
-                    onClick={() => pickExisting(candidate)}
-                    className="rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
+                  <Link
+                    href={`/${citySlug}/pandal/${candidate.slug}`}
+                    target="_blank"
+                    className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
                   >
-                    It's mine
-                  </button>
+                    View pandal
+                  </Link>
                 </div>
               ))}
               <Button
@@ -818,41 +800,6 @@ export function AddPandalFlow({
             </div>
           </div>
 
-        </div>
-      )}
-
-      {step === "update-choice" && selectedExisting && (
-        <div className={formStepClass}>
-          <div className="flex items-center gap-3 rounded-3xl border border-border bg-panel p-3 md:bg-card">
-            <div className="h-14 w-14 flex-none rounded-2xl bg-chip" />
-            <div className="flex flex-col">
-              <span className="font-body font-bold">{selectedExisting.canonicalName}</span>
-              <span className="font-body text-sm text-ink-muted">{selectedExisting.locality}, {cityName}</span>
-            </div>
-          </div>
-          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">What would you like to update?</h2>
-          <div className="flex flex-col gap-2">
-            {UPDATE_OPTIONS.map((option) => (
-              <button
-                key={option.key}
-                onClick={() => setUpdateChoice(option.key)}
-                className={`flex items-center gap-3 rounded-2xl p-3 text-left ${
-                  updateChoice === option.key ? "bg-card ring-2 ring-brand" : "bg-panel md:bg-card/60"
-                }`}
-              >
-                <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip">
-                  <span className="material-symbols-rounded text-brand">{option.icon}</span>
-                </span>
-                <span className="flex flex-col">
-                  <span className="font-body text-[15.5px] font-bold">{option.title}</span>
-                  <span className="font-body text-xs text-ink-muted">{option.subtitle}</span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <Button onClick={confirmUpdateChoice} disabled={!updateChoice}>
-            Continue
-          </Button>
         </div>
       )}
 
@@ -1234,8 +1181,6 @@ export function AddPandalFlow({
                 setCoords(center);
                 setPendingCoords(center);
                 setPendingAddress(null);
-                setSelectedExisting(null);
-                setUpdateChoice(null);
                 setDetails(emptyDetails);
                 setEmail("");
                 setCode("");

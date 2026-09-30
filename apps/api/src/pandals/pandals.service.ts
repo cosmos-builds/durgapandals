@@ -62,6 +62,7 @@ export async function findNearbyPandals(input: {
 
   return nearby.map((pandal) => ({
     id: String(pandal._id),
+    slug: pandal.slug,
     canonicalName: pandal.canonicalName,
     locality: pandal.locality,
     ...fromGeoPoint(pandal.location),

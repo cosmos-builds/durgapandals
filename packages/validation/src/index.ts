@@ -111,6 +111,13 @@ export const submissionTypeSchema = z.enum([
   "UPDATE_PANDAL",
   "NEW_YEAR",
   "CORRECTION",
+  // A visitor flagging something about an *existing* pandal — outdated
+  // info, wrong location, permanently closed, a duplicate listing, or
+  // anything else — from that pandal's own detail page (see PandalDetail's
+  // "Suggest an edit" entry point). Replaces the old "It's mine" claim flow
+  // from Add Pandal, which let anyone claim any pandal and submitted only a
+  // fixed category label with no real content for an admin to act on.
+  "REPORT",
 ]);
 
 export const createSubmissionSchema = z.object({
