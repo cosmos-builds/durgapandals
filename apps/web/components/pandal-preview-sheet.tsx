@@ -144,16 +144,16 @@ export function PandalPreviewSheet({ citySlug, pandal, onClose }: PandalPreviewS
           <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleLike}
-            className={`flex h-12 items-center gap-1.5 rounded-2xl px-3.5 font-body text-sm font-bold ${liked ? "bg-brand text-brand-ink" : "bg-card"}`}
+            className={`flex h-10 items-center gap-1 rounded-2xl px-3 font-body text-xs font-bold ${liked ? "bg-brand text-brand-ink" : "bg-card"}`}
           >
-            <span className="material-symbols-rounded text-base" style={liked ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+            <span className="material-symbols-rounded text-sm" style={liked ? { fontVariationSettings: "'FILL' 1" } : undefined}>
               favorite
             </span>
             {likes}
           </button>
-          <button onClick={toggleSave} className="flex h-12 w-12 flex-none items-center justify-center rounded-2xl bg-card">
+          <button onClick={toggleSave} className="flex h-10 w-10 flex-none items-center justify-center rounded-2xl bg-card">
             <span
-              className={`material-symbols-rounded ${saved ? "text-brand" : ""}`}
+              className={`material-symbols-rounded text-lg ${saved ? "text-brand" : ""}`}
               style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
               bookmark

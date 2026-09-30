@@ -1,6 +1,16 @@
 import type { InputHTMLAttributes, TextareaHTMLAttributes } from "react";
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement>;
+// `uiSize`, not `size` — `<input>`/`<textarea>` already have a native
+// `size`/`cols`-adjacent meaning in HTML, so reusing that name here would
+// either collide with or confusingly shadow it.
+export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
+  /** "md" (default): today's proportions, used everywhere unchanged
+   *  (including every admin usage). "sm": every dimension scaled down by
+   *  roughly the same ratio — for a screen that wants a visibly lighter,
+   *  more compact form without individual inputs, selects and buttons
+   *  drifting out of proportion with each other (see Select/Button). */
+  uiSize?: "md" | "sm";
+}
 
 // The single input style for the whole site (web + admin) — a light field
 // against the app's dark surfaces reads as an actual fillable box instead
@@ -16,19 +26,36 @@ export type InputProps = InputHTMLAttributes<HTMLInputElement>;
 // color already used for the field's real value text, just faded — dark
 // muted text on a light field, matching how "muted" is supposed to read
 // here.
-const BASE_CLASSES =
-  "h-11 md:h-12 rounded-2xl bg-ink px-3.5 md:px-4 font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50";
+const SIZE_CLASSES = {
+  md: "h-11 md:h-12 px-3.5 md:px-4 text-[14.5px] md:text-[15.5px]",
+  sm: "h-10 md:h-11 px-3 md:px-3.5 text-[13px] md:text-[13.5px]",
+};
 
-export function Input({ className = "", ...props }: InputProps) {
-  return <input className={`${BASE_CLASSES} ${className}`} {...props} />;
+export function Input({ className = "", uiSize = "md", ...props }: InputProps) {
+  return (
+    <input
+      className={`rounded-2xl bg-ink font-body text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${SIZE_CLASSES[uiSize]} ${className}`}
+      {...props}
+    />
+  );
 }
 
-export type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement>;
+export interface TextareaProps extends TextareaHTMLAttributes<HTMLTextAreaElement> {
+  uiSize?: "md" | "sm";
+}
 
-export function Textarea({ className = "", ...props }: TextareaProps) {
+// No height in this map (unlike Input/Select above) — a textarea's height
+// comes from `min-h-24` + content, not a fixed row height, so "sm" here
+// only trims padding/font-size to match, not a forced height.
+const TEXTAREA_SIZE_CLASSES = {
+  md: "px-3.5 md:px-4 text-[14.5px] md:text-[15.5px]",
+  sm: "px-3 md:px-3.5 text-[13px] md:text-[13.5px]",
+};
+
+export function Textarea({ className = "", uiSize = "md", ...props }: TextareaProps) {
   return (
     <textarea
-      className={`min-h-24 rounded-2xl bg-ink px-3.5 md:px-4 py-2.5 md:py-3 font-body text-[14.5px] md:text-[15.5px] text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${className}`}
+      className={`min-h-24 rounded-2xl bg-ink py-2.5 md:py-3 font-body text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${TEXTAREA_SIZE_CLASSES[uiSize]} ${className}`}
       {...props}
     />
   );

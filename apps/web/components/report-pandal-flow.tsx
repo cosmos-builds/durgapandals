@@ -164,7 +164,9 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
             Our team will look into this for {pandalName}. We'll email you only if we have questions.
           </p>
           <div className="mt-4 w-full">
-            <Button onClick={() => router.push(`/${citySlug}`)}>Back to map</Button>
+            <Button uiSize="sm" onClick={() => router.push(`/${citySlug}`)}>
+              Back to map
+            </Button>
           </div>
         </div>
       </div>
@@ -201,7 +203,7 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
         </p>
 
         <Field label="What's the issue?">
-          <Select value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
+          <Select uiSize="sm" value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
             {CATEGORY_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -212,6 +214,7 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
 
         <Field label="Details">
           <Textarea
+            uiSize="sm"
             required
             placeholder="What should we know or fix?"
             value={description}
@@ -219,12 +222,12 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
           />
         </Field>
 
-        <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+        <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
           <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+            <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
               <span className="material-symbols-rounded text-brand">photo_camera</span>
             </span>
-            <span className="font-display text-base font-bold">Photos</span>
+            <span className="font-display text-[15px] font-bold">Photos</span>
             <span className="ml-auto font-body text-xs text-ink-muted">optional · up to {MAX_PHOTOS}</span>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -267,6 +270,7 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
 
         <Field label="Your email (in case we have questions)">
           <Input
+            uiSize="sm"
             type="email"
             required
             placeholder="you@example.com"
@@ -291,13 +295,13 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
         />
 
         {!REQUIRE_VERIFICATION && (
-          <Button type="submit" disabled={submitting || !email || !description}>
+          <Button uiSize="sm" type="submit" disabled={submitting || !email || !description}>
             {submitting ? "Submitting…" : "Submit"}
           </Button>
         )}
 
         {REQUIRE_VERIFICATION && !codeSent && (
-          <Button type="submit" disabled={sending || !email || !description}>
+          <Button uiSize="sm" type="submit" disabled={sending || !email || !description}>
             {sending ? "Sending…" : "Send code"}
           </Button>
         )}
@@ -309,11 +313,11 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
               <input
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                className="h-12 md:h-14 rounded-2xl bg-ink text-center font-mono text-lg md:text-xl text-ground tracking-[0.4em]"
+                className="h-11 md:h-12 rounded-2xl bg-ink text-center font-mono text-base md:text-lg text-ground tracking-[0.4em]"
                 placeholder="000000"
               />
             </label>
-            <Button onClick={handleVerifyAndSubmit} disabled={submitting || code.length !== 6}>
+            <Button uiSize="sm" onClick={handleVerifyAndSubmit} disabled={submitting || code.length !== 6}>
               {submitting ? "Submitting…" : "Verify & submit"}
             </Button>
           </>

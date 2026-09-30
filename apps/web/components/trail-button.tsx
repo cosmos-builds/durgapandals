@@ -9,9 +9,12 @@ import { addToTrail, isInTrail, removeFromTrail, TRAIL_CHANGED_EVENT } from "@/l
 export interface TrailButtonProps {
   citySlug: string;
   slug: string;
-  /** "icon" (default): bare circular icon button, matches the map preview
-   *  sheet's save/like buttons. "compact": icon + "Add to trail" label, for
-   *  list rows with more horizontal room. */
+  /** "icon" (default): icon + short "Trail" label, sized to match the
+   *  like/save buttons next to it. "compact": icon + full "Add to trail"
+   *  label, for list rows with more horizontal room. Neither variant is a
+   *  bare icon any more — a route icon with no text had no common meaning
+   *  to a visitor who's never seen this feature before, so it went
+   *  unclicked and the trail-planner feature went undiscovered entirely. */
   variant?: "icon" | "compact";
   className?: string;
 }
@@ -89,9 +92,12 @@ export function TrailButton({ citySlug, slug, variant = "icon", className = "" }
       onClick={handleClick}
       aria-pressed={inTrail}
       aria-label={inTrail ? "Remove from trail" : "Add to trail"}
-      className={`flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-2xl bg-card ${className}`}
+      className={`flex h-10 flex-none items-center gap-1 rounded-2xl px-3 font-body text-xs font-bold ${
+        inTrail ? "bg-accent/15 text-accent" : "bg-card"
+      } ${className}`}
     >
       {icon}
+      Trail
     </button>
   );
 }

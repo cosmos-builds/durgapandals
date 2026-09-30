@@ -18,9 +18,12 @@ import {
   type LocationSearchResult,
   type UploadedPhoto,
 } from "@/lib/api";
+import { distanceMeters } from "@durgapandals/deduplication";
 import { LocationSearchBox } from "./location-search-box";
 import { MobileHeader } from "./mobile-header";
 import { getAvailableFestivalYears } from "@/lib/festival-years";
+import { useCitySearch } from "@/lib/use-city-search";
+import type { CitySearchResult } from "@/lib/api";
 
 // OTP verification is off by default (contributors submit directly) but the
 // code path stays in place — flip this back on with
@@ -39,7 +42,37 @@ export interface AddPandalFlowProps {
   mapTilesUrl: string;
 }
 
-type Step = "location" | "details" | "verify" | "done";
+type Step = "city" | "location" | "details" | "verify" | "done";
+
+const STEP_ORDER: Step[] = ["city", "location", "details", "verify"];
+const STEP_LABELS: Record<Step, string> = {
+  city: "City",
+  location: "Location",
+  details: "Details",
+  verify: "Contact",
+  done: "Done",
+};
+
+// The one place `cityId` ever gets set for the submission (spec fix: the
+// flow used to silently keep whichever city's URL it was opened from, even
+// if the visitor then searched/pinned a location clear across the country —
+// see the flow comment below). Defaults to the page's own city, but is a
+// real, changeable first step, not an invisible side effect of navigation.
+interface SelectedCityState {
+  id: string;
+  slug: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  zoom: number;
+  activeFestivalYear: number;
+}
+
+// A city genuinely far from the visitor's chosen city is either a real (if
+// unusual) outskirt, or a sign they picked the wrong city — 50km is
+// generous enough to rarely flag the former while still catching the
+// latter. Matches the admin review page's own CITY_DISTANCE_WARNING_METERS.
+const CITY_DISTANCE_WARNING_METERS = 50_000;
 
 const emptyDetails = {
   canonicalName: "",
@@ -110,6 +143,7 @@ const ALLOWED_PHOTO_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 // only needs to survive the same tab/session.
 interface AddPandalDraft {
   step: Step;
+  selectedCity: SelectedCityState;
   coords: { latitude: number; longitude: number };
   categories: string[];
   photos: UploadedPhoto[];
@@ -148,10 +182,21 @@ function clearDraft(citySlug: string) {
   window.sessionStorage.removeItem(draftKey(citySlug));
 }
 
-// The contribution flow from spec §14.2: drop pin (with a live nearby check,
-// purely informational — see below) -> progressive details -> OTP verify ->
-// pending-review confirmation. Nothing here writes a canonical Pandal
-// directly — it always ends in a PandalSubmission (spec §14.1).
+// The contribution flow from spec §14.2: pick a city -> drop a pin (with a
+// live nearby check, purely informational — see below) -> progressive
+// details -> OTP verify -> pending-review confirmation. One strictly linear
+// path, each step labeled, nothing implicit. Nothing here writes a
+// canonical Pandal directly — it always ends in a PandalSubmission (spec
+// §14.1).
+//
+// The city step exists because the flow used to silently attribute every
+// submission to whichever city's `/add` URL it was opened from, even if the
+// visitor then searched or dropped a pin clear across the country — a real
+// pandal ended up mis-filed under the wrong city this way. Picking a city
+// first also lets address search (LocationSearchBox's `restrictNear`) be
+// hard-bounded to it, instead of ranking-only across all of India, where a
+// short/common query could surface a same-named place in a different state
+// entirely.
 //
 // This used to also offer "it's mine" on any nearby pandal, jumping into an
 // update/correction path — removed because it let any anonymous visitor
@@ -171,11 +216,24 @@ export function AddPandalFlow({
 }: AddPandalFlowProps) {
   const router = useRouter();
   const toast = useToast();
+  // The page's own city — the city step's default/pre-filled choice, and
+  // where "back"/"cancel" during the flow returns to. Not necessarily the
+  // city the submission ends up under; see `selectedCity` for that.
+  const initialCity: SelectedCityState = {
+    id: cityId,
+    slug: citySlug,
+    name: cityName,
+    latitude: center.latitude,
+    longitude: center.longitude,
+    zoom,
+    activeFestivalYear,
+  };
   // Computed once per mount, not on every render — this is the only place
   // any of the fields below read it.
   const [initialDraft] = useState(() => loadDraft(citySlug));
   const [draftRestored, setDraftRestored] = useState(() => initialDraft !== null);
-  const [step, setStep] = useState<Step>(initialDraft?.step ?? "location");
+  const [step, setStep] = useState<Step>(initialDraft?.step ?? "city");
+  const [selectedCity, setSelectedCity] = useState<SelectedCityState>(initialDraft?.selectedCity ?? initialCity);
   const [coords, setCoords] = useState(initialDraft?.coords ?? center);
   // The map/search/locate-me pin only ever moves this — never `coords` or
   // `details` directly. Those only change when "Use this location" commits
@@ -216,8 +274,19 @@ export function AddPandalFlow({
   const nearbyMarkersRef = useRef<maplibregl.Marker[]>([]);
   const coordsRef = useRef(coords);
   coordsRef.current = coords;
+  // `handleMapReady` (below) is memoized once with empty deps — the actual
+  // map only ever mounts once city selection is already done, but this
+  // still guards against reading a stale `selectedCity` from that one
+  // initial closure if that ever changes.
+  const selectedCityRef = useRef(selectedCity);
+  selectedCityRef.current = selectedCity;
 
   const hasPendingMove = pendingCoords.latitude !== coords.latitude || pendingCoords.longitude !== coords.longitude;
+  // Only meaningful once the pin has actually moved away from the city's
+  // own center (its starting position) — otherwise this would always read
+  // ~0 and the check would be pointless.
+  const hasConfirmedLocation = coords.latitude !== selectedCity.latitude || coords.longitude !== selectedCity.longitude;
+  const cityDistanceMeters = hasConfirmedLocation ? distanceMeters(coords, selectedCity) : 0;
 
   // Autosaves the in-progress submission so a refresh, accidental back-nav,
   // or closed tab doesn't lose it — debounced so typing doesn't write on
@@ -229,6 +298,7 @@ export function AddPandalFlow({
     const timeout = setTimeout(() => {
       saveDraft(citySlug, {
         step,
+        selectedCity,
         coords,
         categories,
         photos,
@@ -241,7 +311,7 @@ export function AddPandalFlow({
       });
     }, 400);
     return () => clearTimeout(timeout);
-  }, [citySlug, step, coords, categories, photos, details, festivalYear, amenities, visitType, schedule, email]);
+  }, [citySlug, step, selectedCity, coords, categories, photos, details, festivalYear, amenities, visitType, schedule, email]);
 
   // The draft is being resumed, not started fresh — deletes any photos it
   // was holding (they'd otherwise be orphaned the moment the form resets
@@ -252,7 +322,8 @@ export function AddPandalFlow({
     photos.forEach((photo) => void deletePhoto(photo.url));
     clearDraft(citySlug);
     setDraftRestored(false);
-    setStep("location");
+    setStep("city");
+    setSelectedCity(initialCity);
     setCoords(center);
     setPendingCoords(center);
     setPendingAddress(null);
@@ -270,7 +341,7 @@ export function AddPandalFlow({
     if (fetchTimer.current) clearTimeout(fetchTimer.current);
     fetchTimer.current = setTimeout(async () => {
       try {
-        const results = await fetchNearbyPandals(cityId, next.latitude, next.longitude);
+        const results = await fetchNearbyPandals(selectedCityRef.current.id, next.latitude, next.longitude);
         setNearby(results);
         setNearbyCheckFailed(false);
       } catch {
@@ -429,7 +500,7 @@ export function AddPandalFlow({
     nearbyMarkersRef.current.forEach((marker) => marker.remove());
     nearbyMarkersRef.current = nearby.map((candidate) => {
       const el = document.createElement("a");
-      el.href = `/${citySlug}/pandal/${candidate.slug}`;
+      el.href = `/${selectedCity.slug}/pandal/${candidate.slug}`;
       el.target = "_blank";
       el.rel = "noopener noreferrer";
       el.setAttribute("aria-label", candidate.canonicalName);
@@ -443,17 +514,62 @@ export function AddPandalFlow({
         .addTo(map);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearby, citySlug]);
+  }, [nearby, selectedCity.slug]);
 
   function continueAsNew() {
     setStep("details");
   }
 
+  // Highlights a city as the current pick on the city step — separate from
+  // actually advancing (see proceedFromCityStep below), matching the rest
+  // of the flow's select-then-confirm pattern (e.g. the location step's own
+  // "Use this location") instead of jumping away the instant something is
+  // clicked.
+  function selectCityCandidate(city: SelectedCityState) {
+    setSelectedCity(city);
+    setFestivalYear(city.activeFestivalYear);
+  }
+
+  const {
+    query: cityQuery,
+    setQuery: setCityQuery,
+    results: cityResults,
+    loading: cityLoading,
+    resolving: cityResolving,
+    selectAndGo: citySearchSelect,
+  } = useCitySearch((city) =>
+    selectCityCandidate({
+      id: city._id,
+      slug: city.slug,
+      name: city.name,
+      latitude: city.latitude,
+      longitude: city.longitude,
+      zoom: city.defaultMapZoom,
+      activeFestivalYear: city.activeFestivalYear,
+    })
+  );
+
+  // The one place all location-dependent state resets together once the
+  // city step is actually confirmed — so nothing from a previously-explored
+  // city (a half-dropped pin, its nearby-duplicate results) lingers after
+  // switching.
+  function proceedFromCityStep() {
+    const c = { latitude: selectedCity.latitude, longitude: selectedCity.longitude };
+    setCoords(c);
+    setPendingCoords(c);
+    setPendingAddress(null);
+    setNearby([]);
+    setNearbyCheckFailed(false);
+    setStep("location");
+  }
+
   // Mirrors the forward progression so "back" always lands on the step the
   // user actually came from, not just always the first step.
   function goBack() {
-    if (step === "location") {
+    if (step === "city") {
       router.push(`/${citySlug}`);
+    } else if (step === "location") {
+      setStep("city");
     } else if (step === "verify") {
       setStep("details");
     } else {
@@ -539,7 +655,7 @@ export function AddPandalFlow({
     };
 
     const result = await submitPandal({
-      cityId,
+      cityId: selectedCity.id,
       type: "NEW_PANDAL",
       submittedData,
       contributorContact: email,
@@ -590,9 +706,8 @@ export function AddPandalFlow({
   }
 
   const progress = useMemo(() => {
-    const order: Step[] = ["location", "details", "verify"];
-    const index = order.indexOf(step === "done" ? "verify" : step);
-    return { index: index === -1 ? 0 : index, total: order.length };
+    const index = STEP_ORDER.indexOf(step === "done" ? "verify" : step);
+    return { index: index === -1 ? 0 : index, total: STEP_ORDER.length };
   }, [step]);
 
   // Non-location steps are a single scrollable form — full width reads fine
@@ -602,9 +717,10 @@ export function AddPandalFlow({
   const formStepClass =
     "flex flex-col gap-4 px-4 pt-6 md:mx-auto md:mt-6 md:max-w-xl md:rounded-3xl md:border md:border-border md:bg-panel md:p-8 md:pt-8";
 
-  // One header for every step (location included) — the previous version
-  // only rendered this for steps after "location", which is exactly why the
-  // first screen had no back button and no visible chrome at all.
+  // One header for every step — a bare "2/4" counter left a test user
+  // unsure what each step actually was; naming it plus the count together
+  // ("Step 2 of 4 · Location") gives an explicit sense of place, not just
+  // progress.
   const headerBlock = step !== "done" && (
     <div className="flex flex-col gap-3 px-4 pb-3 pt-4 md:mx-auto md:max-w-xl">
       <div className="flex items-center justify-between">
@@ -613,10 +729,10 @@ export function AddPandalFlow({
         <button onClick={goBack} className="flex h-10 w-10 items-center justify-center rounded-full bg-card md:hidden">
           <span className="material-symbols-rounded">arrow_back</span>
         </button>
-        <MobileHeader citySlug={citySlug} cityName={cityName} year={activeFestivalYear} className="md:hidden" />
+        <MobileHeader citySlug={citySlug} cityName={selectedCity.name} year={festivalYear} className="md:hidden" />
         <span className="hidden font-body text-sm font-bold md:inline">Add your pandal</span>
         <span className="font-mono text-xs text-ink-muted">
-          {progress.index + 1}/{progress.total}
+          Step {progress.index + 1} of {progress.total} · {STEP_LABELS[step]}
         </span>
       </div>
       <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${progress.total}, 1fr)` }}>
@@ -645,6 +761,104 @@ export function AddPandalFlow({
         </div>
       )}
 
+      {step === "city" && (
+        <div className={formStepClass}>
+          <h2 className="font-display text-[20px] md:text-[22px] font-extrabold">Which city is this pandal in?</h2>
+          <p className="font-body text-sm text-ink-muted">
+            This decides which city's map it shows up on — you can add a pandal for any city in India, not just{" "}
+            {initialCity.name}.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => selectCityCandidate(initialCity)}
+            className={`flex items-center gap-3 rounded-2xl border p-3 text-left ${
+              selectedCity.id === initialCity.id ? "border-brand bg-card ring-2 ring-brand" : "border-border bg-panel md:bg-card/60"
+            }`}
+          >
+            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="material-symbols-rounded text-brand">location_on</span>
+            </span>
+            <span className="flex flex-col">
+              <span className="font-body text-[15.5px] font-bold">{initialCity.name}</span>
+              <span className="font-body text-xs text-ink-muted">Where you're browsing from</span>
+            </span>
+            {selectedCity.id === initialCity.id && (
+              <span className="material-symbols-rounded ml-auto text-2xl text-brand" style={{ fontVariationSettings: "'FILL' 1" }}>
+                check_circle
+              </span>
+            )}
+          </button>
+
+          <Field label="Or search a different city">
+            <Input
+              uiSize="sm"
+              placeholder="e.g. Rewa, Nagpur, Kota…"
+              value={cityQuery}
+              onChange={(e) => setCityQuery(e.target.value)}
+            />
+          </Field>
+
+          {cityQuery.trim().length >= 2 && (
+            <div className="flex flex-col gap-1">
+              {cityLoading ? (
+                <p className="py-4 text-center font-body text-sm text-ink-muted">Searching…</p>
+              ) : cityResults.length === 0 ? (
+                <p className="py-4 text-center font-body text-sm text-ink-muted">No matching places in India.</p>
+              ) : (
+                cityResults.map((result, index) => {
+                  const isDb = result.source === "db";
+                  // A city can still be picked here even if it isn't
+                  // browsable yet (COMING_SOON) or isn't in the DB at all
+                  // (nominatim) — contributing the first pandal for a city
+                  // is exactly how it *becomes* live, so nothing here
+                  // blocks on status, only on an in-flight resolve.
+                  const isSelected = isDb && result._id === selectedCity.id;
+                  return (
+                    <button
+                      key={isDb ? result._id : `${result.name}-${index}`}
+                      type="button"
+                      disabled={cityResolving}
+                      onClick={() => citySearchSelect(result)}
+                      className={`flex items-center gap-3 rounded-2xl p-2.5 text-left disabled:opacity-60 ${
+                        isSelected ? "bg-card ring-2 ring-brand" : "hover:bg-card/60"
+                      }`}
+                    >
+                      <span className="material-symbols-rounded flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip text-lg text-ink-muted">
+                        {cityResolving ? "sync" : "location_on"}
+                      </span>
+                      <span className="flex min-w-0 flex-1 flex-col">
+                        <span className="truncate font-body text-sm font-bold">{result.name}</span>
+                        <span className="truncate font-body text-xs text-ink-muted">
+                          {result.state}
+                          {isDb && result.status !== "ACTIVE" ? " · not live yet" : ""}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          )}
+
+          <Field label="Festival year">
+            <Select uiSize="sm" value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
+              {getAvailableFestivalYears().map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                  {year === selectedCity.activeFestivalYear ? " (current)" : ""}
+                </option>
+              ))}
+            </Select>
+          </Field>
+
+          <Button uiSize="sm" onClick={proceedFromCityStep} className="mt-1 flex items-center justify-center gap-1.5">
+            Continue with {selectedCity.name}
+            <span className="material-symbols-rounded text-lg">arrow_forward</span>
+          </Button>
+        </div>
+      )}
+
       {step === "location" && (
         <div className="flex flex-col md:h-[600px] md:flex-row-reverse">
           {/* DOM order is [map, panel] so mobile (flex-col, no reverse) stacks
@@ -659,7 +873,7 @@ export function AddPandalFlow({
                 center here meant the map visually snapped back to it on
                 return, even though `coords` (and the nearby/geocode results
                 tied to it) had already moved with the visitor's drag. */}
-            <MapCanvas styleUrl={mapTilesUrl} center={coords} zoom={zoom} onMapReady={handleMapReady} className="absolute inset-0" />
+            <MapCanvas styleUrl={mapTilesUrl} center={coords} zoom={selectedCity.zoom} onMapReady={handleMapReady} className="absolute inset-0" />
             <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-full flex flex-col items-center">
               <span className="mb-1.5 rounded-xl bg-accent px-2.5 py-1 font-body text-xs font-bold text-accent-ink shadow">
                 Your pandal · drag map to adjust
@@ -669,7 +883,13 @@ export function AddPandalFlow({
               </span>
             </div>
             <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
-              <LocationSearchBox citySlug={citySlug} placeholder="Search your pandal's area" onSelect={handleLocationSelect} biasCenter={pendingCoords} />
+              <LocationSearchBox
+                citySlug={selectedCity.slug}
+                placeholder={`Search your pandal's area in ${selectedCity.name}`}
+                onSelect={handleLocationSelect}
+                biasCenter={pendingCoords}
+                restrictNear={{ latitude: selectedCity.latitude, longitude: selectedCity.longitude }}
+              />
             </div>
             <button
               onClick={searchThisArea}
@@ -704,6 +924,14 @@ export function AddPandalFlow({
           </div>
 
           <div className="flex flex-col gap-4 px-4 pt-5 md:w-[420px] md:flex-none md:overflow-y-auto md:border-l md:border-border md:pt-6">
+            <div className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
+              <span className="material-symbols-rounded text-sm text-accent">location_on</span>
+              Adding to <span className="font-bold text-ink">{selectedCity.name}</span>, {festivalYear}
+              <button type="button" onClick={() => setStep("city")} className="ml-auto font-bold text-brand">
+                Change
+              </button>
+            </div>
+
             <button
               onClick={locateMe}
               disabled={locating}
@@ -721,20 +949,10 @@ export function AddPandalFlow({
 
             <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
 
-            <Field label="Festival year">
-              <Select value={String(festivalYear)} onChange={(e) => setFestivalYear(Number(e.target.value))}>
-                {getAvailableFestivalYears().map((year) => (
-                  <option key={year} value={year}>
-                    {year}
-                    {year === activeFestivalYear ? " (current)" : ""}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-
             <div className="grid grid-cols-2 gap-3">
               <Field label="Locality / area">
                 <Input
+                  uiSize="sm"
                   placeholder="e.g. Kumartuli"
                   value={details.locality}
                   onChange={(e) => setDetails({ ...details, locality: e.target.value })}
@@ -742,6 +960,7 @@ export function AddPandalFlow({
               </Field>
               <Field label="Landmark">
                 <Input
+                  uiSize="sm"
                   placeholder="Optional"
                   value={details.landmark}
                   onChange={(e) => setDetails({ ...details, landmark: e.target.value })}
@@ -750,6 +969,7 @@ export function AddPandalFlow({
             </div>
             <Field label="Address">
               <Input
+                uiSize="sm"
                 placeholder="Full street address"
                 value={details.address}
                 onChange={(e) => setDetails({ ...details, address: e.target.value })}
@@ -763,41 +983,67 @@ export function AddPandalFlow({
               </span>
             )}
 
-            <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
-              <div className="flex flex-col gap-1">
-                <span className="font-display text-lg font-extrabold">Is your pandal already here?</span>
-                <span className="font-body text-sm text-ink-muted">
-                  {nearbyCheckFailed
-                    ? "Couldn't check — please look on the map or Explore before continuing, to avoid adding a duplicate."
-                    : nearby.length > 0
-                      ? `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} near your pin.`
-                      : "No existing pandals found near this pin."}
+            {/* Doesn't block — a city's genuine outskirts can reasonably be
+                this far from its center pin — but the visitor sees this
+                *before* submitting instead of it only surfacing in admin
+                review after the fact (see the equivalent banner on the
+                admin submissions page). */}
+            {hasConfirmedLocation && cityDistanceMeters > CITY_DISTANCE_WARNING_METERS && (
+              <div className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2.5">
+                <span className="material-symbols-rounded flex-none text-base text-accent">warning</span>
+                <span className="font-body text-xs text-accent">
+                  This looks ~{Math.round(cityDistanceMeters / 1000)}km from {selectedCity.name} — if that's not right, go
+                  back and pick a different city.
                 </span>
               </div>
-              {nearby.map((candidate) => (
-                <div key={candidate.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel">
-                  <div className="flex min-w-0 flex-1 flex-col">
-                    <span className="truncate font-body text-sm font-bold">{candidate.canonicalName}</span>
-                    <span className="truncate font-body text-xs text-ink-muted">{candidate.locality}</span>
-                  </div>
-                  <Link
-                    href={`/${citySlug}/pandal/${candidate.slug}`}
-                    target="_blank"
-                    className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
-                  >
-                    View pandal
-                  </Link>
+            )}
+
+            {/* Only surfaced once a location is actually confirmed, and only
+                when there's something to say — testers didn't understand
+                what this card was asking when it showed up unconditionally
+                (even with nothing found nearby) while they were still
+                exploring the map. A spot with no nearby matches now shows
+                nothing here at all; the plain Continue button below is the
+                only thing that appears either way. */}
+            {Boolean(details.locality && details.address) && (nearby.length > 0 || nearbyCheckFailed) && (
+              <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
+                <div className="flex flex-col gap-1">
+                  <span className="font-display text-[15px] font-extrabold">
+                    {nearbyCheckFailed ? "Couldn't check for existing pandals nearby" : "Is one of these your pandal?"}
+                  </span>
+                  <span className="font-body text-sm text-ink-muted">
+                    {nearbyCheckFailed
+                      ? "Please look on the map or Explore before continuing, to avoid adding a duplicate."
+                      : `We found ${nearby.length} pandal${nearby.length > 1 ? "s" : ""} already listed near this spot.`}
+                  </span>
                 </div>
-              ))}
-              <Button
-                onClick={continueAsNew}
-                disabled={!details.locality || !details.address}
-                className="mt-1 flex items-center justify-center gap-1.5"
-              >
-                None of these — continue
-                <span className="material-symbols-rounded text-lg">arrow_forward</span>
-              </Button>
-            </div>
+                {nearby.map((candidate) => (
+                  <div key={candidate.id} className="flex items-center gap-3 rounded-2xl bg-card p-2.5 md:bg-panel">
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-body text-sm font-bold">{candidate.canonicalName}</span>
+                      <span className="truncate font-body text-xs text-ink-muted">{candidate.locality}</span>
+                    </div>
+                    <Link
+                      href={`/${selectedCity.slug}/pandal/${candidate.slug}`}
+                      target="_blank"
+                      className="flex-none rounded-xl border-[1.5px] border-brand px-3 py-2 font-body text-xs font-bold text-brand"
+                    >
+                      View pandal
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <Button
+              uiSize="sm"
+              onClick={continueAsNew}
+              disabled={!details.locality || !details.address}
+              className="flex items-center justify-center gap-1.5"
+            >
+              Continue
+              <span className="material-symbols-rounded text-lg">arrow_forward</span>
+            </Button>
           </div>
 
         </div>
@@ -832,15 +1078,16 @@ export function AddPandalFlow({
 
           <span className="font-body text-xs font-extrabold tracking-wide text-accent">BASIC DETAILS</span>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">storefront</span>
               </span>
-              <span className="font-display text-base font-bold">Basics</span>
+              <span className="font-display text-[15px] font-bold">Basics</span>
             </div>
             <Field label="Pandal name">
               <Input
+                uiSize="sm"
                 required
                 placeholder="e.g. Kumartuli Sarbojanin"
                 value={details.canonicalName}
@@ -849,6 +1096,7 @@ export function AddPandalFlow({
             </Field>
             <Field label="Organiser / committee">
               <Input
+                uiSize="sm"
                 placeholder="Optional"
                 value={details.organizerName}
                 onChange={(e) => setDetails({ ...details, organizerName: e.target.value })}
@@ -858,16 +1106,17 @@ export function AddPandalFlow({
 
           <span className="mt-1 font-body text-xs font-extrabold tracking-wide text-accent">OPTIONAL DETAILS</span>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-4">
+          <div className="flex flex-col gap-3 rounded-3xl border border-accent/20 bg-gradient-to-br from-[#2A1B2C] to-[#1E1726] p-3.5">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-accent">palette</span>
               </span>
-              <span className="font-display text-base font-bold">Theme for {festivalYear}</span>
+              <span className="font-display text-[15px] font-bold">Theme for {festivalYear}</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
             <Field label="Theme name">
               <Input
+                uiSize="sm"
                 placeholder="e.g. Rural Bengal"
                 value={details.theme}
                 onChange={(e) => setDetails({ ...details, theme: e.target.value })}
@@ -875,6 +1124,7 @@ export function AddPandalFlow({
             </Field>
             <Field label="Theme details">
               <Textarea
+                uiSize="sm"
                 placeholder="What makes it worth visiting?"
                 value={details.description}
                 onChange={(e) => setDetails({ ...details, description: e.target.value })}
@@ -882,12 +1132,12 @@ export function AddPandalFlow({
             </Field>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">photo_camera</span>
               </span>
-              <span className="font-display text-base font-bold">Photos</span>
+              <span className="font-display text-[15px] font-bold">Photos</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional · up to {MAX_PHOTOS}</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -928,12 +1178,12 @@ export function AddPandalFlow({
             {photoError && <p className="font-body text-xs text-brand">{photoError}</p>}
           </div>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">sell</span>
               </span>
-              <span className="font-display text-base font-bold">Categories</span>
+              <span className="font-display text-[15px] font-bold">Categories</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -955,16 +1205,17 @@ export function AddPandalFlow({
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">local_parking</span>
               </span>
-              <span className="font-display text-base font-bold">Good to know for visitors</span>
+              <span className="font-display text-[15px] font-bold">Good to know for visitors</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
             <Field label="Public contact">
               <Input
+                uiSize="sm"
                 placeholder="Phone number visitors can call"
                 value={details.publicContact}
                 onChange={(e) => setDetails({ ...details, publicContact: e.target.value })}
@@ -990,7 +1241,7 @@ export function AddPandalFlow({
               </label>
             ))}
             <Field label="Visit type">
-              <Select value={visitType} onChange={(e) => setVisitType(e.target.value)}>
+              <Select uiSize="sm" value={visitType} onChange={(e) => setVisitType(e.target.value)}>
                 {VISIT_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -1000,12 +1251,12 @@ export function AddPandalFlow({
             </Field>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-4 md:bg-card/60">
+          <div className="flex flex-col gap-3 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-chip">
+              <span className="flex h-8 w-8 flex-none items-center justify-center rounded-xl bg-chip">
                 <span className="material-symbols-rounded text-brand">schedule</span>
               </span>
-              <span className="font-display text-base font-bold">Puja schedule</span>
+              <span className="font-display text-[15px] font-bold">Puja schedule</span>
               <span className="ml-auto font-body text-xs text-ink-muted">optional</span>
             </div>
             {schedule.map((row, index) => {
@@ -1014,10 +1265,11 @@ export function AddPandalFlow({
               <div key={index} className="flex gap-2">
                 <div className="flex flex-none gap-1">
                   <Select
+                    uiSize="sm"
                     aria-label="Hour"
                     value={hour}
                     onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(e.target.value, minute, period))}
-                    className="w-[60px]"
+                    className="w-[56px]"
                   >
                     {SCHEDULE_HOURS.map((h) => (
                       <option key={h} value={h}>
@@ -1026,10 +1278,11 @@ export function AddPandalFlow({
                     ))}
                   </Select>
                   <Select
+                    uiSize="sm"
                     aria-label="Minute"
                     value={minute}
                     onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, e.target.value, period))}
-                    className="w-[68px]"
+                    className="w-[64px]"
                   >
                     {SCHEDULE_MINUTES.map((m) => (
                       <option key={m} value={m}>
@@ -1038,10 +1291,11 @@ export function AddPandalFlow({
                     ))}
                   </Select>
                   <Select
+                    uiSize="sm"
                     aria-label="AM or PM"
                     value={period}
                     onChange={(e) => updateScheduleRow(index, "time", formatScheduleTime(hour, minute, e.target.value))}
-                    className="w-[68px]"
+                    className="w-[64px]"
                   >
                     {SCHEDULE_PERIODS.map((p) => (
                       <option key={p} value={p}>
@@ -1051,6 +1305,7 @@ export function AddPandalFlow({
                   </Select>
                 </div>
                 <Input
+                  uiSize="sm"
                   placeholder="Event — e.g. Evening Aarti"
                   value={row.label}
                   onChange={(e) => updateScheduleRow(index, "label", e.target.value)}
@@ -1059,7 +1314,7 @@ export function AddPandalFlow({
                 <button
                   type="button"
                   onClick={() => removeScheduleRow(index)}
-                  className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-card"
+                  className="flex h-10 w-10 flex-none items-center justify-center rounded-xl bg-card"
                 >
                   <span className="material-symbols-rounded text-ink-muted">close</span>
                 </button>
@@ -1076,7 +1331,7 @@ export function AddPandalFlow({
             </button>
           </div>
 
-          <Button type="submit" disabled={!details.canonicalName}>
+          <Button uiSize="sm" type="submit" disabled={!details.canonicalName}>
             Continue
           </Button>
         </form>
@@ -1094,8 +1349,8 @@ export function AddPandalFlow({
                 : "We only use this to reach you if we have questions about your submission. No account, no newsletters."}
             </p>
           </div>
-          <div className="flex h-11 md:h-12 items-center gap-2.5 rounded-2xl border border-border bg-panel px-3.5 md:bg-card">
-            <span className="material-symbols-rounded text-[20px] text-ink-muted">mail</span>
+          <div className="flex h-10 md:h-11 items-center gap-2.5 rounded-2xl border border-border bg-panel px-3 md:bg-card">
+            <span className="material-symbols-rounded text-[18px] text-ink-muted">mail</span>
             <input
               type="email"
               required
@@ -1103,7 +1358,7 @@ export function AddPandalFlow({
               value={email}
               disabled={REQUIRE_VERIFICATION && codeSent}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-transparent font-body text-[14.5px] md:text-[15.5px] outline-none"
+              className="flex-1 bg-transparent font-body text-[13px] md:text-[13.5px] outline-none"
             />
             {REQUIRE_VERIFICATION && codeSent && (
               <button className="font-body text-sm font-bold text-brand" onClick={() => setCodeSent(false)}>
@@ -1127,13 +1382,13 @@ export function AddPandalFlow({
           />
 
           {!REQUIRE_VERIFICATION && (
-            <Button onClick={handleSubmitRequest} disabled={submitting || !email}>
+            <Button uiSize="sm" onClick={handleSubmitRequest} disabled={submitting || !email}>
               {submitting ? "Submitting…" : "Submit request"}
             </Button>
           )}
 
           {REQUIRE_VERIFICATION && !codeSent && (
-            <Button onClick={handleSendCode} disabled={sending || !email}>
+            <Button uiSize="sm" onClick={handleSendCode} disabled={sending || !email}>
               {sending ? "Sending…" : "Send code"}
             </Button>
           )}
@@ -1145,11 +1400,11 @@ export function AddPandalFlow({
                 <input
                   value={code}
                   onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  className="h-12 md:h-14 rounded-2xl bg-ink text-center font-mono text-lg md:text-xl text-ground tracking-[0.4em]"
+                  className="h-11 md:h-12 rounded-2xl bg-ink text-center font-mono text-base md:text-lg text-ground tracking-[0.4em]"
                   placeholder="000000"
                 />
               </label>
-              <Button onClick={handleVerifyAndSubmit} disabled={submitting || code.length !== 6}>
+              <Button uiSize="sm" onClick={handleVerifyAndSubmit} disabled={submitting || code.length !== 6}>
                 {submitting ? "Submitting…" : "Verify & submit"}
               </Button>
             </>
@@ -1168,16 +1423,21 @@ export function AddPandalFlow({
           </span>
           <h2 className="font-display text-[22px] md:text-[26px] font-extrabold">Shubho! It's in the queue.</h2>
           <p className="font-body text-ink-dim">
-            Every listing is checked before it appears on the {cityName} map. We'll email you only if something needs a fix.
+            Every listing is checked before it appears on the {selectedCity.name} map. We'll email you only if something
+            needs a fix.
           </p>
           {submissionId && <p className="font-mono text-xs text-ink-muted">#{submissionId.slice(-6)}</p>}
           <div className="mt-4 flex w-full flex-col gap-2.5">
-            <Button onClick={() => router.push(`/${citySlug}`)}>Back to map</Button>
+            <Button uiSize="sm" onClick={() => router.push(`/${selectedCity.slug}`)}>
+              Back to map
+            </Button>
             <Button
+              uiSize="sm"
               variant="secondary"
               onClick={() => {
                 setDraftRestored(false);
-                setStep("location");
+                setStep("city");
+                setSelectedCity(initialCity);
                 setCoords(center);
                 setPendingCoords(center);
                 setPendingAddress(null);

@@ -6,12 +6,18 @@ import { searchCities, resolveCity, type CitySearchResult } from "@/lib/api";
 
 const DEBOUNCE_MS = 350;
 
-// Shared by the city-selector sheet and the intro-hero search box so
-// "type a city, get live results across all of India (not just admin-curated
-// ones), pick one, navigate there" isn't implemented twice. A "nominatim"
-// result has no City row yet — selectAndGo() creates one (idempotently) right
-// before navigating, per the "materialize at selection time" design.
-export function useCitySearch() {
+// Shared by the city-selector sheet, the intro-hero search box, and Add
+// Pandal's city step so "type a city, get live results across all of India
+// (not just admin-curated ones), pick one" isn't implemented three times. A
+// "nominatim" result has no City row yet — selectAndGo() creates one
+// (idempotently) right before handing it off, per the "materialize at
+// selection time" design.
+//
+// `onSelected`, when given, replaces the default "navigate to /{slug}"
+// behavior with a callback carrying the resolved city instead — Add Pandal
+// needs to stay on the same page and just record which city was chosen,
+// not browse there.
+export function useCitySearch(onSelected?: (city: { _id: string; slug: string; name: string; latitude: number; longitude: number; defaultMapZoom: number; activeFestivalYear: number }) => void) {
   const router = useRouter();
   const [query, setQueryState] = useState("");
   const [results, setResults] = useState<CitySearchResult[]>([]);
@@ -45,13 +51,23 @@ export function useCitySearch() {
 
   async function selectAndGo(result: CitySearchResult) {
     if (result.source === "db") {
-      router.push(`/${result.slug}`);
+      if (onSelected) {
+        // The search endpoint doesn't carry defaultMapZoom (not needed for
+        // display) — 10 matches the City schema's own default, same
+        // fallback admin's city-combobox uses for the same reason.
+        onSelected({ ...result, defaultMapZoom: 10 });
+      } else {
+        router.push(`/${result.slug}`);
+      }
       return;
     }
     setResolving(true);
     try {
       const city = await resolveCity(result);
-      if (city) router.push(`/${city.slug}`);
+      if (city) {
+        if (onSelected) onSelected(city);
+        else router.push(`/${city.slug}`);
+      }
     } finally {
       setResolving(false);
     }

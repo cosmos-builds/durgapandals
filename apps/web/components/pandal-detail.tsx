@@ -346,11 +346,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
           <DirectionsButton pandal={pandal} variant="block" />
           <button
             onClick={toggleSave}
-            className={`flex h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl font-body text-sm font-bold ${
+            className={`flex h-10 flex-1 items-center justify-center gap-1 rounded-2xl font-body text-xs font-bold ${
               saved ? "bg-card text-brand" : "border border-border text-ink"
             }`}
           >
-            <span className="material-symbols-rounded text-base" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+            <span className="material-symbols-rounded text-sm" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
               bookmark
             </span>
             {saved ? "Added to route" : "Add to route"}
@@ -364,11 +364,11 @@ export function PandalDetail({ citySlug, cityName, pandal, nearby, mapTilesUrl }
         <DirectionsButton pandal={pandal} variant="block" />
         <button
           onClick={toggleSave}
-          className={`flex h-12 flex-1 items-center justify-center gap-1.5 rounded-2xl font-body text-sm font-bold ${
+          className={`flex h-10 flex-1 items-center justify-center gap-1 rounded-2xl font-body text-xs font-bold ${
             saved ? "bg-card text-brand" : "border border-border text-ink"
           }`}
         >
-          <span className="material-symbols-rounded text-base" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
+          <span className="material-symbols-rounded text-sm" style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}>
             bookmark
           </span>
           {saved ? "Added to route" : "Add to route"}

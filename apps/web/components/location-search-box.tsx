@@ -12,7 +12,12 @@ export interface LocationSearchBoxProps {
   // live pin in the Add Pandal flow) instead of always the city's fixed
   // centre — without this, "near me" could resolve to a same-named place
   // clear across the state (spec: search should return relevant results).
+  // Ranking only, never excludes a distant result — see `restrictNear`.
   biasCenter?: { latitude: number; longitude: number };
+  // Hard-restricts results to near this point instead of just ranking —
+  // used once a city has been explicitly chosen (Add Pandal's city step),
+  // where a distant same-named result genuinely isn't relevant anymore.
+  restrictNear?: { latitude: number; longitude: number };
 }
 
 const DEBOUNCE_MS = 350;
@@ -20,7 +25,7 @@ const DEBOUNCE_MS = 350;
 // Shared between the Map home search bar and the Add Pandal location step
 // (spec §8.1's "search" extends to place lookup, not just pandal names) —
 // debounced so geocoding isn't called on every keystroke (spec §5.4).
-export function LocationSearchBox({ citySlug, placeholder, onSelect, className = "", biasCenter }: LocationSearchBoxProps) {
+export function LocationSearchBox({ citySlug, placeholder, onSelect, className = "", biasCenter, restrictNear }: LocationSearchBoxProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<LocationSearchResult[]>([]);
   const [open, setOpen] = useState(false);
@@ -50,7 +55,7 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
-      const found = await searchLocations(citySlug, value, biasCenter);
+      const found = await searchLocations(citySlug, value, biasCenter, restrictNear);
       setResults(found);
       setSearched(true);
       setLoading(false);

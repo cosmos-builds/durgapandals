@@ -14,23 +14,30 @@ export function externalDirectionsUrl(destination: {
 // UI should cap selection at this instead of finding out after the fact.
 export const MAX_TRAIL_STOPS = 10;
 
+// `origin`, when given (the visitor's live geolocation — see trail-sheet.tsx),
+// is the route's true starting point, with every stop as a waypoint/
+// destination. Omitted, this falls back to the original behavior — the
+// first-added stop doubles as the origin — which is also what a shared
+// WhatsApp link keeps using unconditionally, since it can't meaningfully
+// encode "the sender's location" for whoever opens it.
 export function externalTrailDirectionsUrl(
   stops: { latitude: number; longitude: number }[],
+  origin?: { latitude: number; longitude: number },
 ): string {
-  const origin = stops[0];
-  if (!origin) return "";
-  if (stops.length === 1) return externalDirectionsUrl(origin);
+  const allStops = origin ? stops : stops.slice(1);
+  const routeOrigin = origin ?? stops[0];
+  if (!routeOrigin) return "";
+  if (allStops.length === 0) return externalDirectionsUrl(routeOrigin);
 
-  const rest = stops.slice(1);
-  const destination = rest[rest.length - 1] as {
+  const destination = allStops[allStops.length - 1] as {
     latitude: number;
     longitude: number;
   };
-  const waypoints = rest.slice(0, -1);
+  const waypoints = allStops.slice(0, -1);
 
   const params = new URLSearchParams({
     api: "1",
-    origin: `${origin.latitude},${origin.longitude}`,
+    origin: `${routeOrigin.latitude},${routeOrigin.longitude}`,
     destination: `${destination.latitude},${destination.longitude}`,
   });
   if (waypoints.length > 0) {

@@ -23,6 +23,7 @@ export interface TrailSheetProps {
 export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
   const [allPandals, setAllPandals] = useState<PandalSummary[] | null>(null);
   const [orderedSlugs, setOrderedSlugs] = useState<string[]>([]);
+  const [locating, setLocating] = useState(false);
 
   useEffect(() => {
     function sync() {
@@ -53,9 +54,38 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
 
   function shareOnWhatsApp() {
     const names = stops.map((s) => s.canonicalName).join(", ");
+    // No live-location origin here (unlike openInGoogleMaps below) — a
+    // shared link can't meaningfully encode "the sender's location" for
+    // whoever else opens it, so this keeps the first-stop-as-origin
+    // fallback intentionally.
     const url = externalTrailDirectionsUrl(stops);
     const text = `My pandal hopping trail in ${citySlug}: ${names}\n${url}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
+  }
+
+  // Matches add-pandal-flow.tsx's locateMe() — same options, same graceful
+  // fallback on denial/unavailability, just opening a URL instead of
+  // setting form state. Previously this used the trail's first-added stop
+  // as the route's origin unconditionally, which made no sense once the
+  // visitor could genuinely be starting from anywhere.
+  function openInGoogleMaps() {
+    if (!navigator.geolocation) {
+      window.open(externalTrailDirectionsUrl(stops), "_blank", "noopener,noreferrer");
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocating(false);
+        const origin = { latitude: position.coords.latitude, longitude: position.coords.longitude };
+        window.open(externalTrailDirectionsUrl(stops, origin), "_blank", "noopener,noreferrer");
+      },
+      () => {
+        setLocating(false);
+        window.open(externalTrailDirectionsUrl(stops), "_blank", "noopener,noreferrer");
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
   }
 
   return (
@@ -100,7 +130,7 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
                 </span>
                 <span className="font-display text-lg font-extrabold">No stops yet</span>
                 <span className="font-body text-sm text-ink-muted">
-                  Tap the route icon on any pandal to add it to your trail.
+                  Tap "Trail" on any pandal to add it here — plan a multi-stop route, then open it in Google Maps.
                 </span>
               </div>
             ) : (
@@ -151,17 +181,20 @@ export function TrailSheet({ citySlug, open, onClose }: TrailSheetProps) {
 
             {stops.length > 0 && (
               <div className="flex flex-col gap-2">
-                <a
-                  href={externalTrailDirectionsUrl(stops)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-brand font-body text-sm font-bold text-brand-ink"
+                <button
+                  type="button"
+                  onClick={openInGoogleMaps}
+                  disabled={locating}
+                  className="flex h-12 items-center justify-center gap-1.5 rounded-2xl bg-brand font-body text-sm font-bold text-brand-ink disabled:opacity-70"
                 >
-                  <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
-                    directions
+                  <span
+                    className="material-symbols-rounded text-base"
+                    style={locating ? undefined : { fontVariationSettings: "'FILL' 1" }}
+                  >
+                    {locating ? "sync" : "directions"}
                   </span>
-                  Open in Google Maps
-                </a>
+                  {locating ? "Locating you…" : "Open in Google Maps"}
+                </button>
                 <div className="flex gap-2">
                   <button
                     onClick={shareOnWhatsApp}

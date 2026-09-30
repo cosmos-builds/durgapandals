@@ -8,6 +8,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { ToastProvider } from "@durgapandals/ui";
+import { SplashScreen } from "@/components/splash-screen";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 const SITE_DESCRIPTION = "Discover Durga Puja pandals across India — map-first, no login needed.";
@@ -39,6 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" data-theme="dark">
       <body>
+        {/* Mounted here (not per-page) so it only ever appears once per
+            real browser load — the App Router keeps this layout mounted
+            across client-side navigation, so this component simply never
+            remounts when a visitor clicks around the app, no separate
+            "was this a reload" detection needed. See splash-screen.tsx. */}
+        <SplashScreen />
         <ToastProvider>{children}</ToastProvider>
       </body>
     </html>

@@ -12,13 +12,16 @@ export interface DirectionsButtonProps {
 // The same bg-brand/text-brand-ink anchor tag was hand-rolled at 4 call
 // sites (saved-list, preview-sheet, pandal-detail x2) with near-identical
 // markup — this is that shared version instead of a 5th copy-paste.
+// Scaled down together (height, padding, icon+text size) — not just height
+// alone, which would make it look squat rather than genuinely smaller.
+// Same ~0.85x ratio as Add Pandal's uiSize="sm" pass elsewhere this session.
 export function DirectionsButton({ pandal, variant = "full", className = "" }: DirectionsButtonProps) {
   const sizeClasses =
     variant === "compact"
-      ? "h-11 flex-none gap-1.5 rounded-2xl px-3.5 text-sm"
+      ? "h-9 flex-none gap-1 rounded-xl px-3 text-xs"
       : variant === "block"
-        ? "h-12 flex-1 gap-1.5 rounded-2xl font-body text-sm"
-        : "h-11 gap-1.5 rounded-full px-4 text-sm";
+        ? "h-10 flex-1 gap-1 rounded-2xl font-body text-xs"
+        : "h-9 gap-1 rounded-full px-3.5 text-xs";
 
   return (
     <a
@@ -27,7 +30,7 @@ export function DirectionsButton({ pandal, variant = "full", className = "" }: D
       rel="noopener noreferrer"
       className={`flex items-center justify-center bg-brand font-body font-bold text-brand-ink ${sizeClasses} ${className}`}
     >
-      <span className="material-symbols-rounded text-base" style={{ fontVariationSettings: "'FILL' 1" }}>
+      <span className="material-symbols-rounded text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
         directions
       </span>
       {variant === "compact" ? "Go" : "Directions"}

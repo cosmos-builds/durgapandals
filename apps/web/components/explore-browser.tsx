@@ -194,17 +194,14 @@ export function ExploreBrowser({
           instead of a separate sort menu up here. */}
       <div className="relative flex flex-col gap-1.5 px-4 pt-4 md:hidden">
         <MobileHeader citySlug={citySlug} cityName={cityName} year={year} />
-        <h2 className="font-display text-[18px] font-extrabold">
-          Explore <span className="text-brand">{cityName}</span>
-        </h2>
       </div>
 
       <div className="relative md:flex md:items-start md:gap-8 md:px-8 md:pt-6">
         <div className="min-w-0 flex-1">
           <div className="hidden items-baseline px-4 md:flex md:px-0">
-            <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">
-              Explore <span className="text-brand">{cityName}</span>
-            </h1>
+            {/* No repeated city name — desktop's persistent TopHeader
+                already shows it via its CityYearPill. */}
+            <h1 className="font-display text-[34px] font-extrabold tracking-tight md:text-[42px]">Explore</h1>
           </div>
           <p className="mt-1 px-4 font-body text-sm text-ink-muted md:px-0">
             {pandals.length} pandals this festival season

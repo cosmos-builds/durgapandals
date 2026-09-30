@@ -356,13 +356,22 @@ export interface LocationSearchResult {
 export async function searchLocations(
   citySlug: string,
   q: string,
-  bias?: { latitude: number; longitude: number }
+  bias?: { latitude: number; longitude: number },
+  // Hard-restricts results to near this point (e.g. a city explicitly
+  // chosen in Add Pandal's city step) — distinct from `bias`, which only
+  // nudges ranking and never excludes a distant result. See
+  // apps/api/src/geocoding/geocoding.routes.ts.
+  restrictNear?: { latitude: number; longitude: number }
 ): Promise<LocationSearchResult[]> {
   if (q.trim().length < 2) return [];
   const params = new URLSearchParams({ citySlug, q });
   if (bias) {
     params.set("lat", String(bias.latitude));
     params.set("lon", String(bias.longitude));
+  }
+  if (restrictNear) {
+    params.set("nearLat", String(restrictNear.latitude));
+    params.set("nearLon", String(restrictNear.longitude));
   }
   const response = await fetch(`${API_BASE_URL}/geocode/search?${params}`, { cache: "no-store" });
   return safeJson(response, []);

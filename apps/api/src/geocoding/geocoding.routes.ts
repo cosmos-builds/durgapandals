@@ -10,10 +10,24 @@ const searchQuerySchema = z.object({
   // Optional: bias to wherever the user is actually looking (e.g. the
   // current pending pin in the Add Pandal flow / admin picker) rather than
   // always the city's fixed centre — "near me" should mean near the pin,
-  // not near city hall.
+  // not near city hall. Soft ranking only — never excludes a distant,
+  // correctly-named result (see the India-wide comment below).
   lat: z.coerce.number().optional(),
   lon: z.coerce.number().optional(),
+  // Optional, distinct from lat/lon above: once a visitor has explicitly
+  // chosen a city (Add Pandal's city step), this hard-restricts results to
+  // near it instead of just nudging ranking — without this, a short/common
+  // query like "MG Road" typed while adding a pandal in Indore could rank a
+  // same-named place in Bangalore above the actually-relevant one, since
+  // Photon's lat/lon bias alone doesn't exclude anything.
+  nearLat: z.coerce.number().optional(),
+  nearLon: z.coerce.number().optional(),
 });
+
+// ~0.5° in each direction — roughly a 100km-wide box around a city center,
+// generous enough to cover a large metro's genuine outskirts without
+// reintroducing the "next state over" irrelevance this is meant to fix.
+const CITY_BBOX_DEGREES = 0.5;
 
 const reverseQuerySchema = z.object({
   lat: z.coerce.number(),
@@ -83,10 +97,13 @@ function toResult(feature: PhotonFeature) {
 // results" with no error surfaced anywhere.
 //
 // Pandals can be added anywhere in India (not just near the visitor's
-// currently-selected city), so this always searches all of India — the
-// live pin (when present) only nudges ranking toward it via Photon's native
-// lat/lon bias, it never excludes a legitimately distant, correctly-named
-// result.
+// currently-selected city), so by default this searches all of India — the
+// live pin (when present via lat/lon) only nudges ranking toward it via
+// Photon's native bias, it never excludes a legitimately distant,
+// correctly-named result. Once a city is known (nearLat/nearLon), the
+// caller has already committed to "this pandal is in that city," so results
+// outside it are actually irrelevant, not just lower-priority — that's the
+// one case this hard-filters instead of just ranking.
 export const geocodingRoutes: FastifyPluginAsync = async (app) => {
   await app.register(import("@fastify/rate-limit"), {
     max: 30,
@@ -101,8 +118,18 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
     url.searchParams.set("limit", "8");
     url.searchParams.set("lang", "en");
     // Hard filter, not a ranking bias — Photon's `bbox` actually excludes
-    // non-Indian results instead of just deprioritizing them.
-    url.searchParams.set("bbox", INDIA_BBOX);
+    // results outside it instead of just deprioritizing them.
+    if (query.nearLat != null && query.nearLon != null) {
+      const bbox = [
+        query.nearLon - CITY_BBOX_DEGREES,
+        query.nearLat - CITY_BBOX_DEGREES,
+        query.nearLon + CITY_BBOX_DEGREES,
+        query.nearLat + CITY_BBOX_DEGREES,
+      ].join(",");
+      url.searchParams.set("bbox", bbox);
+    } else {
+      url.searchParams.set("bbox", INDIA_BBOX);
+    }
     if (query.lat != null && query.lon != null) {
       url.searchParams.set("lat", String(query.lat));
       url.searchParams.set("lon", String(query.lon));
