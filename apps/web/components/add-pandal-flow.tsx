@@ -484,6 +484,25 @@ export function AddPandalFlow({
         address: pendingAddress.road ?? pendingAddress.label,
       }));
     }
+    warnIfFarFromSelectedCity(pendingCoords);
+  }
+
+  // The persistent "~Xkm from {city}" note further down the panel is easy
+  // to scroll past without noticing — this fires the instant a location far
+  // from the selected city is actually confirmed (by any of the three ways
+  // to confirm one: dragging + "Use marked location", searching, or
+  // geolocation), so a visitor who picked the wrong city step doesn't only
+  // find out after they've already filled in the rest of the form.
+  function warnIfFarFromSelectedCity(point: {
+    latitude: number;
+    longitude: number;
+  }) {
+    const km = Math.round(distanceMeters(point, selectedCity) / 1000);
+    if (km * 1000 > CITY_DISTANCE_WARNING_METERS) {
+      toast.error(
+        `This spot is ~${km}km from ${selectedCity.name} — go back and change city if that's wrong.`,
+      );
+    }
   }
 
   // Drag-to-adjust matching Google Maps: the pin stays fixed at screen
@@ -831,8 +850,17 @@ export function AddPandalFlow({
   // unsure what each step actually was; naming it plus the count together
   // ("Step 2 of 4 · Location") gives an explicit sense of place, not just
   // progress.
+  // Hidden on mobile for the location step alone — that step is the one
+  // genuinely starved for vertical space (it's mostly a map), and back
+  // navigation there is covered instead by a small floating button directly
+  // on the map (see the `goBack` button inside the location step below).
+  // Desktop keeps this as-is, same as every other step.
   const headerBlock = step !== "done" && (
-    <div className="flex flex-col gap-3 px-4 pb-3 pt-4 md:mx-auto md:max-w-xl">
+    <div
+      className={`flex-col gap-3 px-4 pb-3 pt-4 md:mx-auto md:flex md:max-w-xl ${
+        step === "location" ? "hidden md:flex" : "flex"
+      }`}
+    >
       <div className="flex items-center justify-between">
         {/* Back arrow: mobile only — desktop relies on the persistent top
             nav bar instead, matching the design. */}
@@ -906,37 +934,39 @@ export function AddPandalFlow({
             for any city in India, not just {initialCity.name}.
           </p>
 
-          <button
-            type="button"
-            onClick={() => selectCityCandidate(initialCity)}
-            className={`flex items-center gap-3 rounded-2xl border p-3 text-left ${
-              selectedCity.id === initialCity.id
-                ? "border-brand bg-card ring-2 ring-brand"
-                : "border-border bg-panel md:bg-card/60"
-            }`}
-          >
-            <span className="flex h-11 w-11 flex-none items-center justify-center rounded-xl bg-chip">
-              <span className="material-symbols-rounded text-brand">
-                location_on
-              </span>
+          {/* Small, persistent indicator of the current pick — a big
+              selectable "browsing from" card used to sit here and looked
+              identical whether or not a different city had just been chosen
+              via search below, so after picking e.g. Nagpur the page still
+              visually read as if the browsing city were still selected.
+              This always reflects whatever's actually selected, and the
+              "where you're browsing from" detail moves to its own small,
+              secondary line instead of being part of a big card. */}
+          <div className="flex items-center gap-2 rounded-xl bg-card px-3 py-2.5">
+            <span
+              className="material-symbols-rounded text-lg text-brand"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              check_circle
             </span>
-            <span className="flex flex-col">
-              <span className="font-body text-[15.5px] font-bold">
-                {initialCity.name}
-              </span>
-              <span className="font-body text-xs text-ink-muted">
-                Where you're browsing from
-              </span>
+            <span className="font-body text-sm">
+              Selected: <span className="font-bold">{selectedCity.name}</span>
             </span>
-            {selectedCity.id === initialCity.id && (
-              <span
-                className="material-symbols-rounded ml-auto text-2xl text-brand"
-                style={{ fontVariationSettings: "'FILL' 1" }}
+            {selectedCity.id !== initialCity.id && (
+              <button
+                type="button"
+                onClick={() => selectCityCandidate(initialCity)}
+                className="ml-auto font-body text-xs font-bold text-brand"
               >
-                check_circle
-              </span>
+                Use {initialCity.name}
+              </button>
             )}
-          </button>
+          </div>
+          {selectedCity.id === initialCity.id && (
+            <span className="-mt-2 font-body text-xs text-ink-muted">
+              Where you're browsing from
+            </span>
+          )}
 
           <Field label="Or search a different city">
             <Input
@@ -1040,7 +1070,19 @@ export function AddPandalFlow({
               map) so "use this location"/"use current location" stop eating
               into the already-small map viewport. */}
           <div className="flex flex-col md:h-full md:flex-1">
-            <div className="relative h-[320px] w-full flex-none overflow-hidden md:h-auto md:flex-1">
+            <div className="relative h-[420px] w-full flex-none overflow-hidden md:h-auto md:flex-1">
+              {/* Replaces the shared header's back arrow — that header is
+                  hidden on mobile for this step to free up room for the map
+                  (see `headerBlock` above), so back navigation needs its own
+                  affordance directly on the map instead. */}
+              <button
+                onClick={goBack}
+                className="absolute left-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-ground/85 shadow-lg md:hidden"
+              >
+                <span className="material-symbols-rounded text-lg">
+                  arrow_back
+                </span>
+              </button>
               {/* `coords`, not the fixed `center` prop — MapCanvas only reads
                   its `center` at mount time (see packages/maps/src/react), and
                   this step's subtree unmounts/remounts on every trip through
@@ -1066,7 +1108,7 @@ export function AddPandalFlow({
                   add_location
                 </span>
               </div>
-              <div className="absolute inset-x-3 top-3 z-10 md:max-w-[420px]">
+              <div className="absolute left-14 right-3 top-3 z-10 md:left-3 md:max-w-[420px]">
                 <LocationSearchBox
                   citySlug={selectedCity.slug}
                   placeholder={`Search your pandal's area in ${selectedCity.name}`}
@@ -1202,15 +1244,22 @@ export function AddPandalFlow({
                 admin submissions page). */}
             {hasConfirmedLocation &&
               cityDistanceMeters > CITY_DISTANCE_WARNING_METERS && (
-                <div className="flex items-start gap-2 rounded-xl border border-accent/40 bg-accent/10 px-3 py-2.5">
-                  <span className="material-symbols-rounded flex-none text-base text-accent">
+                <div className="flex items-start gap-2 rounded-xl border-2 border-brand bg-brand/10 px-3 py-2.5">
+                  <span className="material-symbols-rounded flex-none text-base text-brand">
                     warning
                   </span>
-                  <span className="font-body text-xs text-accent">
+                  <span className="font-body text-xs font-semibold text-brand">
                     This looks ~{Math.round(cityDistanceMeters / 1000)}km from{" "}
-                    {selectedCity.name} — if that's not right, go back and pick
-                    a different city.
+                    {selectedCity.name} — if that's not right, change the city
+                    instead of continuing.
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => setStep("city")}
+                    className="ml-auto flex-none rounded-lg bg-brand px-2.5 py-1.5 font-body text-xs font-bold text-brand-ink"
+                  >
+                    Change city
+                  </button>
                 </div>
               )}
 
