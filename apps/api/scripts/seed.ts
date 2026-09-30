@@ -28,13 +28,13 @@ interface SeedCity {
 // festival's home city and should be the most obvious "not live yet, but
 // we know about it" entry once the product expands past its MP launch pair.
 const CITIES: SeedCity[] = [
-  { name: "Bhopal", slug: "bhopal", state: "Madhya Pradesh", stateCode: "MP", latitude: 23.2599, longitude: 77.4126, defaultMapZoom: 13, status: "ACTIVE", tier: "MAJOR" },
-  { name: "Indore", slug: "indore", state: "Madhya Pradesh", stateCode: "MP", latitude: 22.7196, longitude: 75.8577, defaultMapZoom: 13, status: "ACTIVE", tier: "MAJOR" },
-  { name: "Kolkata", slug: "kolkata", state: "West Bengal", stateCode: "WB", latitude: 22.5726, longitude: 88.3639, defaultMapZoom: 12, status: "COMING_SOON", tier: "MAJOR" },
-  { name: "Delhi", slug: "delhi", state: "Delhi", stateCode: "DL", latitude: 28.6139, longitude: 77.2090, defaultMapZoom: 11, status: "COMING_SOON", tier: "MAJOR" },
-  { name: "Mumbai", slug: "mumbai", state: "Maharashtra", stateCode: "MH", latitude: 19.0760, longitude: 72.8777, defaultMapZoom: 11, status: "COMING_SOON", tier: "MAJOR" },
-  { name: "Pune", slug: "pune", state: "Maharashtra", stateCode: "MH", latitude: 18.5204, longitude: 73.8567, defaultMapZoom: 12, status: "COMING_SOON", tier: "MAJOR" },
-  { name: "Bengaluru", slug: "bengaluru", state: "Karnataka", stateCode: "KA", latitude: 12.9716, longitude: 77.5946, defaultMapZoom: 11, status: "COMING_SOON", tier: "MAJOR" },
+  { name: "Bhopal", slug: "bhopal", state: "Madhya Pradesh", stateCode: "MP", latitude: 23.2599, longitude: 77.4126, defaultMapZoom: 10, status: "ACTIVE", tier: "MAJOR" },
+  { name: "Indore", slug: "indore", state: "Madhya Pradesh", stateCode: "MP", latitude: 22.7196, longitude: 75.8577, defaultMapZoom: 10, status: "ACTIVE", tier: "MAJOR" },
+  { name: "Kolkata", slug: "kolkata", state: "West Bengal", stateCode: "WB", latitude: 22.5726, longitude: 88.3639, defaultMapZoom: 10, status: "COMING_SOON", tier: "MAJOR" },
+  { name: "Delhi", slug: "delhi", state: "Delhi", stateCode: "DL", latitude: 28.6139, longitude: 77.2090, defaultMapZoom: 10, status: "COMING_SOON", tier: "MAJOR" },
+  { name: "Mumbai", slug: "mumbai", state: "Maharashtra", stateCode: "MH", latitude: 19.0760, longitude: 72.8777, defaultMapZoom: 10, status: "COMING_SOON", tier: "MAJOR" },
+  { name: "Pune", slug: "pune", state: "Maharashtra", stateCode: "MH", latitude: 18.5204, longitude: 73.8567, defaultMapZoom: 10, status: "COMING_SOON", tier: "MAJOR" },
+  { name: "Bengaluru", slug: "bengaluru", state: "Karnataka", stateCode: "KA", latitude: 12.9716, longitude: 77.5946, defaultMapZoom: 10, status: "COMING_SOON", tier: "MAJOR" },
 ];
 
 async function main() {

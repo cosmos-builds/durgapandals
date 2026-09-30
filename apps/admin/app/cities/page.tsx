@@ -28,7 +28,7 @@ const EMPTY_FORM = {
   countryCode: "IN",
   latitude: "",
   longitude: "",
-  defaultMapZoom: "13",
+  defaultMapZoom: "10",
   status: "ACTIVE" as City["status"],
   activeFestivalYear: String(new Date().getFullYear()),
   tier: "MINOR" as City["tier"],

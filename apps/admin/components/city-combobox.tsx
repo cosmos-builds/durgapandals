@@ -22,9 +22,9 @@ const DEBOUNCE_MS = 350;
 
 function toSelectedCity(result: Extract<CitySearchResult, { source: "db" }>): SelectedCity {
   // The search endpoint doesn't carry defaultMapZoom (it's not needed for
-  // display) — 13 matches the City schema's own default, so the map still
+  // display) — 10 matches the City schema's own default, so the map still
   // centers at a sensible zoom for a city picked this way.
-  return { _id: result._id, name: result.name, latitude: result.latitude, longitude: result.longitude, defaultMapZoom: 13 };
+  return { _id: result._id, name: result.name, latitude: result.latitude, longitude: result.longitude, defaultMapZoom: 10 };
 }
 
 function toSelectedCityFromResolved(city: ResolvedCity): SelectedCity {

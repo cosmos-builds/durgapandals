@@ -9,7 +9,7 @@ const citySchema = new Schema(
     countryCode: { type: String, required: true },
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true },
-    defaultMapZoom: { type: Number, required: true, default: 13 },
+    defaultMapZoom: { type: Number, required: true, default: 10 },
     status: {
       type: String,
       enum: ["ACTIVE", "COMING_SOON", "DISABLED"],

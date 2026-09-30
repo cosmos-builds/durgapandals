@@ -84,7 +84,7 @@ export const citySchema = z.object({
   countryCode: z.string().length(2),
   latitude: z.number().min(-90).max(90),
   longitude: z.number().min(-180).max(180),
-  defaultMapZoom: z.number().min(1).max(20).default(13),
+  defaultMapZoom: z.number().min(1).max(20).default(10),
   status: z.enum(["ACTIVE", "COMING_SOON", "DISABLED"]).default("COMING_SOON"),
   activeFestivalYear: z.number().int().min(2000).max(2100),
   // MAJOR cities are pinned in the city picker; MINOR ones are search-only
