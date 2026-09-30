@@ -512,6 +512,15 @@ export function AddPandalFlow({
   const reverseGeocodeTimer = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  // Bumped on every new reverse-geocode request (scheduled here, or
+  // committed directly by `locateMe`) — clearing the debounce timer only
+  // ever cancels a request that hasn't fired *yet*. Once a request is
+  // actually in flight, nothing stops a second one from going out on the
+  // next drag pause before the first resolves, and without this guard
+  // whichever one happened to land last would win, regardless of which
+  // coordinates it was actually for — the "flashes 'couldn't resolve' on
+  // every pause, corrects itself once you stop moving" bug this fixes.
+  const reverseGeocodeSeq = useRef(0);
   function scheduleReverseGeocode(next: {
     latitude: number;
     longitude: number;
@@ -519,9 +528,14 @@ export function AddPandalFlow({
     if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
     setGeocodeFailed(false);
     setPendingAddress(null);
+    const seq = ++reverseGeocodeSeq.current;
     reverseGeocodeTimer.current = setTimeout(async () => {
       setGeocoding(true);
       const result = await reverseGeocode(next.latitude, next.longitude);
+      // A newer request has since superseded this one — its (possibly
+      // slower, possibly failed) response must not overwrite whatever the
+      // newer request already showed or is about to show.
+      if (seq !== reverseGeocodeSeq.current) return;
       setGeocoding(false);
       if (result) setPendingAddress(result);
       // Never leave someone stuck with no explanation — if the preview
@@ -556,8 +570,7 @@ export function AddPandalFlow({
     setLocating(true);
     setLocationError(null);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocating(false);
+      async (position) => {
         const next = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -568,7 +581,33 @@ export function AddPandalFlow({
         });
         setPendingCoords(next);
         scheduleNearbyFetch(next);
-        scheduleReverseGeocode(next);
+        warnIfFarFromSelectedCity(next);
+
+        // "Use current location" is a deliberate, explicit action (unlike a
+        // stray map drag) — commit it immediately instead of leaving it
+        // pending on a second "Use marked location" tap, the same way
+        // picking an address from search already commits right away.
+        // Bumping the seq first invalidates any reverse-geocode request a
+        // prior drag might still have in flight, so a late, stale response
+        // can't clobber what we're about to set here.
+        reverseGeocodeSeq.current += 1;
+        if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
+        setGeocoding(true);
+        const result = await reverseGeocode(next.latitude, next.longitude);
+        setGeocoding(false);
+        setLocating(false);
+        setCoords(next);
+        if (result) {
+          setPendingAddress(result);
+          setGeocodeFailed(false);
+          setDetails((prev) => ({
+            ...prev,
+            locality: result.locality ?? "",
+            address: result.road ?? result.label,
+          }));
+        } else {
+          setGeocodeFailed(true);
+        }
       },
       (err) => {
         setLocating(false);
