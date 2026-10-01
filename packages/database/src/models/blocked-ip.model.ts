@@ -2,7 +2,7 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 
 const blockedIpSchema = new Schema(
   {
-    ip: { type: String, required: true, unique: true },
+    ip: { type: String, required: true },
     reason: {
       type: String,
       enum: ["SPAM_LIKES", "SPAM_SUBMISSIONS", "ABUSE", "SCRAPING", "OTHER"],
