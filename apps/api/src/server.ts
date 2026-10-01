@@ -14,12 +14,17 @@ import { authRoutes } from "./auth/auth.routes";
 import { adminRoutes } from "./admin/admin.routes";
 import { geocodingRoutes } from "./geocoding/geocoding.routes";
 import { mediaRoutes } from "./media/media.routes";
+import { checkBlockedIp } from "./security/blocked-ip-hook";
 
 async function main() {
   const env = loadServerEnv();
   await connectDatabase({ uri: env.MONGODB_URI });
 
-  const app = Fastify({ logger: true });
+  // Without this, `request.ip` (and the rate-limiter and blocked-IP check
+  // that both key off it) resolves to whatever reverse proxy/CDN sits in
+  // front of the API in production, not the real client — every IP-based
+  // check below would silently check/block the wrong address.
+  const app = Fastify({ logger: true, trustProxy: true });
 
   app.get("/health", async () => ({ status: "ok" }));
 
@@ -29,6 +34,11 @@ async function main() {
   await app.register(rateLimit, { max: 200, timeWindow: "1 minute" });
 
   app.decorate("env", env);
+
+  // Runs ahead of every route registered below (including public ones like
+  // likes/submissions) — the actual enforcement point for the admin-managed
+  // blocked-IP list (see apps/api/src/admin/blocked-ips.admin-routes.ts).
+  app.addHook("onRequest", checkBlockedIp);
 
   await app.register(citiesRoutes, { prefix: "/cities" });
   await app.register(pandalsRoutes, { prefix: "/pandals" });

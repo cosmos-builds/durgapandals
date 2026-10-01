@@ -13,6 +13,7 @@ const NAV = [
   { href: "/pandals/new", label: "Add Pandal", icon: "add_location_alt" },
   { href: "/submissions", label: "Submissions", icon: "fact_check" },
   { href: "/cities", label: "Cities", icon: "public" },
+  { href: "/blocked-ips", label: "Blocked IPs", icon: "block" },
 ] as const;
 
 const WORDMARK = (

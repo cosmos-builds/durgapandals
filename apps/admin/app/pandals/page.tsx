@@ -517,11 +517,21 @@ export default function PandalsListPage() {
                   {header.column.getCanSort() ? (
                     <button type="button" onClick={header.column.getToggleSortingHandler()} className="flex items-center gap-1">
                       {flexRender(header.column.columnDef.header, header.getContext())}
-                      {header.column.getIsSorted() && (
-                        <span className="material-symbols-rounded text-sm">
-                          {header.column.getIsSorted() === "desc" ? "arrow_downward" : "arrow_upward"}
-                        </span>
-                      )}
+                      {/* Always shown, not just once a column becomes the active
+                          sort — a dimmed placeholder on every sortable column
+                          signals upfront that it's clickable, instead of only
+                          the active column ever showing an icon. */}
+                      <span
+                        className={`material-symbols-rounded text-sm ${
+                          header.column.getIsSorted() ? "text-ink" : "text-ink-muted/40"
+                        }`}
+                      >
+                        {header.column.getIsSorted() === "desc"
+                          ? "arrow_downward"
+                          : header.column.getIsSorted() === "asc"
+                            ? "arrow_upward"
+                            : "unfold_more"}
+                      </span>
                     </button>
                   ) : (
                     flexRender(header.column.columnDef.header, header.getContext())
@@ -589,7 +599,8 @@ export default function PandalsListPage() {
             Previous
           </Button>
           <span className="font-body text-sm text-ink-muted">
-            Page {result.page} of {result.totalPages} · {result.total} total
+            Showing {(result.page - 1) * result.pageSize + 1}–
+            {Math.min(result.page * result.pageSize, result.total)} of {result.total} records
           </span>
           <Button variant="secondary" disabled={page >= result.totalPages} onClick={() => setPage((p) => p + 1)}>
             Next

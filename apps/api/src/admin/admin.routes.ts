@@ -18,6 +18,7 @@ import { registerDashboardRoutes } from "./dashboard.admin-routes";
 import { registerCitiesAdminRoutes } from "./cities.admin-routes";
 import { registerPandalsAdminRoutes } from "./pandals.admin-routes";
 import { registerContributorsAdminRoutes } from "./contributors.admin-routes";
+import { registerBlockedIpsAdminRoutes } from "./blocked-ips.admin-routes";
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(8) });
 const reviewSchema = z.object({
@@ -138,6 +139,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
     registerCitiesAdminRoutes(protectedRoutes);
     registerPandalsAdminRoutes(protectedRoutes);
     registerContributorsAdminRoutes(protectedRoutes);
+    registerBlockedIpsAdminRoutes(protectedRoutes);
 
     // Duplicate candidates only ever carried a pandalId — the submissions
     // list showed nothing but a bare score/distance line, no way to tell
