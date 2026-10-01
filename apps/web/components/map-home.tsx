@@ -84,18 +84,9 @@ export function MapHome({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [citySlug, year]);
 
-  // The server skips the pandal fetch entirely while a visitor hasn't seen
-  // the intro yet (see CityMapPage) — since we're staying on the same city
-  // here (picking a different one navigates away instead), that means
-  // `initialPandals` is an empty placeholder, not a real "no pandals" state.
-  // Fetch for real now that the overlay's actually being dismissed.
-  async function dismissIntro() {
+  function dismissIntro() {
     markIntroSeen();
     setShowIntro(false);
-    if (initialPandals.length === 0) {
-      const results = await fetchPandalsForCity(citySlug, undefined, year);
-      setPandals(results);
-    }
   }
 
   const mapRef = useRef<maplibregl.Map | null>(null);
