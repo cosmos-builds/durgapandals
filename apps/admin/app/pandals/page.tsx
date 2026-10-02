@@ -160,7 +160,7 @@ export default function PandalsListPage() {
     // — the table falls back to one large fetch and hides its own
     // pagination controls while a group-by is active.
     params.set("page", String(isGrouped ? 1 : page));
-    params.set("pageSize", String(isGrouped ? GROUPED_PAGE_SIZE : 25));
+    params.set("pageSize", String(isGrouped ? GROUPED_PAGE_SIZE : 100));
     const sort = sorting[0];
     if (sort && VALID_SERVER_SORT_KEYS.has(sort.id)) {
       params.set("sortBy", sort.id);
