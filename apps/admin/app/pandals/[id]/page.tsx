@@ -498,10 +498,11 @@ export default function PandalDetailPage() {
       {/* One action bar: the title/status at a glance on the left; Merge and
           Delete grouped together on the right (same prominence as Save, but
           a divider away from it — neither is ever triggered by Save); and a
-          Reset+Save pair that only appears once something is actually
-          dirty, instead of a permanent "Save changes" button sitting far
-          below a long form with no indication anything needs saving. */}
-      <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-6 flex items-center gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:-mt-8 md:px-8">
+          Reset+"Update pandal" pair that's always visible but disabled
+          until something's actually dirty — so an admin can always see
+          where the save action lives instead of it appearing/disappearing
+          as they edit. */}
+      <div className="sticky top-0 z-10 -mx-4 mb-6 flex items-center gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:px-8">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <h1 className="truncate font-display text-xl font-extrabold">{pandal.canonicalName}</h1>
@@ -522,23 +523,25 @@ export default function PandalDetailPage() {
             Delete pandal
           </Button>
 
-          {isDirty && (
-            <>
-              <div className="h-6 w-px bg-border" />
-              <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 pl-3 pr-1.5 py-1.5">
-                <span className="flex items-center gap-1.5 font-body text-xs font-bold text-accent">
-                  <span className="h-1.5 w-1.5 flex-none rounded-full bg-accent" />
-                  Unsaved changes
-                </span>
-                <Button variant="secondary" uiSize="sm" onClick={resetAll}>
-                  Reset
-                </Button>
-                <Button uiSize="sm" onClick={() => setSaveConfirmOpen(true)}>
-                  Save changes
-                </Button>
-              </div>
-            </>
-          )}
+          <div className="h-6 w-px bg-border" />
+          <div
+            className={`flex items-center gap-2 rounded-xl border py-1.5 pl-3 pr-1.5 ${
+              isDirty ? "border-accent/30 bg-accent/10" : "border-border bg-card/40"
+            }`}
+          >
+            {isDirty && (
+              <span className="flex items-center gap-1.5 font-body text-xs font-bold text-accent">
+                <span className="h-1.5 w-1.5 flex-none rounded-full bg-accent" />
+                Unsaved changes
+              </span>
+            )}
+            <Button variant="secondary" uiSize="sm" disabled={!isDirty} onClick={resetAll}>
+              Reset
+            </Button>
+            <Button uiSize="sm" disabled={!isDirty} onClick={() => setSaveConfirmOpen(true)}>
+              Update pandal
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -954,13 +957,13 @@ export default function PandalDetailPage() {
           await saveCanonical();
           setSaveConfirmOpen(false);
         }}
-        title="Save these changes?"
+        title="Update this pandal?"
         description={
           pendingChangesSummary().length > 0
             ? pendingChangesSummary().join("  •  ")
             : "No changes to save."
         }
-        confirmLabel="Save"
+        confirmLabel="Update pandal"
         danger={false}
       />
 

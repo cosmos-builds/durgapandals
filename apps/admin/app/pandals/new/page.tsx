@@ -209,7 +209,7 @@ export default function NewPandalPage() {
             scrolling back up through a long form. Add Pandal never had
             scattered status/delete/merge actions to consolidate — this is
             just the same visual language, not the same fix. */}
-        <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-6 flex items-center justify-between gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:-mt-8 md:px-8">
+        <div className="sticky top-0 z-10 -mx-4 mb-6 flex items-center justify-between gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:px-8">
           <div>
             <div className="font-body text-xs text-ink-muted">Pandals / New</div>
             <h1 className="font-display text-xl font-extrabold">Add Pandal</h1>

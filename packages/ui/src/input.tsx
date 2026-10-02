@@ -12,20 +12,13 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   uiSize?: "md" | "sm";
 }
 
-// The single input style for the whole site (web + admin) — a light field
-// against the app's dark surfaces reads as an actual fillable box instead
-// of blending into the card/panel behind it. h-12/text-[15.5px] matches
+// The single input style for the whole site (web + admin) — a darker field
+// with a visible border against the app's panel/card surfaces reads as an
+// actual fillable box without the jarring bright-cream-on-dark-page look
+// the previous light-field version had. h-12/text-[15.5px] matches
 // Button's h-13/rounded-2xl proportions closely enough that inputs don't
 // look visually shorter/thinner than the buttons sitting next to them in
 // the same form row.
-//
-// Placeholder color is `text-ground/50`, not `text-ink-muted` — `ink-muted`
-// is a light cream tone meant for muted text on the app's DARK surfaces
-// (panel/card); used as a placeholder inside this light field it was
-// rendering as near-invisible light-on-light. `ground` is the same dark
-// color already used for the field's real value text, just faded — dark
-// muted text on a light field, matching how "muted" is supposed to read
-// here.
 const SIZE_CLASSES = {
   md: "h-11 md:h-12 px-3.5 md:px-4 text-[14.5px] md:text-[15.5px]",
   sm: "h-10 md:h-11 px-3 md:px-3.5 text-[13px] md:text-[13.5px]",
@@ -34,7 +27,7 @@ const SIZE_CLASSES = {
 export function Input({ className = "", uiSize = "md", ...props }: InputProps) {
   return (
     <input
-      className={`rounded-2xl bg-ink font-body text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${SIZE_CLASSES[uiSize]} ${className}`}
+      className={`rounded-2xl border border-border bg-ground font-body text-ink outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-brand disabled:opacity-50 ${SIZE_CLASSES[uiSize]} ${className}`}
       {...props}
     />
   );
@@ -55,7 +48,7 @@ const TEXTAREA_SIZE_CLASSES = {
 export function Textarea({ className = "", uiSize = "md", ...props }: TextareaProps) {
   return (
     <textarea
-      className={`min-h-24 rounded-2xl bg-ink py-2.5 md:py-3 font-body text-ground outline-none placeholder:text-ground/50 focus:ring-2 focus:ring-brand disabled:opacity-50 ${TEXTAREA_SIZE_CLASSES[uiSize]} ${className}`}
+      className={`min-h-24 rounded-2xl border border-border bg-ground py-2.5 md:py-3 font-body text-ink outline-none placeholder:text-ink-muted focus:ring-2 focus:ring-brand disabled:opacity-50 ${TEXTAREA_SIZE_CLASSES[uiSize]} ${className}`}
       {...props}
     />
   );
