@@ -23,16 +23,19 @@ const MotionTr = motion.create(Tr);
 import { PandalsClusterMap, type DashboardPandal } from "@/components/pandals-cluster-map";
 
 const MAP_TILES_URL = process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://durgapandal.com";
 const INDIA_CENTER = { latitude: 22.9734, longitude: 78.6569 };
 
 interface City {
   _id: string;
   name: string;
+  slug: string;
 }
 
 interface Pandal {
   _id: string;
   cityId: string;
+  slug: string;
   canonicalName: string;
   locality: string;
   publicationStatus: string;
@@ -40,6 +43,8 @@ interface Pandal {
   updatedAt: string;
   yearCount: number;
   hasCurrentYearEntry: boolean;
+  thumbnailUrl?: string;
+  featured: boolean;
 }
 
 const CURRENT_YEAR = new Date().getFullYear();
@@ -99,6 +104,7 @@ export default function PandalsListPage() {
   const [cityId, setCityId] = useState("");
   const [status, setStatus] = useState("");
   const [year, setYear] = useState("");
+  const [featuredOnly, setFeaturedOnly] = useState(false);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -124,13 +130,14 @@ export default function PandalsListPage() {
   }, [ready]);
 
   const cityNameById = useMemo(() => new Map(cities.map((c) => [c._id, c.name])), [cities]);
+  const citySlugById = useMemo(() => new Map(cities.map((c) => [c._id, c.slug])), [cities]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
 
-  useEffect(() => setPage(1), [cityId, status, year, debouncedSearch]);
+  useEffect(() => setPage(1), [cityId, status, year, featuredOnly, debouncedSearch]);
 
   // Shared by both fetch effects below, so the map view can never drift out
   // of sync with whatever the table's filters currently say.
@@ -139,6 +146,7 @@ export default function PandalsListPage() {
     if (cityId) params.set("cityId", cityId);
     if (status) params.set("status", status);
     if (year) params.set("year", year);
+    if (featuredOnly) params.set("featured", "1");
     if (debouncedSearch) params.set("search", debouncedSearch);
     return params;
   }
@@ -164,7 +172,7 @@ export default function PandalsListPage() {
       .then(setResult);
     setSelected(new Set());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, view, cityId, status, year, debouncedSearch, page, sorting, isGrouped]);
+  }, [ready, view, cityId, status, year, featuredOnly, debouncedSearch, page, sorting, isGrouped]);
 
   // The map has no pagination — it plots every pandal matching the current
   // filters, not just the table's current page, since "every pandal in the
@@ -177,7 +185,7 @@ export default function PandalsListPage() {
       .then(setMapPandals);
     setSelectedMapPandal(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, view, cityId, status, year, debouncedSearch]);
+  }, [ready, view, cityId, status, year, featuredOnly, debouncedSearch]);
 
   function toggleSelected(id: string) {
     setSelected((prev) => {
@@ -246,6 +254,25 @@ export default function PandalsListPage() {
         ),
       },
       {
+        id: "photo",
+        header: "Photo",
+        enableSorting: false,
+        enableGrouping: false,
+        cell: ({ row }) =>
+          row.original.thumbnailUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.original.thumbnailUrl}
+              alt=""
+              className="h-10 w-10 flex-none rounded-lg object-cover"
+            />
+          ) : (
+            <div className="flex h-10 w-10 flex-none items-center justify-center rounded-lg border border-dashed border-border text-[9px] text-ink-muted">
+              none
+            </div>
+          ),
+      },
+      {
         id: "name",
         accessorKey: "canonicalName",
         header: "Name",
@@ -258,7 +285,17 @@ export default function PandalsListPage() {
       },
       {
         id: "cityName",
-        header: "City",
+        header: () => (
+          <span className="flex items-center gap-1">
+            City
+            <span
+              title="Not sortable — a pandal only stores a city reference, no city name to sort by server-side"
+              className="cursor-help text-ink-muted/40"
+            >
+              ⓘ
+            </span>
+          </span>
+        ),
         enableSorting: false,
         accessorFn: (row) => cityNameById.get(row.cityId) ?? "—",
       },
@@ -304,6 +341,19 @@ export default function PandalsListPage() {
         },
       },
       {
+        id: "featured",
+        header: "★",
+        enableSorting: false,
+        enableGrouping: false,
+        cell: ({ row }) => (
+          <span
+            className={`block text-center text-base ${row.original.featured ? "text-accent" : "text-ink-muted/20"}`}
+          >
+            {row.original.featured ? "★" : "☆"}
+          </span>
+        ),
+      },
+      {
         id: "updated",
         accessorKey: "updatedAt",
         header: "Updated",
@@ -315,20 +365,47 @@ export default function PandalsListPage() {
         header: "",
         enableSorting: false,
         enableGrouping: false,
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => setDeleteTarget(row.original)}
-            aria-label={`Delete ${row.original.canonicalName}`}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
-          >
-            <span className="material-symbols-rounded text-lg">delete</span>
-          </button>
-        ),
+        cell: ({ row }) => {
+          const pandal = row.original;
+          const citySlug = citySlugById.get(pandal.cityId);
+          return (
+            <div className="flex items-center justify-end gap-1">
+              {citySlug && (
+                <a
+                  href={`${SITE_URL}/${citySlug}/pandal/${pandal.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`View ${pandal.canonicalName} on the live site`}
+                  title="View live page"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent hover:bg-accent/25"
+                >
+                  <span className="material-symbols-rounded text-lg">visibility</span>
+                </a>
+              )}
+              <Link
+                href={`/pandals/${pandal._id}`}
+                aria-label={`Edit ${pandal.canonicalName}`}
+                title="Edit"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-card hover:text-ink"
+              >
+                <span className="material-symbols-rounded text-lg">edit</span>
+              </Link>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(pandal)}
+                aria-label={`Delete ${pandal.canonicalName}`}
+                title="Delete"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
+              >
+                <span className="material-symbols-rounded text-lg">delete</span>
+              </button>
+            </div>
+          );
+        },
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [cityNameById, selected]
+    [cityNameById, citySlugById, selected]
   );
 
   const table = useReactTable({
@@ -416,6 +493,15 @@ export default function PandalsListPage() {
             </option>
           ))}
         </Select>
+        <button
+          type="button"
+          onClick={() => setFeaturedOnly((prev) => !prev)}
+          className={`flex h-12 flex-none items-center gap-1.5 rounded-xl border px-4 font-body text-sm font-bold ${
+            featuredOnly ? "border-accent bg-accent/15 text-accent" : "border-border text-ink-muted"
+          }`}
+        >
+          ★ Featured only
+        </button>
         {view === "table" && (
           <Select
             value={grouping[0] ?? ""}
@@ -572,7 +658,7 @@ export default function PandalsListPage() {
           )}
           {pandals.length === 0 && (
             <tr>
-              <td colSpan={8} className="px-4 py-6 text-center text-ink-muted">
+              <td colSpan={10} className="px-4 py-6 text-center text-ink-muted">
                 No pandals match these filters.
               </td>
             </tr>

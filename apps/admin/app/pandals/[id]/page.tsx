@@ -301,6 +301,17 @@ export default function PandalDetailPage() {
     setMapKey((k) => k + 1); // forces LocationPicker to remount centered on the reset point
   }
 
+  // The one "Reset" next to the one "Save" — discards every pending edit on
+  // this form (status selects included, since those are now just regular
+  // fields here too) back to whatever's actually saved, instead of an admin
+  // having to manually retype each field back or reload the page.
+  function resetAll() {
+    if (!savedPandal) return;
+    setPandal(savedPandal);
+    setAlternateNamesInput((savedPandal.alternateNames ?? []).join(", "));
+    setMapKey((k) => k + 1);
+  }
+
   const hasMovedFromSaved =
     !!savedPandal && (pandal?.latitude !== savedPandal.latitude || pandal?.longitude !== savedPandal.longitude);
 
@@ -480,17 +491,54 @@ export default function PandalDetailPage() {
 
   if (!ready || !pandal) return null;
 
+  const isDirty = pendingChangesSummary().length > 0;
+
   return (
     <AdminShell>
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="font-display text-3xl font-extrabold">{pandal.canonicalName}</h1>
-        <div className="flex gap-2">
-          <Button variant="secondary" onClick={() => setMergeOpen(true)}>
-            Merge into another pandal…
+      {/* One action bar: the title/status at a glance on the left; Merge and
+          Delete grouped together on the right (same prominence as Save, but
+          a divider away from it — neither is ever triggered by Save); and a
+          Reset+Save pair that only appears once something is actually
+          dirty, instead of a permanent "Save changes" button sitting far
+          below a long form with no indication anything needs saving. */}
+      <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-6 flex items-center gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:-mt-8 md:px-8">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h1 className="truncate font-display text-xl font-extrabold">{pandal.canonicalName}</h1>
+            <span className="flex-none rounded-pill bg-info/15 px-2 py-0.5 font-body text-[10px] font-bold text-info">
+              {pandal.publicationStatus}
+            </span>
+            <span className="flex-none rounded-pill bg-accent/15 px-2 py-0.5 font-body text-[10px] font-bold text-accent">
+              {pandal.verificationStatus}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-none items-center gap-2">
+          <Button variant="secondary" uiSize="sm" onClick={() => setMergeOpen(true)}>
+            Merge into…
           </Button>
-          <Button variant="secondary" onClick={() => setDeletePandalOpen(true)}>
+          <Button variant="secondary" uiSize="sm" className="border-brand/40 text-brand" onClick={() => setDeletePandalOpen(true)}>
             Delete pandal
           </Button>
+
+          {isDirty && (
+            <>
+              <div className="h-6 w-px bg-border" />
+              <div className="flex items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 pl-3 pr-1.5 py-1.5">
+                <span className="flex items-center gap-1.5 font-body text-xs font-bold text-accent">
+                  <span className="h-1.5 w-1.5 flex-none rounded-full bg-accent" />
+                  Unsaved changes
+                </span>
+                <Button variant="secondary" uiSize="sm" onClick={resetAll}>
+                  Reset
+                </Button>
+                <Button uiSize="sm" onClick={() => setSaveConfirmOpen(true)}>
+                  Save changes
+                </Button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
@@ -500,46 +548,39 @@ export default function PandalDetailPage() {
         </div>
       )}
 
-      <div className="mb-6 flex gap-3">
-        <Select
-          value={pandal.publicationStatus}
-          onChange={(e) => updateField("publicationStatus", e.target.value)}
-          className="h-12 w-44 text-sm"
-        >
-          {["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"].map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
-        <Select
-          value={pandal.verificationStatus}
-          onChange={(e) => updateField("verificationStatus", e.target.value)}
-          className="h-12 w-44 text-sm"
-        >
-          {["UNVERIFIED", "VERIFIED", "DUPLICATE"].map((s) => (
-            <option key={s} value={s}>
-              {s}
-            </option>
-          ))}
-        </Select>
-        <Select
-          value={pandal.addedBy}
-          onChange={(e) => updateField("addedBy", e.target.value)}
-          className="h-12 w-48 text-sm"
-        >
-          <option value="PUBLIC_SUBMISSION">Added by a visitor</option>
-          <option value="ORGANIZER">Added by organiser</option>
-          <option value="ADMIN">Added by admin</option>
-        </Select>
-      </div>
-
       <Card className="mb-8 max-w-5xl">
         <h2 className="mb-4 font-body text-sm font-semibold uppercase tracking-wide text-ink-muted">
           Canonical details
         </h2>
         <div className="flex flex-col gap-6 md:flex-row">
           <div className="grid flex-1 grid-cols-2 gap-3">
+            <div className="col-span-2 grid grid-cols-3 gap-3 rounded-xl bg-card px-4 py-3">
+              <Field label="Publication status">
+                <Select value={pandal.publicationStatus} onChange={(e) => updateField("publicationStatus", e.target.value)}>
+                  {["DRAFT", "PENDING", "PUBLISHED", "ARCHIVED", "REJECTED"].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Verification status">
+                <Select value={pandal.verificationStatus} onChange={(e) => updateField("verificationStatus", e.target.value)}>
+                  {["UNVERIFIED", "VERIFIED", "DUPLICATE"].map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <Field label="Added by">
+                <Select value={pandal.addedBy} onChange={(e) => updateField("addedBy", e.target.value)}>
+                  <option value="PUBLIC_SUBMISSION">Visitor</option>
+                  <option value="ORGANIZER">Organiser</option>
+                  <option value="ADMIN">Admin</option>
+                </Select>
+              </Field>
+            </div>
             <Field label="Pandal name" className="col-span-2">
               <Input value={pandal.canonicalName} onChange={(e) => updateField("canonicalName", e.target.value)} />
             </Field>
@@ -675,9 +716,6 @@ export default function PandalDetailPage() {
             </div>
           </div>
         </div>
-        <Button className="mt-4" onClick={() => setSaveConfirmOpen(true)}>
-          Save changes
-        </Button>
       </Card>
 
       <Card className="max-w-3xl">

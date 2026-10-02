@@ -203,220 +203,268 @@ export default function NewPandalPage() {
 
   return (
     <AdminShell>
-      <h1 className="mb-6 font-display text-3xl font-extrabold">Add Pandal</h1>
-
-      <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
-        <Card padding="md">
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="City" className="col-span-2">
-            <CityCombobox value={selectedCity} onSelect={handleCitySelect} />
-          </Field>
-          <Field label="Pandal name" className="col-span-2">
-            <Input
-              required
-              placeholder="e.g. Kumartuli Sarbojanin"
-              value={form.canonicalName}
-              onChange={(e) => setForm({ ...form, canonicalName: e.target.value })}
-            />
-          </Field>
-          <Field label="Also known as" className="col-span-2">
-            <Input
-              placeholder="Comma-separated — other names people search for this pandal by"
-              value={form.alternateNames}
-              onChange={(e) => setForm({ ...form, alternateNames: e.target.value })}
-            />
-          </Field>
-          <Field label="Organiser / committee" className="col-span-2">
-            <Input
-              placeholder="e.g. Kumartuli Sarbojanin Committee"
-              value={form.organizerName}
-              onChange={(e) => setForm({ ...form, organizerName: e.target.value })}
-            />
-          </Field>
-          <Field label="Address" className="col-span-2">
-            <Input
-              required
-              placeholder="Full street address"
-              value={form.address}
-              onChange={(e) => setForm({ ...form, address: e.target.value })}
-            />
-          </Field>
-          <Field label="Locality / area">
-            <Input
-              required
-              placeholder="e.g. Kumartuli"
-              value={form.locality}
-              onChange={(e) => setForm({ ...form, locality: e.target.value })}
-            />
-          </Field>
-          <Field label="Landmark">
-            <Input
-              placeholder="Optional"
-              value={form.landmark}
-              onChange={(e) => setForm({ ...form, landmark: e.target.value })}
-            />
-          </Field>
-          <Field label="Public contact" className="col-span-2">
-            <Input
-              placeholder="Phone number visitors can call"
-              value={form.publicContact}
-              onChange={(e) => setForm({ ...form, publicContact: e.target.value })}
-            />
-          </Field>
-          <Field label="Instagram">
-            <Input
-              placeholder="https://instagram.com/…"
-              value={form.instagramUrl}
-              onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
-            />
-          </Field>
-          <Field label="Facebook">
-            <Input
-              placeholder="https://facebook.com/…"
-              value={form.facebookUrl}
-              onChange={(e) => setForm({ ...form, facebookUrl: e.target.value })}
-            />
-          </Field>
-          <Field label="Website" className="col-span-2">
-            <Input
-              placeholder="https://…"
-              value={form.websiteUrl}
-              onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
-            />
-          </Field>
+      <form onSubmit={handleSubmit}>
+        {/* Matches the Edit page's action bar: both actions that used to sit
+            mid-form (duplicate check, create) stay reachable without
+            scrolling back up through a long form. Add Pandal never had
+            scattered status/delete/merge actions to consolidate — this is
+            just the same visual language, not the same fix. */}
+        <div className="sticky top-0 z-10 -mx-4 -mt-4 mb-6 flex items-center justify-between gap-4 border-b border-border bg-ground-deep/95 px-4 py-4 backdrop-blur md:-mx-8 md:-mt-8 md:px-8">
+          <div>
+            <div className="font-body text-xs text-ink-muted">Pandals / New</div>
+            <h1 className="font-display text-xl font-extrabold">Add Pandal</h1>
+          </div>
+          <div className="flex flex-none items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              uiSize="sm"
+              onClick={handleCheckDuplicates}
+              disabled={checking || !form.cityId || !form.canonicalName || !form.latitude || !form.longitude}
+            >
+              {checking ? "Checking…" : "Check for duplicates"}
+            </Button>
+            <Button type="submit" uiSize="sm" disabled={saving}>
+              {saving ? "Creating…" : "Create & publish pandal"}
+            </Button>
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
-          <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            Good to know for visitors
-          </span>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {AMENITY_FIELDS.map((field) => (
-              <label key={field.key} className="flex items-center gap-2 font-body text-sm">
-                <input
-                  type="checkbox"
-                  checked={form[field.key]}
-                  onChange={() => toggleAmenity(field.key)}
-                  className="h-4 w-4 accent-brand"
-                />
-                {field.label}
-              </label>
-            ))}
-          </div>
-          <Field label="Visit type">
-            <Select value={form.visitType} onChange={(e) => setForm({ ...form, visitType: e.target.value })}>
-              <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
-              <option value="PARK_AND_VISIT">Park &amp; visit</option>
-              <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
-            </Select>
-          </Field>
-        </div>
+        {error && <p className="mb-4 font-body text-sm text-brand">{error}</p>}
 
-        <div className="mt-4 flex gap-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleCheckDuplicates}
-            disabled={checking || !form.cityId || !form.canonicalName || !form.latitude || !form.longitude}
-          >
-            {checking ? "Checking…" : "Check for duplicates"}
-          </Button>
-        </div>
-
-        {duplicates && (
-          <div className="mt-4 flex flex-col gap-2">
-            {duplicates.length === 0 ? (
-              <p className="font-body text-sm text-ink-muted">No likely duplicates found nearby.</p>
-            ) : (
-              duplicates.map((candidate) => (
-                <div
-                  key={candidate.pandalId}
-                  className="rounded-xl border border-accent/30 bg-card px-4 py-3 font-body text-sm"
-                >
-                  <span className="font-semibold text-accent">
-                    {Math.round(candidate.score * 100)}% match
-                  </span>{" "}
-                  · {candidate.distanceMeters}m away · {candidate.reasons.join(", ")}
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {error && <p className="mt-3 font-body text-sm text-brand">{error}</p>}
-
-        <div className="mt-4 flex flex-col gap-3 border-t border-border pt-4">
-          <span className="font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            This festival year (optional)
-          </span>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Year">
-              <Input
-                type="number"
-                value={yearForm.year}
-                onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
-              />
-            </Field>
-            <Field label="Theme">
-              <Input
-                placeholder="Optional"
-                value={yearForm.theme}
-                onChange={(e) => setYearForm({ ...yearForm, theme: e.target.value })}
-              />
-            </Field>
-          </div>
-          <Field label="Theme details">
-            <Textarea
-              placeholder="What makes this year's theme worth visiting?"
-              value={yearForm.description}
-              onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
-              className="min-h-20"
-            />
-          </Field>
-          <div className="flex flex-wrap gap-1.5">
-            {CATEGORY_OPTIONS.map((category) => {
-              const isActive = yearForm.categories.includes(category);
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => toggleYearCategory(category)}
-                  className={`rounded-pill border px-2.5 py-1 font-body text-xs font-semibold ${
-                    isActive ? "border-brand bg-brand text-brand-ink" : "border-border text-ink-muted"
-                  }`}
-                >
-                  {category}
-                </button>
-              );
-            })}
-          </div>
-          <p className="font-body text-xs text-ink-muted">
-            Leave this blank to add it later. Photos and a detailed schedule can only be added after the pandal is
-            created, from its own page.
-          </p>
-        </div>
-
-        <Button type="submit" disabled={saving} className="mt-4 w-full">
-          {saving ? "Creating…" : "Create & publish pandal"}
-        </Button>
-        </Card>
-
-        <Card padding="none" className="overflow-hidden">
-          {selectedCity ? (
-            <LocationPicker
-              key={selectedCity._id}
-              center={{ latitude: selectedCity.latitude, longitude: selectedCity.longitude }}
-              zoom={selectedCity.defaultMapZoom}
-              mapTilesUrl={MAP_TILES_URL}
-              onChange={handleLocationChange}
-              onAddressResolved={handleAddressResolved}
-            />
-          ) : (
-            <div className="flex h-[280px] w-full items-center justify-center font-body text-sm text-ink-muted">
-              Select a city to drop the pin
+        <Card className="mb-6 max-w-5xl">
+          <div className="flex flex-col gap-6">
+            <div>
+              <h2 className="mb-3 font-body text-xs font-extrabold uppercase tracking-wide text-accent">
+                City &amp; basics
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="City" className="col-span-2">
+                  <CityCombobox value={selectedCity} onSelect={handleCitySelect} />
+                </Field>
+                <Field label="Pandal name" className="col-span-2">
+                  <Input
+                    required
+                    placeholder="e.g. Kumartuli Sarbojanin"
+                    value={form.canonicalName}
+                    onChange={(e) => setForm({ ...form, canonicalName: e.target.value })}
+                  />
+                </Field>
+                <Field label="Organiser / committee">
+                  <Input
+                    placeholder="e.g. Kumartuli Sarbojanin Committee"
+                    value={form.organizerName}
+                    onChange={(e) => setForm({ ...form, organizerName: e.target.value })}
+                  />
+                </Field>
+                <Field label="Also known as">
+                  <Input
+                    placeholder="Comma-separated"
+                    value={form.alternateNames}
+                    onChange={(e) => setForm({ ...form, alternateNames: e.target.value })}
+                  />
+                </Field>
+              </div>
             </div>
-          )}
+
+            <div className="h-px bg-border" />
+
+            {/* Map lives beside the location fields instead of as a whole
+                separate card down/beside the entire page. */}
+            <div>
+              <h2 className="mb-3 font-body text-xs font-extrabold uppercase tracking-wide text-accent">
+                Location
+              </h2>
+              <div className="flex flex-col gap-4 md:flex-row">
+                <div className="flex flex-1 flex-col gap-3">
+                  <Field label="Address">
+                    <Input
+                      required
+                      placeholder="Full street address"
+                      value={form.address}
+                      onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Locality / area">
+                      <Input
+                        required
+                        placeholder="e.g. Kumartuli"
+                        value={form.locality}
+                        onChange={(e) => setForm({ ...form, locality: e.target.value })}
+                      />
+                    </Field>
+                    <Field label="Landmark">
+                      <Input
+                        placeholder="Optional"
+                        value={form.landmark}
+                        onChange={(e) => setForm({ ...form, landmark: e.target.value })}
+                      />
+                    </Field>
+                  </div>
+                  {duplicates && (
+                    <div className="flex flex-col gap-2">
+                      {duplicates.length === 0 ? (
+                        <p className="font-body text-sm text-ink-muted">No likely duplicates found nearby.</p>
+                      ) : (
+                        duplicates.map((candidate) => (
+                          <div
+                            key={candidate.pandalId}
+                            className="rounded-xl border border-accent/30 bg-card px-4 py-3 font-body text-sm"
+                          >
+                            <span className="font-semibold text-accent">
+                              {Math.round(candidate.score * 100)}% match
+                            </span>{" "}
+                            · {candidate.distanceMeters}m away · {candidate.reasons.join(", ")}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="overflow-hidden rounded-xl md:w-[380px] md:flex-none">
+                  {selectedCity ? (
+                    <LocationPicker
+                      key={selectedCity._id}
+                      center={{ latitude: selectedCity.latitude, longitude: selectedCity.longitude }}
+                      zoom={selectedCity.defaultMapZoom}
+                      mapTilesUrl={MAP_TILES_URL}
+                      onChange={handleLocationChange}
+                      onAddressResolved={handleAddressResolved}
+                    />
+                  ) : (
+                    <div className="flex h-[220px] w-full items-center justify-center rounded-xl bg-card font-body text-sm text-ink-muted">
+                      Select a city to drop the pin
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div>
+              <h2 className="mb-3 font-body text-xs font-extrabold uppercase tracking-wide text-accent">
+                Contact &amp; links
+              </h2>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Public contact" className="col-span-2">
+                  <Input
+                    placeholder="Phone number visitors can call"
+                    value={form.publicContact}
+                    onChange={(e) => setForm({ ...form, publicContact: e.target.value })}
+                  />
+                </Field>
+                <Field label="Instagram">
+                  <Input
+                    placeholder="https://instagram.com/…"
+                    value={form.instagramUrl}
+                    onChange={(e) => setForm({ ...form, instagramUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Facebook">
+                  <Input
+                    placeholder="https://facebook.com/…"
+                    value={form.facebookUrl}
+                    onChange={(e) => setForm({ ...form, facebookUrl: e.target.value })}
+                  />
+                </Field>
+                <Field label="Website" className="col-span-2">
+                  <Input
+                    placeholder="https://…"
+                    value={form.websiteUrl}
+                    onChange={(e) => setForm({ ...form, websiteUrl: e.target.value })}
+                  />
+                </Field>
+              </div>
+            </div>
+
+            <div className="h-px bg-border" />
+
+            <div>
+              <h2 className="mb-3 font-body text-xs font-extrabold uppercase tracking-wide text-accent">
+                Amenities &amp; visit type
+              </h2>
+              <div className="mb-3 grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-card px-4 py-3">
+                {AMENITY_FIELDS.map((field) => (
+                  <label key={field.key} className="flex items-center gap-2 font-body text-sm">
+                    <input
+                      type="checkbox"
+                      checked={form[field.key]}
+                      onChange={() => toggleAmenity(field.key)}
+                      className="h-4 w-4 accent-brand"
+                    />
+                    {field.label}
+                  </label>
+                ))}
+              </div>
+              <Field label="Visit type" className="max-w-xs">
+                <Select value={form.visitType} onChange={(e) => setForm({ ...form, visitType: e.target.value })}>
+                  <option value="WALKING_DARSHAN">Walking darshan · quick visit</option>
+                  <option value="PARK_AND_VISIT">Park &amp; visit</option>
+                  <option value="DARSHAN_AND_GO">Darshan &amp; go</option>
+                </Select>
+              </Field>
+            </div>
+          </div>
         </Card>
+
+        {/* Boxed off and dashed, same as the Edit page's Festival Years —
+            optional and a different lifecycle from the pandal fields above. */}
+        <div className="max-w-5xl">
+          <div className="mb-2 flex items-baseline justify-between">
+            <h2 className="font-body text-sm font-bold">This festival year</h2>
+            <span className="font-body text-xs text-ink-muted">
+              Optional — leave blank and add it later from the pandal&apos;s own page
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-5">
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Year">
+                <Input
+                  type="number"
+                  value={yearForm.year}
+                  onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
+                />
+              </Field>
+              <Field label="Theme">
+                <Input
+                  placeholder="Optional"
+                  value={yearForm.theme}
+                  onChange={(e) => setYearForm({ ...yearForm, theme: e.target.value })}
+                />
+              </Field>
+            </div>
+            <Field label="Theme details">
+              <Textarea
+                placeholder="What makes this year's theme worth visiting?"
+                value={yearForm.description}
+                onChange={(e) => setYearForm({ ...yearForm, description: e.target.value })}
+                className="min-h-20"
+              />
+            </Field>
+            <div className="flex flex-wrap gap-1.5">
+              {CATEGORY_OPTIONS.map((category) => {
+                const isActive = yearForm.categories.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => toggleYearCategory(category)}
+                    className={`rounded-pill border px-2.5 py-1 font-body text-xs font-semibold ${
+                      isActive ? "border-brand bg-brand text-brand-ink" : "border-border text-ink-muted"
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="font-body text-xs text-ink-muted">
+              Photos and a detailed schedule can only be added after the pandal is created, from its own page.
+            </p>
+          </div>
+        </div>
       </form>
     </AdminShell>
   );

@@ -15,6 +15,10 @@ const listQuerySchema = z.object({
   // "2026"/"2025"/etc filters to pandals with a PandalYear for that year;
   // "none" filters to pandals with no festival year on record at all.
   year: z.string().optional(),
+  // "1" filters to pandals with at least one featured PandalYear — featured
+  // lives on PandalYear, not Pandal, so this resolves the same way `year`
+  // does below rather than being a plain field match.
+  featured: z.enum(["1"]).optional(),
   sortBy: z.enum(["name", "locality", "status", "updated"]).optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
   page: z.coerce.number().optional(),
@@ -37,6 +41,7 @@ async function buildPandalFilter(query: {
   verificationStatus?: string;
   search?: string;
   year?: string;
+  featured?: string;
 }): Promise<Record<string, unknown>> {
   const filter: Record<string, unknown> = {};
   if (query.cityId) filter.cityId = query.cityId;
@@ -44,13 +49,34 @@ async function buildPandalFilter(query: {
   if (query.verificationStatus) filter.verificationStatus = query.verificationStatus;
   if (query.search) filter.$text = { $search: query.search };
 
+  // `year` and `featured` both resolve to a constraint on which pandalIds
+  // qualify (neither is a plain field on Pandal) — composed as a genuine
+  // intersection below rather than two `$in`/`$nin` keys overwriting each
+  // other on `filter._id`.
+  let idConstraint: { $in: unknown[] } | { $nin: unknown[] } | undefined;
+
   if (query.year === "none") {
     const idsWithYears = await PandalYearModel.distinct("pandalId");
-    filter._id = { $nin: idsWithYears };
+    idConstraint = { $nin: idsWithYears };
   } else if (query.year) {
     const idsForYear = await PandalYearModel.distinct("pandalId", { year: Number(query.year) });
-    filter._id = { $in: idsForYear };
+    idConstraint = { $in: idsForYear };
   }
+
+  if (query.featured === "1") {
+    const idsFeatured = await PandalYearModel.distinct("pandalId", { featured: true });
+    if (idConstraint && "$in" in idConstraint) {
+      const featuredSet = new Set(idsFeatured.map(String));
+      idConstraint = { $in: idConstraint.$in.filter((id) => featuredSet.has(String(id))) };
+    } else if (idConstraint && "$nin" in idConstraint) {
+      const excludedSet = new Set(idConstraint.$nin.map(String));
+      idConstraint = { $in: idsFeatured.filter((id) => !excludedSet.has(String(id))) };
+    } else {
+      idConstraint = { $in: idsFeatured };
+    }
+  }
+
+  if (idConstraint) filter._id = idConstraint;
 
   return filter;
 }
@@ -107,21 +133,35 @@ export function registerPandalsAdminRoutes(app: FastifyInstance) {
     // One grouped query for the current page's ids is cheap (25 rows) and
     // avoids an N+1 per-row lookup.
     const ids = items.map((item) => item._id);
-    const yearRows = await PandalYearModel.find({ pandalId: { $in: ids } }, { pandalId: 1, year: 1 });
-    const yearsByPandal = new Map<string, number[]>();
+    // Widened to also carry a thumbnail and the featured flag — still one
+    // cheap grouped query for the current page's rows, same as before, just
+    // a wider projection instead of a second lookup.
+    const yearRows = await PandalYearModel.find(
+      { pandalId: { $in: ids } },
+      { pandalId: 1, year: 1, coverImage: 1, photos: 1, featured: 1 }
+    );
+    const yearsByPandal = new Map<string, (typeof yearRows)[number][]>();
     for (const row of yearRows) {
       const key = String(row.pandalId);
       const list = yearsByPandal.get(key) ?? [];
-      list.push(row.year);
+      list.push(row);
       yearsByPandal.set(key, list);
     }
     const currentYear = new Date().getFullYear();
     const itemsWithYears = items.map((item) => {
       const years = yearsByPandal.get(String(item._id)) ?? [];
+      // The current year's entry if there is one, else whichever year is
+      // most recent — that's the thumbnail/featured state actually worth
+      // showing in a list an admin is triaging.
+      const relevantYear =
+        years.find((y) => y.year === currentYear) ?? years.slice().sort((a, b) => b.year - a.year)[0];
+      const thumbnail = relevantYear?.coverImage ?? relevantYear?.photos?.[0]?.url;
       return {
         ...item.toObject(),
         yearCount: years.length,
-        hasCurrentYearEntry: years.includes(currentYear),
+        hasCurrentYearEntry: years.some((y) => y.year === currentYear),
+        thumbnailUrl: thumbnail,
+        featured: relevantYear?.featured ?? false,
       };
     });
 
