@@ -26,6 +26,10 @@ export async function generateMetadata({
     title: pandal.canonicalName,
     description,
     openGraph: { title: pandal.canonicalName, description },
+    // Ignores `?year=` — the sitemap only lists the bare slug URL (see
+    // app/sitemap.ts), so a past-year visit should canonicalize back to it
+    // instead of being indexed as a separate near-duplicate per year.
+    alternates: { canonical: `/${citySlug}/pandal/${slug}` },
   };
 }
 

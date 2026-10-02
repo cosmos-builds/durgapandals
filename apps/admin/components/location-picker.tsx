@@ -177,8 +177,15 @@ export function LocationPicker({ center, zoom = 14, mapTilesUrl, onChange, onAdd
         <MapCanvas styleUrl={mapTilesUrl} center={center} zoom={zoom} onMapReady={handleMapReady} className="absolute inset-0" />
 
         <div className="pointer-events-none absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-full flex-col items-center">
+          {/* Always full-brightness `text-accent` — this used to dim to the
+              pale, low-alpha `text-ink-muted` the instant the map moved once
+              (via `hasPendingMove`), with nothing to switch it back except
+              clicking "Use this location". Against most map tiles that pale
+              color reads as the pin having vanished rather than "pending",
+              so a confirm/unconfirmed state is better left to the existing
+              pending-address bar than to starving this icon's contrast. */}
           <span
-            className={`material-symbols-rounded text-[34px] ${hasPendingMove ? "text-ink-muted" : "text-accent"}`}
+            className="material-symbols-rounded text-[34px] text-accent"
             style={{ fontVariationSettings: "'FILL' 1" }}
           >
             add_location

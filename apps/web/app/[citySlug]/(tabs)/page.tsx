@@ -30,6 +30,11 @@ export async function generateMetadata({
     title,
     description,
     openGraph: { title, description },
+    // Ignores `?year=` on purpose — the sitemap only ever lists the bare
+    // `/city` URL (see app/sitemap.ts), so a `?year=2025` visit should point
+    // back at that one canonical page rather than being indexed as a
+    // separate near-duplicate for each year.
+    alternates: { canonical: `/${citySlug}` },
   };
 }
 
