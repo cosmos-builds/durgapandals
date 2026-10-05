@@ -8,11 +8,10 @@ export interface BottomNavProps {
   citySlug: string;
 }
 
-const ITEMS = [
+const TAB_ITEMS = [
   { key: "map", label: "Map", icon: "map", suffix: "" },
   { key: "explore", label: "Explore", icon: "view_agenda", suffix: "/explore" },
   { key: "saved", label: "Saved", icon: "bookmark", suffix: "/saved" },
-  { key: "add", label: "Add Pandal", icon: "add_circle", suffix: "/add" },
 ] as const;
 
 // Primary public navigation (spec §4) — rendered once from the (tabs) layout
@@ -24,9 +23,11 @@ const ITEMS = [
 export function BottomNav({ citySlug }: BottomNavProps) {
   const pathname = usePathname();
 
+  const addHref = `/${citySlug}/add`;
+
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-border bg-ground/95 px-2 pt-2 backdrop-blur md:hidden">
-      {ITEMS.map((item) => {
+      {TAB_ITEMS.map((item) => {
         const href = `/${citySlug}${item.suffix}`;
         const isActive = pathname === href;
         return (
@@ -59,6 +60,17 @@ export function BottomNav({ citySlug }: BottomNavProps) {
           </Link>
         );
       })}
+
+      {/* Add Pandal gets its own treatment instead of being a fifth flat
+          tab icon — a filled, rounded "ball" button (Instagram/TikTok-style
+          center action) so it reads as the one thing in this bar that
+          CREATES something, not just navigates to another view of what
+          already exists. */}
+      <Link href={addHref} aria-label="Add Pandal" className="flex h-[54px] flex-col items-center justify-center">
+        <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand text-brand-ink shadow-[0_4px_14px_rgba(255,68,51,.45)]">
+          <span className="material-symbols-rounded text-[26px]">add</span>
+        </span>
+      </Link>
     </nav>
   );
 }
