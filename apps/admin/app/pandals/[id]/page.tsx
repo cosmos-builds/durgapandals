@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { useAdminGuard } from "@/lib/use-admin-guard";
@@ -63,6 +63,7 @@ interface PandalYear {
   year: number;
   theme?: string;
   description?: string;
+  categories: string[];
   featured: boolean;
   publicationStatus: string;
   likes: number;
@@ -123,6 +124,10 @@ export default function PandalDetailPage() {
   const [mapKey, setMapKey] = useState(0);
   const [years, setYears] = useState<PandalYear[]>([]);
   const [yearForm, setYearForm] = useState(EMPTY_YEAR_FORM);
+  // Set while editing an existing, already-published year — the same form
+  // below switches from POST (new year) to PATCH (this one) while it's set.
+  const [editingYearId, setEditingYearId] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const [savingYear, setSavingYear] = useState(false);
   const [uploadingYearId, setUploadingYearId] = useState<string | null>(null);
 
@@ -420,30 +425,62 @@ export default function PandalDetailPage() {
     setYearForm((prev) => ({ ...prev, schedule: prev.schedule.filter((_, i) => i !== index) }));
   }
 
+  function startEditingYear(year: PandalYear) {
+    setEditingYearId(year._id);
+    setYearForm({
+      year: String(year.year),
+      theme: year.theme ?? "",
+      description: year.description ?? "",
+      categories: year.categories ?? [],
+      schedule: year.schedule,
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function cancelEditingYear() {
+    setEditingYearId(null);
+    setYearForm(EMPTY_YEAR_FORM);
+  }
+
   async function addYear(event: React.FormEvent) {
     event.preventDefault();
     if (!pandal) return;
     setSavingYear(true);
     setError(null);
     try {
-      const result = await adminMutate("/admin/pandal-years", {
-        method: "POST",
-        body: JSON.stringify({
-          pandalId: pandal._id,
-          year: Number(yearForm.year),
-          theme: yearForm.theme || undefined,
-          description: yearForm.description || undefined,
-          categories: yearForm.categories,
-          schedule: yearForm.schedule.filter((row) => row.time && row.label),
-        }),
-      });
+      // Editing an existing year PATCHes it in place (its `year` field is
+      // immutable server-side — pandalYearSchema.partial().omit({ year })
+      // on that route — so the Year input stays disabled while editing
+      // rather than silently accepting a value the server will ignore).
+      const result = editingYearId
+        ? await adminMutate(`/admin/pandal-years/${editingYearId}`, {
+            method: "PATCH",
+            body: JSON.stringify({
+              theme: yearForm.theme || undefined,
+              description: yearForm.description || undefined,
+              categories: yearForm.categories,
+              schedule: yearForm.schedule.filter((row) => row.time && row.label),
+            }),
+          })
+        : await adminMutate("/admin/pandal-years", {
+            method: "POST",
+            body: JSON.stringify({
+              pandalId: pandal._id,
+              year: Number(yearForm.year),
+              theme: yearForm.theme || undefined,
+              description: yearForm.description || undefined,
+              categories: yearForm.categories,
+              schedule: yearForm.schedule.filter((row) => row.time && row.label),
+            }),
+          });
       if (!result.ok) {
-        setError(result.error ?? "Couldn't add year.");
-        toast.error(result.error ?? "Couldn't add year.");
+        setError(result.error ?? "Couldn't save year.");
+        toast.error(result.error ?? "Couldn't save year.");
         return;
       }
+      toast.success(editingYearId ? `${yearForm.year} updated.` : `${yearForm.year} added.`);
+      setEditingYearId(null);
       setYearForm(EMPTY_YEAR_FORM);
-      toast.success(`${yearForm.year} added.`);
       await load();
     } finally {
       setSavingYear(false);
@@ -759,6 +796,14 @@ export default function PandalDetailPage() {
                   </button>
                   <button
                     type="button"
+                    onClick={() => startEditingYear(year)}
+                    aria-label={`Edit ${year.year}`}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
+                  >
+                    <span className="material-symbols-rounded text-lg">edit</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setYearToDelete(year)}
                     aria-label={`Delete ${year.year}`}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-ink-muted hover:bg-brand/10 hover:text-brand"
@@ -822,9 +867,9 @@ export default function PandalDetailPage() {
           {years.length === 0 && <p className="font-body text-sm text-ink-muted">No years added yet.</p>}
         </div>
 
-        <form onSubmit={addYear} className="flex flex-col gap-3 border-t border-border pt-4">
+        <form ref={formRef} onSubmit={addYear} className="flex flex-col gap-3 border-t border-border pt-4">
           <span className="-mb-1 font-body text-xs font-semibold uppercase tracking-wide text-ink-muted">
-            Add a festival year
+            {editingYearId ? `Editing ${yearForm.year}` : "Add a festival year"}
           </span>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Year">
@@ -832,6 +877,7 @@ export default function PandalDetailPage() {
                 type="number"
                 value={yearForm.year}
                 onChange={(e) => setYearForm({ ...yearForm, year: e.target.value })}
+                disabled={!!editingYearId}
                 className="text-sm"
               />
             </Field>
@@ -904,9 +950,16 @@ export default function PandalDetailPage() {
               );
             })}
           </div>
-          <Button type="submit" disabled={savingYear}>
-            {savingYear ? "Adding festival year…" : "Add festival year"}
-          </Button>
+          <div className="flex gap-2">
+            <Button type="submit" disabled={savingYear} className="flex-1">
+              {savingYear ? "Saving…" : editingYearId ? "Save changes" : "Add festival year"}
+            </Button>
+            {editingYearId && (
+              <Button type="button" variant="secondary" onClick={cancelEditingYear}>
+                Cancel
+              </Button>
+            )}
+          </div>
         </form>
       </Card>
 

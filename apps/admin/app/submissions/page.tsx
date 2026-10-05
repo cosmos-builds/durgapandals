@@ -457,10 +457,14 @@ export default function SubmissionsPage() {
               </>
             )}
 
-            {active.duplicateCandidates.length > 0 && (
+            {/* Shown whenever the submission has a pin, not just when there
+                are duplicate candidates — a plain new pandal with zero
+                matches still has a location worth checking on a map before
+                approving, and previously got no map at all. */}
+            {(origin || active.duplicateCandidates.length > 0) && (
               <div className="flex flex-col gap-3 border-t border-border pt-4">
                 <span className="font-body text-xs font-semibold uppercase tracking-wide text-accent">
-                  Possible duplicates
+                  {active.duplicateCandidates.length > 0 ? "Possible duplicates" : "Submitted location"}
                 </span>
                 <CandidatesMap mapTilesUrl={MAP_TILES_URL} origin={origin} candidates={active.duplicateCandidates} />
                 {active.duplicateCandidates.map((candidate, index) => (
