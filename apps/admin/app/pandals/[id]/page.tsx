@@ -175,9 +175,12 @@ export default function PandalDetailPage() {
     return () => clearTimeout(timer);
   }, [mergeOpen, mergeQuery, params.id]);
 
+  // Functional update on purpose: the location picker's "Use this location"
+  // calls updateLocation and then this (twice, for address and locality) in
+  // the same tick. Spreading the render's `pandal` here would overwrite the
+  // just-set coordinates with the stale ones and drop the first field.
   function updateField(field: keyof Pandal, value: string) {
-    if (!pandal) return;
-    setPandal({ ...pandal, [field]: value });
+    setPandal((prev) => (prev ? { ...prev, [field]: value } : prev));
   }
 
   function toggleAmenity(field: (typeof AMENITY_FIELDS)[number]["key"]) {
