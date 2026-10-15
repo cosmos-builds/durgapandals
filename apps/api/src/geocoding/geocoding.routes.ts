@@ -52,6 +52,7 @@ interface PhotonFeature {
     county?: string;
     state?: string;
     country?: string;
+    osm_value?: string;
   };
   geometry: { coordinates: [number, number] };
 }
@@ -60,10 +61,30 @@ interface PhotonResponse {
   features: PhotonFeature[];
 }
 
-function buildLabel(p: PhotonFeature["properties"]): string {
-  const streetLine = [p.housenumber, p.street].filter(Boolean).join(" ") || p.name;
-  const parts = [streetLine, p.locality ?? p.suburb ?? p.district, p.city, p.state, p.country].filter(
-    (part): part is string => Boolean(part)
+// OSM place types that *are* a neighbourhood — for these the feature's own
+// name is the locality ("Park Circus", "Arera Colony"), not a field on it.
+const AREA_TYPES = new Set(["suburb", "neighbourhood", "quarter", "village", "hamlet", "residential"]);
+
+// Photon's `locality` is often a block/sector code ("E-5", "No 6 Locality")
+// rather than an area name, and `district` is often just the city
+// ("Indore City") — both useless as a "Locality / area" value.
+const JUNK_LOCALITY = /^(no\.?\s*\d+\s*locality|[a-z]{1,2}[- ]?\d+[a-z]?)$/i;
+
+function pickLocality(p: PhotonFeature["properties"]): string | undefined {
+  if (p.osm_value && AREA_TYPES.has(p.osm_value) && p.name) return p.name;
+  const district =
+    p.district && p.district !== p.city && !/\bcity$/i.test(p.district) ? p.district : undefined;
+  const locality = p.locality && !JUNK_LOCALITY.test(p.locality.trim()) ? p.locality : undefined;
+  return p.suburb ?? district ?? locality;
+}
+
+// `reverse` drops the feature's own name: reverse geocoding returns the
+// nearest OSM object, which is routinely a clinic or shop — "Colony Care
+// Hospital" is not the pandal's street address.
+function buildLabel(p: PhotonFeature["properties"], reverse: boolean): string {
+  const streetLine = [p.housenumber, p.street].filter(Boolean).join(" ") || (reverse ? undefined : p.name);
+  const parts = [streetLine, pickLocality(p), p.city, p.state, p.country].filter((part): part is string =>
+    Boolean(part)
   );
   // A locality search often repeats itself across two of these fields (e.g.
   // name === locality) — dedup while preserving order so the label doesn't
@@ -71,13 +92,13 @@ function buildLabel(p: PhotonFeature["properties"]): string {
   return Array.from(new Set(parts)).join(", ");
 }
 
-function toResult(feature: PhotonFeature) {
+function toResult(feature: PhotonFeature, reverse = false) {
   const p = feature.properties;
   return {
-    label: buildLabel(p),
+    label: buildLabel(p, reverse),
     latitude: feature.geometry.coordinates[1],
     longitude: feature.geometry.coordinates[0],
-    locality: p.locality ?? p.suburb ?? p.district,
+    locality: pickLocality(p),
     road: p.street,
   };
 }
@@ -141,7 +162,7 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
     if (!response.ok) return reply.code(502).send({ error: "Geocoding provider unavailable" });
 
     const data = (await response.json()) as PhotonResponse;
-    return data.features.map(toResult);
+    return data.features.map((feature) => toResult(feature));
   });
 
   // Backs the "drag the pin, address fills in" pattern from Google Maps —
@@ -164,6 +185,6 @@ export const geocodingRoutes: FastifyPluginAsync = async (app) => {
     const data = (await response.json()) as PhotonResponse;
     const feature = data.features[0];
     if (!feature) return reply.code(404).send({ error: "No address found for this location" });
-    return toResult(feature);
+    return toResult(feature, true);
   });
 };

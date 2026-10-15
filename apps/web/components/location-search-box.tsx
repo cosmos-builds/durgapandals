@@ -32,6 +32,9 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Geocoding takes 1-3s, so a slow response for an older query can land
+  // after a newer one — only the latest request may update the list.
+  const searchSeq = useRef(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,8 +49,10 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
     setQuery(value);
     setOpen(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
+    const seq = ++searchSeq.current;
 
     if (value.trim().length < 2) {
+      setLoading(false);
       setResults([]);
       setSearched(false);
       return;
@@ -56,6 +61,7 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       const found = await searchLocations(citySlug, value, biasCenter, restrictNear);
+      if (seq !== searchSeq.current) return;
       setResults(found);
       setSearched(true);
       setLoading(false);
@@ -63,6 +69,8 @@ export function LocationSearchBox({ citySlug, placeholder, onSelect, className =
   }
 
   function handleSelect(result: LocationSearchResult) {
+    searchSeq.current++;
+    setLoading(false);
     onSelect(result);
     setQuery(result.label);
     setOpen(false);

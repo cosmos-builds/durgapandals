@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { fetchCityBySlug, fetchPandalsForCityOrThrow } from "@/lib/api";
 import { ExploreBrowser } from "@/components/explore-browser";
+import { CitySeoSection } from "@/components/city-seo-section";
+import { exploreDescription, exploreTitle } from "@/lib/seo";
 
 // This list view (unlike the map page) already renders every pandal as a
 // real server-rendered <a href="/city/pandal/slug"> with visible text — the
@@ -20,8 +22,8 @@ export async function generateMetadata({
   if (!city) return {};
 
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
-  const title = `Explore Durga Pandals in ${city.name} ${year}`;
-  const description = `Browse every Durga Puja pandal in ${city.name} for ${year} — themes, localities, organisers and directions, searchable and filterable by area.`;
+  const title = exploreTitle(city.name, year);
+  const description = exploreDescription(city.name, year);
 
   return {
     title,
@@ -46,5 +48,10 @@ export default async function ExplorePage({
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
   const pandals = await fetchPandalsForCityOrThrow(city.slug, undefined, year);
 
-  return <ExploreBrowser citySlug={city.slug} cityName={city.name} year={year} pandals={pandals} />;
+  return (
+    <>
+      <ExploreBrowser citySlug={city.slug} cityName={city.name} year={year} pandals={pandals} />
+      <CitySeoSection citySlug={city.slug} cityName={city.name} year={year} pandals={pandals} />
+    </>
+  );
 }

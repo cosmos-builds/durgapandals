@@ -2,9 +2,12 @@ import { notFound } from "next/navigation";
 import { fetchCityBySlug, fetchPandalsForCityOrThrow } from "@/lib/api";
 import { MapHome } from "@/components/map-home";
 import { getAvailableFestivalYears } from "@/lib/festival-years";
+import { JsonLd } from "@/components/json-ld";
+import { absoluteUrl, cityDescription, cityTitle } from "@/lib/seo";
 
 const MAP_TILES_URL =
-  process.env.NEXT_PUBLIC_MAP_TILES_URL ?? "https://tiles.openfreemap.org/styles/liberty";
+  process.env.NEXT_PUBLIC_MAP_TILES_URL ??
+  "https://tiles.openfreemap.org/styles/liberty";
 
 // Without this, every city shared the root layout's generic sitewide
 // title/description — a search for "durga pandal <city>" had nothing
@@ -23,8 +26,8 @@ export async function generateMetadata({
   if (!city) return {};
 
   const year = yearParam ? Number(yearParam) : city.activeFestivalYear;
-  const title = `Durga Pandals in ${city.name} ${year}`;
-  const description = `Explore Durga Puja and Navratri pandals in ${city.name} for ${year} — locations, themes, timings, photos and directions, all on one map.`;
+  const title = cityTitle(city.name, year);
+  const description = cityDescription(city.name, year);
 
   return {
     title,
@@ -64,16 +67,57 @@ export default async function CityMapPage({
   const availableYears = getAvailableFestivalYears();
 
   return (
-    <MapHome
-      citySlug={city.slug}
-      cityName={city.name}
-      year={year}
-      activeFestivalYear={city.activeFestivalYear}
-      availableYears={availableYears}
-      center={{ latitude: city.latitude, longitude: city.longitude }}
-      zoom={city.defaultMapZoom}
-      mapTilesUrl={MAP_TILES_URL}
-      pandals={pandals}
-    />
+    <>
+      {/* The map is a full-screen canvas with almost no text — this gives
+          the page a real heading and the structured data a crawler needs. */}
+      <h1 className="sr-only">
+        Durga Puja Pandals in {city.name} {year} — Durga Darshan map
+      </h1>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name: `Durga Puja pandals in ${city.name} ${year}`,
+            numberOfItems: pandals.length,
+            itemListElement: pandals.slice(0, 100).map((pandal, index) => ({
+              "@type": "ListItem",
+              position: index + 1,
+              name: pandal.canonicalName,
+              url: absoluteUrl(`/${city.slug}/pandal/${pandal.slug}`),
+            })),
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: absoluteUrl("/"),
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: city.name,
+                item: absoluteUrl(`/${city.slug}`),
+              },
+            ],
+          },
+        ]}
+      />
+      <MapHome
+        citySlug={city.slug}
+        cityName={city.name}
+        year={year}
+        activeFestivalYear={city.activeFestivalYear}
+        availableYears={availableYears}
+        center={{ latitude: city.latitude, longitude: city.longitude }}
+        zoom={city.defaultMapZoom}
+        mapTilesUrl={MAP_TILES_URL}
+        pandals={pandals}
+      />
+    </>
   );
 }

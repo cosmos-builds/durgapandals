@@ -30,6 +30,7 @@ import { LocationSearchBox } from "./location-search-box";
 import { MobileHeader } from "./mobile-header";
 import { useCitySearch } from "@/lib/use-city-search";
 import type { CitySearchResult } from "@/lib/api";
+import { PhotoAddButton } from "./photo-add-button";
 
 // OTP verification is off by default (contributors submit directly) but the
 // code path stays in place — flip this back on with
@@ -324,6 +325,9 @@ export function AddPandalFlow({
   const fetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const nearbyMarkersRef = useRef<maplibregl.Marker[]>([]);
+  // The search result the map was last flown to, so the resulting moveend
+  // doesn't reverse-geocode over it (see handleMapReady).
+  const pickedResultRef = useRef<LocationSearchResult | null>(null);
   const coordsRef = useRef(coords);
   coordsRef.current = coords;
   // `handleMapReady` (below) is memoized once with empty deps — the actual
@@ -436,6 +440,13 @@ export function AddPandalFlow({
         const next = { latitude: c.lat, longitude: c.lng };
         setPendingCoords(next);
         scheduleNearbyFetch(next);
+        // The flyTo from a picked search result ends exactly on it — keep
+        // that result's address instead of replacing it with whatever OSM
+        // object happens to be nearest the pin. A real drag moves away,
+        // which releases it.
+        const picked = pickedResultRef.current;
+        if (picked && distanceMeters(next, picked) < 25) return;
+        pickedResultRef.current = null;
         scheduleReverseGeocode(next);
       });
       // `coordsRef`, not the fixed `center` prop — this callback is memoized
@@ -456,6 +467,11 @@ export function AddPandalFlow({
   // there by hand. The search result already carries a resolved address, so
   // there's no need to wait on a separate reverse-geocode call for it.
   function handleLocationSelect(result: LocationSearchResult) {
+    pickedResultRef.current = result;
+    // Drop any reverse-geocode already queued/in flight for the old pin.
+    reverseGeocodeSeq.current += 1;
+    if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
+    setGeocoding(false);
     mapRef.current?.flyTo({
       center: [result.longitude, result.latitude],
       zoom: 16,
@@ -471,19 +487,11 @@ export function AddPandalFlow({
   // The one and only place a map move ever reaches the actual submission —
   // current vs pending are always shown side by side (see the confirm bar
   // below) so it's never ambiguous which address is currently committed.
+  // Only the coordinates are committed — locality and address are left for
+  // the visitor to type, since geocoded values are often wrong for Indian
+  // neighbourhoods (the preview above is a hint, not a pre-fill).
   function useThisLocation() {
     setCoords(pendingCoords);
-    if (pendingAddress) {
-      // Always overwrite from the confirmed pin position, even with an
-      // empty string — falling back to `prev.locality` here would leave a
-      // moved pin showing the *previous* location's locality with no sign
-      // it's stale.
-      setDetails((prev) => ({
-        ...prev,
-        locality: pendingAddress.locality ?? "",
-        address: pendingAddress.road ?? pendingAddress.label,
-      }));
-    }
     warnIfFarFromSelectedCity(pendingCoords);
   }
 
@@ -591,7 +599,8 @@ export function AddPandalFlow({
         // prior drag might still have in flight, so a late, stale response
         // can't clobber what we're about to set here.
         reverseGeocodeSeq.current += 1;
-        if (reverseGeocodeTimer.current) clearTimeout(reverseGeocodeTimer.current);
+        if (reverseGeocodeTimer.current)
+          clearTimeout(reverseGeocodeTimer.current);
         setGeocoding(true);
         const result = await reverseGeocode(next.latitude, next.longitude);
         setGeocoding(false);
@@ -600,11 +609,6 @@ export function AddPandalFlow({
         if (result) {
           setPendingAddress(result);
           setGeocodeFailed(false);
-          setDetails((prev) => ({
-            ...prev,
-            locality: result.locality ?? "",
-            address: result.road ?? result.label,
-          }));
         } else {
           setGeocodeFailed(true);
         }
@@ -915,9 +919,7 @@ export function AddPandalFlow({
             onClick={goBack}
             className="flex h-8 w-8 flex-none items-center justify-center rounded-full bg-card"
           >
-            <span className="material-symbols-rounded text-lg">
-              arrow_back
-            </span>
+            <span className="material-symbols-rounded text-lg">arrow_back</span>
           </button>
           {stepDots}
         </div>
@@ -1274,11 +1276,11 @@ export function AddPandalFlow({
               />
             </Field>
 
-            {!details.locality && !details.address && (
+            {!hasConfirmedLocation && !details.locality && !details.address && (
               <span className="flex items-center gap-1.5 font-body text-xs text-ink-muted">
                 <span className="material-symbols-rounded text-sm">info</span>
                 Drag the map, search, or use your location above, then tap "Use
-                this location" — or type the address directly.
+                this location".
               </span>
             )}
 
@@ -1315,7 +1317,7 @@ export function AddPandalFlow({
                 exploring the map. A spot with no nearby matches now shows
                 nothing here at all; the plain Continue button below is the
                 only thing that appears either way. */}
-            {Boolean(details.locality && details.address) &&
+            {hasConfirmedLocation &&
               (nearby.length > 0 || nearbyCheckFailed) && (
                 <div className="flex flex-col gap-2 rounded-3xl border border-border bg-panel p-3.5 md:bg-card/60">
                   <div className="flex flex-col gap-1">
@@ -1517,30 +1519,10 @@ export function AddPandalFlow({
                 </div>
               ))}
               {photos.length < MAX_PHOTOS && (
-                <label className="flex h-20 w-20 flex-none cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-ink-muted">
-                  {uploadingPhoto ? (
-                    <span className="material-symbols-rounded animate-spin text-xl">
-                      progress_activity
-                    </span>
-                  ) : (
-                    <>
-                      <span className="material-symbols-rounded text-xl">
-                        add_photo_alternate
-                      </span>
-                      <span className="font-body text-[10px] font-semibold">
-                        Add
-                      </span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    multiple
-                    disabled={uploadingPhoto}
-                    onChange={handlePhotoSelect}
-                    className="hidden"
-                  />
-                </label>
+                <PhotoAddButton
+                  uploading={uploadingPhoto}
+                  onChange={handlePhotoSelect}
+                />
               )}
             </div>
             {photoError && (

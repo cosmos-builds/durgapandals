@@ -12,6 +12,7 @@ import {
   type UploadedPhoto,
 } from "@/lib/api";
 import { MobileHeader } from "./mobile-header";
+import { PhotoAddButton } from "./photo-add-button";
 
 const REQUIRE_VERIFICATION = process.env.NEXT_PUBLIC_REQUIRE_CONTRIBUTOR_VERIFICATION === "true";
 
@@ -244,26 +245,7 @@ export function ReportPandalFlow({ citySlug, cityName, cityId, activeFestivalYea
                 </button>
               </div>
             ))}
-            {photos.length < MAX_PHOTOS && (
-              <label className="flex h-20 w-20 flex-none cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-border text-ink-muted">
-                {uploadingPhoto ? (
-                  <span className="material-symbols-rounded animate-spin text-xl">progress_activity</span>
-                ) : (
-                  <>
-                    <span className="material-symbols-rounded text-xl">add_photo_alternate</span>
-                    <span className="font-body text-[10px] font-semibold">Add</span>
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  multiple
-                  disabled={uploadingPhoto}
-                  onChange={handlePhotoSelect}
-                  className="hidden"
-                />
-              </label>
-            )}
+            {photos.length < MAX_PHOTOS && <PhotoAddButton uploading={uploadingPhoto} onChange={handlePhotoSelect} />}
           </div>
           {photoError && <p className="font-body text-xs text-brand">{photoError}</p>}
         </div>
